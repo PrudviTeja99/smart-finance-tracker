@@ -7,6 +7,8 @@ import '../utils/transaction_parser.dart';
 import '../utils/app_settings.dart';
 import '../utils/app_snackbar.dart';
 import '../utils/icon_helper.dart';
+import '../services/perceptron_storage_service.dart';
+import '../utils/bio_tagger.dart';
 
 class ModelTrainingScreen extends StatefulWidget {
   const ModelTrainingScreen({super.key});
@@ -20,6 +22,7 @@ class _ModelTrainingScreenState extends State<ModelTrainingScreen> {
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _descController = TextEditingController();
   final TransactionParser _parser = TransactionParser();
+  final TextEditingController _accountHintController = TextEditingController(); // NEW
 
   List<AccountModel> _accounts = [];
   List<CategoryModel> _categories = [];
@@ -43,6 +46,7 @@ class _ModelTrainingScreenState extends State<ModelTrainingScreen> {
     _bodyController.dispose();
     _amountController.dispose();
     _descController.dispose();
+    _accountHintController.dispose();
     super.dispose();
   }
 
@@ -61,39 +65,51 @@ class _ModelTrainingScreenState extends State<ModelTrainingScreen> {
   Future<void> _runPrediction() async {
     final body = _bodyController.text.trim();
     if (body.isEmpty) {
-      AppSnackBar.show(context, 'Paste a notification message first', type: SnackBarType.warning);
-      return;
+        AppSnackBar.show(context, 'Paste a notification message first', type: SnackBarType.warning);
+        return;
     }
 
     setState(() => _isPredicting = true);
 
     final TransactionModel? tx = await _parser.parseNotification(
-      appName: 'Manual Training',
-      title: '',
-      body: body,
+        appName: 'Manual Training',
+        title: '',
+        body: body,
     );
+
+    // Also pull the raw account-span guess directly from the tagger for display
+    final tokens = TokenFeatureExtractor.tokenize(body);
+    final tagger = PerceptronStorageService.instance.tagger;
+    final bioTags = tagger.predictSequence(tokens);
+    final accountHintTokens = <String>[];
+    for (int i = 0; i < tokens.length; i++) {
+        if (bioTags[i] == BioTag.bAccount || bioTags[i] == BioTag.iAccount) {
+        accountHintTokens.add(tokens[i]);
+        }
+    }
 
     if (!mounted) return;
 
     setState(() {
-      _isPredicting = false;
-      _hasPredicted = true;
+        _isPredicting = false;
+        _hasPredicted = true;
 
-      if (tx != null) {
+        if (tx != null) {
         _wasDetectedAsTransaction = true;
         _amountController.text = tx.amount > 0 ? tx.amount.toString() : '';
         _descController.text = tx.description;
         _type = tx.type;
         _accountId = tx.accountId;
         _categoryId = tx.categoryId;
-      } else {
+        } else {
         _wasDetectedAsTransaction = false;
         _amountController.clear();
         _descController.clear();
         _type = 'debit';
         _accountId = _accounts.isNotEmpty ? _accounts.first.id : null;
         _categoryId = _categories.isNotEmpty ? _categories.first.id : null;
-      }
+        }
+        _accountHintController.text = accountHintTokens.join(' '); // NEW — user can correct this
     });
   }
 
@@ -122,13 +138,14 @@ class _ModelTrainingScreenState extends State<ModelTrainingScreen> {
     final category = _categories.firstWhere((c) => c.id == _categoryId);
 
     await _parser.trainConfirm(
-      body: body,
-      categoryName: category.name,
-      accountName: account.name,
-      accountKeywords: account.keywords,
-      description: description,
-      amount: amount,
-      type: _type,
+        body: body,
+        categoryName: category.name,
+        accountName: account.name,
+        accountKeywords: account.keywords,
+        description: description,
+        amount: amount,
+        type: _type,
+        accountHintOverride: _accountHintController.text.trim(), // NEW
     );
 
     if (mounted) {
@@ -159,6 +176,7 @@ class _ModelTrainingScreenState extends State<ModelTrainingScreen> {
       _bodyController.clear();
       _amountController.clear();
       _descController.clear();
+      _accountHintController.clear();
       _type = 'debit';
     });
   }
@@ -398,6 +416,38 @@ class _ModelTrainingScreenState extends State<ModelTrainingScreen> {
                     ),
                   ),
                 ),
+
+                const SizedBox(height: 12),
+
+                const Text('Account Identifier in Message', style: TextStyle(fontSize: 12, color: Colors.white54, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 4),
+                const Text(
+                'The exact text (e.g. "XX1234" or "SBI") that tells the model which account this is',
+                style: TextStyle(fontSize: 10, color: Colors.white38),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                controller: _accountHintController,
+                enabled: !_isSaving,
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+                decoration: InputDecoration(
+                    hintText: 'e.g. XX1234',
+                    hintStyle: const TextStyle(color: Colors.white24, fontSize: 12),
+                    filled: true,
+                    fillColor: const Color(0xFF0F172A),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Colors.white24),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFF6366F1), width: 1.5),
+                    ),
+                ),
+                ),
+
+
                 const SizedBox(height: 12),
 
                 if (_accounts.isNotEmpty)

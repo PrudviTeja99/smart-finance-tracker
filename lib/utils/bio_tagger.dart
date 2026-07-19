@@ -69,10 +69,11 @@ static List<BioTag> buildTrueTagsFromConfirmation({
   required double amount,
   required String description,
   required List<String> accountKeywords,
+  String? accountHintOverride, // NEW — explicit text the user says identifies the account
 }) {
   final tags = List<BioTag>.filled(tokens.length, BioTag.o);
 
-  // 1. Amount: tag any token whose numeric value matches the confirmed amount
+  // 1. Amount (unchanged)
   for (int i = 0; i < tokens.length; i++) {
     final cleaned = tokens[i].replaceAll(RegExp(r'[^0-9.]'), '');
     if (cleaned.isEmpty) continue;
@@ -82,12 +83,11 @@ static List<BioTag> buildTrueTagsFromConfirmation({
     }
   }
 
-  // 2. Merchant/description: find the matching consecutive token span
+  // 2. Merchant (unchanged)
   final descWords = description.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
   if (descWords.isNotEmpty) {
     final lowerTokens = tokens.map((t) => t.toLowerCase()).toList();
     final lowerDescWords = descWords.map((w) => w.toLowerCase()).toList();
-
     for (int i = 0; i <= tokens.length - lowerDescWords.length; i++) {
       bool matches = true;
       for (int j = 0; j < lowerDescWords.length; j++) {
@@ -106,14 +106,37 @@ static List<BioTag> buildTrueTagsFromConfirmation({
     }
   }
 
-  // 3. Account: tag tokens matching the account's keywords or a masked-digit pattern
-  for (int i = 0; i < tokens.length; i++) {
-    if (tags[i] != BioTag.o) continue; // don't overwrite amount/merchant tags
-    final lower = tokens[i].toLowerCase();
-    final hasMask = tokens[i].contains('X') || tokens[i].contains('x') || tokens[i].contains('*');
-    final matchesKeyword = accountKeywords.any((kw) => kw.trim().isNotEmpty && lower.contains(kw.trim().toLowerCase()));
-    if (hasMask || matchesKeyword) {
-      tags[i] = BioTag.bAccount;
+  // 3. Account — prefer the user's explicit hint text over keyword guessing
+  if (accountHintOverride != null && accountHintOverride.trim().isNotEmpty) {
+    final hintWords = accountHintOverride.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+    final lowerTokens = tokens.map((t) => t.toLowerCase()).toList();
+    final lowerHintWords = hintWords.map((w) => w.toLowerCase()).toList();
+    for (int i = 0; i <= tokens.length - lowerHintWords.length; i++) {
+      bool matches = true;
+      for (int j = 0; j < lowerHintWords.length; j++) {
+        if (!lowerTokens[i + j].contains(lowerHintWords[j])) {
+          matches = false;
+          break;
+        }
+      }
+      if (matches && tags[i] == BioTag.o) {
+        tags[i] = BioTag.bAccount;
+        for (int j = 1; j < lowerHintWords.length; j++) {
+          if (tags[i + j] == BioTag.o) tags[i + j] = BioTag.iAccount;
+        }
+        break;
+      }
+    }
+  } else {
+    // Fallback: original keyword/mask-char heuristic
+    for (int i = 0; i < tokens.length; i++) {
+      if (tags[i] != BioTag.o) continue;
+      final lower = tokens[i].toLowerCase();
+      final hasMask = tokens[i].contains('X') || tokens[i].contains('x') || tokens[i].contains('*');
+      final matchesKeyword = accountKeywords.any((kw) => kw.trim().isNotEmpty && lower.contains(kw.trim().toLowerCase()));
+      if (hasMask || matchesKeyword) {
+        tags[i] = BioTag.bAccount;
+      }
     }
   }
 

@@ -65,10 +65,6 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
 
     final serviceEnabled = permission && AppSettings.smartTrackingEnabled;
 
-    if (!serviceEnabled && AppSettings.autoDeleteArchive) {
-      await AppSettings.setAutoDeleteArchive(false);
-    }
-
     if (mounted) {
       setState(() {
         _accounts = accountsList;
@@ -91,9 +87,11 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
       }
 
       // Auto-enable Auto-Delete with a default of 1 month
-      await AppSettings.setAutoDeleteArchive(true);
-      await AppSettings.setAutoDeleteValue(1);
-      await AppSettings.setAutoDeleteUnit('months');
+      if (!AppSettings.autoDeleteArchive) {
+        await AppSettings.setAutoDeleteArchive(true);
+        await AppSettings.setAutoDeleteValue(1);
+        await AppSettings.setAutoDeleteUnit('months');
+      }
     } else {
       // Confirmation dialog before disabling
       final confirmed = await showDialog<bool>(
