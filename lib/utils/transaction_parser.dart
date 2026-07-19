@@ -177,7 +177,7 @@ class TransactionParser {
 }
 
   // Trains BIO sequence tagger and category/type/account classifier using confirmed user inputs
-  Future<void> trainConfirm({
+Future<void> trainConfirm({
   required String body,
   required String categoryName,
   required String accountName,
@@ -185,6 +185,7 @@ class TransactionParser {
   required String description,
   required double amount,
   String? type,
+  String? accountHintOverride, // NEW
 }) async {
   final storage = PerceptronStorageService.instance;
   final classifier = storage.classifier;
@@ -209,17 +210,17 @@ class TransactionParser {
       amount: amount,
       description: description,
       accountKeywords: accountKeywords.split(','),
+      accountHintOverride: accountHintOverride, // NEW
     );
     final predictedTags = storage.tagger.predictSequence(tokens);
     storage.tagger.trainSequence(tokens: tokens, trueTags: trueTags, predictedTags: predictedTags);
   }
 
-  // Train account classifier using the confirmed account name
   final accounts = await DatabaseService.instance.getAllAccounts();
   final accountHintTokens = <String>[];
   if (trueTags != null) {
     for (int i = 0; i < tokens.length; i++) {
-      if (trueTags[i] == BioTag.bAccount) accountHintTokens.add(tokens[i]);
+      if (trueTags[i] == BioTag.bAccount || trueTags[i] == BioTag.iAccount) accountHintTokens.add(tokens[i]);
     }
   }
   classifier.trainAccount(
