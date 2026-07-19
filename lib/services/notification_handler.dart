@@ -72,7 +72,11 @@ class NotificationHandler {
 
   // Background entry point for the notification service (runs in a separate isolate)
   @pragma('vm:entry-point')
-  static void _onNotificationCallback(NotificationEvent event) {
+  static Future<void> _onNotificationCallback(NotificationEvent event) async {
+    // Required for background isolates — without this, plugin channel calls
+    // (like sqflite) can silently fail and the notification gets dropped.
+    WidgetsFlutterBinding.ensureInitialized();
+
     if (event.packageName == null) return;
 
     final title = event.title ?? '';
@@ -81,12 +85,17 @@ class NotificationHandler {
 
     if (body.trim().isEmpty) return;
 
-    // Ultra-fast background queue insertion (< 2ms, 0 ML, zero battery impact)
-    DatabaseService.instance.insertRawNotification(
-      packageName: event.packageName!,
-      title: title,
-      body: body,
-    );
+    try {
+      // Awaited now — the isolate must not be allowed to die before this completes.
+      await DatabaseService.instance.insertRawNotification(
+        packageName: event.packageName!,
+        title: title,
+        body: body,
+      );
+    } catch (e, st) {
+      debugPrint('⚠️ Failed to queue background notification: $e\n$st');
+      return; // don't attempt to notify UI if the write itself failed
+    }
 
     // Notify the foreground UI (if the app is open) so it can process immediately
     final sendPort = IsolateNameServer.lookupPortByName(portName);
