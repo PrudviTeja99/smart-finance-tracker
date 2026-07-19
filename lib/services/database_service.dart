@@ -615,15 +615,49 @@ class DatabaseService {
     required String packageName,
     required String title,
     required String body,
+    required int timestamp,
   }) async {
     final db = await database;
+
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final fiveSecondsAgo = now - const Duration(seconds: 5).inMilliseconds;
+    // Or use 10 seconds if you prefer:
+    // final tenSecondsAgo = now - const Duration(seconds: 10).inMilliseconds;
+
+    // Look for an identical pending notification received recently.
+    final duplicateCount = Sqflite.firstIntValue(
+      await db.rawQuery(
+        '''
+        SELECT COUNT(*)
+        FROM raw_notification_queue
+        WHERE package_name = ?
+          AND title = ?
+          AND body = ?
+          AND status = 'pending'
+          AND timestamp >= ?
+        ''',
+        [
+          packageName,
+          title,
+          body,
+          fiveSecondsAgo,
+        ],
+      ),
+    );
+
+    if (duplicateCount != null && duplicateCount > 0) {
+      // Duplicate detected.
+      return -1;
+    }
+
     return await db.insert('raw_notification_queue', {
       'package_name': packageName,
       'title': title,
       'body': body,
-      'timestamp': DateTime.now().millisecondsSinceEpoch,
+      'timestamp': timestamp,
       'status': 'pending',
     });
+
   }
 
   Future<List<Map<String, dynamic>>> getPendingRawNotifications() async {

@@ -14,13 +14,15 @@ class NotificationHandler {
   static ReceivePort? _receivePort;
 
   // Initialize the notification listener service in the foreground UI
-  static Future<void> init(Function(NotificationEvent) onUIMessageReceived) async {
+  static Future<void> init(Function() onRefreshRequested) async {
     _receivePort = ReceivePort();
+
+    IsolateNameServer.removePortNameMapping(portName);
     IsolateNameServer.registerPortWithName(_receivePort!.sendPort, portName);
 
     _receivePort!.listen((message) {
-      if (message is NotificationEvent) {
-        onUIMessageReceived(message);
+      if(message == "refresh"){
+        onRefreshRequested();
       }
     });
 
@@ -91,6 +93,7 @@ class NotificationHandler {
         packageName: event.packageName!,
         title: title,
         body: body,
+        timestamp: event.timestamp ?? DateTime.now().millisecondsSinceEpoch,
       );
     } catch (e, st) {
       debugPrint('⚠️ Failed to queue background notification: $e\n$st');
@@ -100,7 +103,7 @@ class NotificationHandler {
     // Notify the foreground UI (if the app is open) so it can process immediately
     final sendPort = IsolateNameServer.lookupPortByName(portName);
     if (sendPort != null) {
-      sendPort.send(event);
+      sendPort.send("refresh");
     }
   }
 
@@ -208,11 +211,6 @@ class NotificationHandler {
             logId: logId,
           );
 
-          // Notify UI isolate
-          final sendPort = IsolateNameServer.lookupPortByName(portName);
-          if (sendPort != null) {
-            sendPort.send(event);
-          }
           return 'drafted';
         }
       }

@@ -55,7 +55,7 @@ class BatchProcessorService {
         final title = rawItem['title'] as String? ?? '';
         final body = rawItem['body'] as String;
 
-        // Process notification via full 7-field prefill & Perceptron engine
+        // Process notification via full 7-field prefill & Perceptron enginez
         final mockEvent = NotificationEvent(
           packageName: pkg,
           title: title,
@@ -63,8 +63,20 @@ class BatchProcessorService {
           timestamp: rawItem['timestamp'] as int?,
         );
 
-        await NotificationHandler.handleNotificationEvent(mockEvent);
-        processedRawIds.add(rawId);
+        try {
+          final result =
+              await NotificationHandler.handleNotificationEvent(mockEvent);
+
+          if (result != "error") {
+            processedRawIds.add(rawId);
+          }
+        } catch (e, st) {
+          debugPrint("Failed processing raw notification $rawId");
+          debugPrint("$e");
+          debugPrintStack(stackTrace: st);
+
+          // Leave it pending for retry.
+        }
 
         progressNotifier.value = BatchProgressState(
           isProcessing: true,
@@ -73,8 +85,10 @@ class BatchProcessorService {
         );
 
         // Yield execution briefly to keep UI responsive
-        if (i % 5 == 0) {
-          await Future.delayed(const Duration(milliseconds: 5));
+        if ((i + 1) % 5 == 0) {
+          await Future.delayed(
+            const Duration(milliseconds: 5),
+          );
         }
       }
 

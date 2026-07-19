@@ -44,16 +44,15 @@ class _MainNavigationHolderState extends State<MainNavigationHolder> {
     if (_isInitPort) return;
     _isInitPort = true;
 
-    await NotificationHandler.init((event) {
-      // Triggered when a new notification arrives while app is in foreground
-      // Process the raw queue immediately through the full ML pipeline
-      BatchProcessorService.instance.processQueue(onCompleted: () {
-        if (mounted) {
-          _updatePendingCount();
-          // Signal PendingVerificationScreen to refresh its data
-          _foregroundRefreshSignal.value++;
-        }
-      });
+    await NotificationHandler.init(() {
+      BatchProcessorService.instance.processQueue(
+        onCompleted: () {
+          if (mounted) {
+            _updatePendingCount();
+            _foregroundRefreshSignal.value++;
+          }
+        },
+      );
     });
 
     // Auto-start the background listener service ONLY if user enabled Smart Tracking
@@ -64,10 +63,24 @@ class _MainNavigationHolderState extends State<MainNavigationHolder> {
     } else if (isRunning && !AppSettings.smartTrackingEnabled) {
       await NotificationHandler.stopService();
     }
+
+
+    // Process any notifications that were queued while the app wasn't running.
+    await BatchProcessorService.instance.processQueue(
+      onCompleted: () {
+        if (mounted) {
+          _updatePendingCount();
+          _foregroundRefreshSignal.value++;
+        }
+      },
+    );
   }
 
   @override
   void dispose() {
+    
+    IsolateNameServer.removePortNameMapping(NotificationHandler.portName);
+
     _pageController.dispose();
     _foregroundRefreshSignal.dispose();
     super.dispose();
