@@ -66,6 +66,68 @@ class MainActivity : FlutterActivity() {
                 } catch (e: Exception) {
                     result.error("ERROR", e.message, null)
                 }
+            } else if (call.method == "openAutoStartSettings") {
+                try {
+                    val packageName = this.packageName
+                    var intent: android.content.Intent? = null
+
+                    // Manufacturer-specific Auto Start settings
+                    when (android.os.Build.MANUFACTURER.lowercase()) {
+                        "xiaomi", "redmi", "mi", "poco" -> {
+                            intent = android.content.Intent().apply {
+                                setClassName("com.miui.securitycenter", "com.miui.permcenter.autostart.AutoStartManagementActivity")
+                            }
+                        }
+                        "oppo", "realme", "oneplus" -> {
+                            intent = android.content.Intent().apply {
+                                setComponent(android.content.ComponentName("com.android.settings", "com.android.settings.Settings\$AppAndNotificationSettingsActivity"))
+                            }
+                        }
+                        "vivo", "iqoo" -> {
+                            intent = android.content.Intent().apply {
+                                setComponent(android.content.ComponentName("com.vivo.permissionmanager", "com.vivo.permissionmanager.activity.BgStartUpManagerActivity"))
+                            }
+                        }
+                        "huawei", "honor" -> {
+                            intent = android.content.Intent().apply {
+                                setComponent(android.content.ComponentName("com.huawei.systemmanager", "com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity"))
+                            }
+                        }
+                        "samsung" -> {
+                            intent = android.content.Intent().apply {
+                                setComponent(android.content.ComponentName("com.samsung.android.sm", "com.samsung.android.sm.battery.BatteryActivity"))
+                            }
+                        }
+                        "google", "asus", "motorola", "" -> {
+                            // fall through to general fallback
+                        }
+                        else -> {
+                            // Unknown manufacturer → use general fallback
+                        }
+                    }
+
+                    // Try manufacturer-specific intent first
+                    if (intent != null) {
+                    try {
+                            intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                            startActivity(intent)
+                            result.success(true)
+                            return@setMethodCallHandler
+                        } catch (e: Exception) {
+                            // Intent failed (activity not found) → fallback
+                        }
+                    }
+
+                    // === BEST GENERAL FALLBACK ===
+                    val fallbackIntent = android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                        data = android.net.Uri.fromParts("package", packageName, null)
+                        addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    startActivity(fallbackIntent)
+                    result.success(true)
+                } catch (e: Exception) {
+                    result.error("ERROR", e.message, null)
+                }
             } else {
                 result.notImplemented()
             }

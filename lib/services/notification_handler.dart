@@ -55,6 +55,17 @@ class NotificationHandler {
     await NotificationsListener.openPermissionSettings();
   }
 
+  static Future<void> openAutoStartSettings() async {
+    try {
+      await const MethodChannel('com.example.finance_tracker/app_info')
+          .invokeMethod('openAutoStartSettings');
+    } catch (e) {
+      debugPrint('Failed to open auto start settings: $e');
+      // Graceful fallback to app settings
+      await openAppSystemSettings();
+    }
+  }
+
   static Future<void> openAppSystemSettings() async {
     try {
       await const MethodChannel('com.example.finance_tracker/app_info')

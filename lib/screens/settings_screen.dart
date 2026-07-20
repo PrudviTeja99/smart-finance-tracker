@@ -1123,6 +1123,77 @@ class _SettingsScreenState extends State<SettingsScreen>
     );
   }
 
+  // Reusable reliability recommendation block
+  Widget _buildReliabilityAction({
+    required IconData icon,
+    required String title,
+    required String description,
+    required String buttonText,
+    required VoidCallback onTap,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, color: const Color(0xFF6366F1), size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          description,
+          style: const TextStyle(
+            color: Colors.white54,
+            fontSize: 12,
+            height: 1.4,
+          ),
+        ),
+        const SizedBox(height: 12),
+        InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFF6366F1).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: const Color(0xFF6366F1).withOpacity(0.3),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.settings_rounded,
+                    size: 16, color: Color(0xFF818CF8)),
+                const SizedBox(width: 8),
+                Text(
+                  buttonText,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF818CF8),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildSmartTrackingCard() {
     return _buildSettingsGroup(
       title: 'Smart Tracking',
@@ -1142,14 +1213,15 @@ class _SettingsScreenState extends State<SettingsScreen>
               const Icon(Icons.receipt_long_rounded, color: Color(0xFF6366F1)),
         ),
 
+        // Reliability Recommendations - always shown when toggle is present
         if (_isServiceEnabled) ...[
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: const Color(0xFF1E293B),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: const Color(0xFF334155)),
               ),
               child: Column(
@@ -1157,56 +1229,50 @@ class _SettingsScreenState extends State<SettingsScreen>
                 children: [
                   const Row(
                     children: [
-                      Icon(Icons.battery_saver_rounded,
-                          color: Color(0xFF6366F1), size: 16),
+                      Icon(Icons.shield_rounded,
+                          color: Color(0xFF6366F1), size: 20),
                       SizedBox(width: 8),
                       Text(
-                        'Reliability Recommendation',
+                        'Reliability Recommendations',
                         style: TextStyle(
                             color: Color(0xFFE2E8F0),
-                            fontSize: 12,
+                            fontSize: 14,
                             fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
                   const SizedBox(height: 6),
                   const Text(
-                    'To prevent Android from putting the background listener to sleep, please set this app to "Unrestricted" in battery settings. This will NOT drain your battery because the app only wakes up for 5-10ms when a notification is received.',
+                    'Configure the options below to maximize Smart Tracking reliability, especially on devices with aggressive background management.',
                     style: TextStyle(
-                        color: Colors.white54, fontSize: 11, height: 1.4),
+                        color: Colors.white54, fontSize: 12, height: 1.4),
                   ),
-                  const SizedBox(height: 10),
-                  InkWell(
-                    onTap: () {
-                      NotificationHandler.requestBatteryExemption();
-                    },
-                    borderRadius: BorderRadius.circular(8),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF6366F1).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                            color:
-                                const Color(0xFF6366F1).withValues(alpha: 0.3)),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.bolt_rounded,
-                              size: 12, color: Color(0xFF818CF8)),
-                          SizedBox(width: 6),
-                          Text(
-                            'Enable Unrestricted Run',
-                            style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF818CF8)),
-                          ),
-                        ],
-                      ),
-                    ),
+                  const SizedBox(height: 16),
+                  _buildReliabilityAction(
+                    icon: Icons.rocket_launch_rounded,
+                    title: 'Enable Auto Start (Highly Recommended)',
+                    description:
+                        'Allows Android to automatically start Smart Finance Tracker after reboot and when notifications arrive. This improves notification capture reliability on many devices with aggressive battery management.',
+                    buttonText: 'Enable Auto Start',
+                    onTap: () => NotificationHandler.openAutoStartSettings(),
+                  ),
+                  const Divider(color: Colors.white10, height: 24),
+                  _buildReliabilityAction(
+                    icon: Icons.battery_saver_rounded,
+                    title: 'Enable Unrestricted Run',
+                    description:
+                        'Prevent Android from putting Smart Finance Tracker\'s notification listener to sleep. The app only wakes for a few milliseconds when a notification arrives, so battery impact is minimal.',
+                    buttonText: 'Enable Unrestricted Run',
+                    onTap: () => NotificationHandler.requestBatteryExemption(),
+                  ),
+                  const Divider(color: Colors.white10, height: 24),
+                  _buildReliabilityAction(
+                    icon: Icons.notifications_active_rounded,
+                    title: 'Keep Notification Access Enabled',
+                    description:
+                        'Smart Tracking requires notification access to capture incoming transaction alerts. If notification access is disabled, automatic transaction detection will stop working.',
+                    buttonText: 'Open Notification Access',
+                    onTap: () => NotificationHandler.openPermissionSettings(),
                   ),
                 ],
               ),
