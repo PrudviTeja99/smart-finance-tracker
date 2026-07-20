@@ -90,14 +90,19 @@ class NotificationHandler {
 
     try {
       // Awaited now — the isolate must not be allowed to die before this completes.
-      await DatabaseService.instance.insertRawNotification(
+      final insertResult = await DatabaseService.instance.insertRawNotification(
         packageName: event.packageName!,
         title: title,
         body: body,
         timestamp: event.timestamp ?? DateTime.now().millisecondsSinceEpoch,
       );
-      LogService.logFromAnyIsolate(
-          '✅ Queued raw notification from ${event.packageName}');
+      if (insertResult == -1) {
+        LogService.logFromAnyIsolate(
+            '⏭️ Skipped as duplicate: ${event.packageName} — "$body"');
+      } else {
+        LogService.logFromAnyIsolate(
+            '✅ Queued raw notification from ${event.packageName}');
+      }
     } catch (e, st) {
       LogService.logFromAnyIsolate(
           '⚠️ Failed to queue background notification: $e\n$st');

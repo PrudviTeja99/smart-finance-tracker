@@ -68,8 +68,16 @@ class LogService {
       _receivePort = ReceivePort();
       IsolateNameServer.removePortNameMapping(portName);
       IsolateNameServer.registerPortWithName(_receivePort!.sendPort, portName);
+
       _receivePort!.listen((message) {
-        if (message is String) addLog(message);
+        if (message is String) {
+          final entry = LogEntry(DateTime.now(), message);
+          _logs.add(entry);
+          if (_logs.length > _maxLogsInMemory) {
+            _logs.removeAt(0);
+          }
+          logCountNotifier.value++;
+        }
       });
     }
 
@@ -171,11 +179,18 @@ class LogService {
       a.year == b.year && a.month == b.month && a.day == b.day;
 
   static void logFromAnyIsolate(String message) {
+    final entry = LogEntry(DateTime.now(), message);
+
+    // Always persist directly from whichever isolate is calling — this is
+    // what guarantees the line survives even if the main app process/UI
+    // isolate isn't alive to receive a forwarded message.
+    instance._appendToFile(entry);
+
+    // Additionally forward to the UI isolate so an already-open Log Inspector
+    // updates live, if the app happens to be running.
     final sendPort = IsolateNameServer.lookupPortByName(portName);
     if (sendPort != null) {
       sendPort.send(message);
-    } else {
-      debugPrint(message); // fallback if called before listener is ready
     }
   }
 }
