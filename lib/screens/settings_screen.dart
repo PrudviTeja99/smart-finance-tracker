@@ -1432,22 +1432,6 @@ class _SettingsScreenState extends State<SettingsScreen>
             ),
           ),
         ),
-
-        const Divider(color: Colors.white10),
-
-        // Model Automation Audit Log
-        ListTile(
-          leading:
-              const Icon(Icons.auto_awesome_rounded, color: Color(0xFF818CF8)),
-          title: const Text('Model Automation Audit Log',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-          subtitle: const Text(
-              'View AI triage history and 1-tap undo automated actions',
-              style: TextStyle(fontSize: 11)),
-          trailing: const Icon(Icons.arrow_forward_ios_rounded,
-              size: 16, color: Colors.white54),
-          onTap: () => _showModelAuditLogSheet(context),
-        ),
       ],
     );
   }

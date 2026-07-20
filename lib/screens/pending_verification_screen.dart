@@ -20,13 +20,16 @@ class PendingVerificationScreen extends StatefulWidget {
   final VoidCallback onConfirmedOrDiscarded;
   final ValueNotifier<int>? refreshSignal;
 
-  const PendingVerificationScreen({super.key, required this.onConfirmedOrDiscarded, this.refreshSignal});
+  const PendingVerificationScreen(
+      {super.key, required this.onConfirmedOrDiscarded, this.refreshSignal});
 
   @override
-  State<PendingVerificationScreen> createState() => _PendingVerificationScreenState();
+  State<PendingVerificationScreen> createState() =>
+      _PendingVerificationScreenState();
 }
 
-class _PendingVerificationScreenState extends State<PendingVerificationScreen> with TickerProviderStateMixin {
+class _PendingVerificationScreenState extends State<PendingVerificationScreen>
+    with TickerProviderStateMixin {
   List<TransactionModel> _pendingTransactions = [];
   List<AccountModel> _accounts = [];
   List<CategoryModel> _categories = [];
@@ -41,7 +44,8 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
   bool _isAppCategorySelectionMode = false;
   final Set<String> _selectedAppPackages = {};
 
-  Widget _buildAppIconWidget(String packageName, String fallbackName, {double size = 24}) {
+  Widget _buildAppIconWidget(String packageName, String fallbackName,
+      {double size = 24}) {
     return AppIconCacheService.instance.buildAppIconWidget(
       packageName,
       fallbackName,
@@ -95,7 +99,8 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
   }
 
   Future<void> _loadCapturedAlerts() async {
-    final logs = await DatabaseService.instance.getNotificationLogs('unclassified');
+    final logs =
+        await DatabaseService.instance.getNotificationLogs('unclassified');
     if (mounted) {
       setState(() {
         _capturedAlerts = logs;
@@ -120,7 +125,10 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
       final hasCategoriesChanged = _categories.length != categoriesList.length;
       final hasServiceChanged = _isServiceEnabled != serviceEnabled;
 
-      if (hasPendingChanged || hasAccountsChanged || hasCategoriesChanged || hasServiceChanged) {
+      if (hasPendingChanged ||
+          hasAccountsChanged ||
+          hasCategoriesChanged ||
+          hasServiceChanged) {
         setState(() {
           _pendingTransactions = pending;
           _accounts = accountsList;
@@ -142,32 +150,36 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
   }
 
   // Confirm and train Naive Bayes models with user verified data
-  Future<void> _confirmTransaction(TransactionModel tx, String categoryName) async {
+  Future<void> _confirmTransaction(
+      TransactionModel tx, String categoryName) async {
     // Show SnackBar synchronously first to avoid queuing delays
     if (mounted) {
-      AppSnackBar.show(context, 'Confirmed transaction under "$categoryName"! Learned this pattern.', type: SnackBarType.success);
+      AppSnackBar.show(context,
+          'Confirmed transaction under "$categoryName"! Learned this pattern.',
+          type: SnackBarType.success);
     }
 
     final dbService = DatabaseService.instance;
-    
+
     // Update status to confirmed and save edits
     final confirmedTx = tx.copyWith(status: 'confirmed');
     await dbService.updateTransaction(confirmedTx);
 
     // Look up the name of the selected account
-    final account = _accounts.firstWhere((a) => a.id == tx.accountId, orElse: () => _accounts.first);
+    final account = _accounts.firstWhere((a) => a.id == tx.accountId,
+        orElse: () => _accounts.first);
     final accountName = account.name;
 
     // Self-Learning: Train type, category, account, and description classifiers on-device
     await _parser.trainConfirm(
-  body: tx.body,
-  categoryName: categoryName,
-  accountName: accountName,
-  accountKeywords: account.keywords,
-  description: tx.description,
-  amount: tx.amount,
-  type: tx.type,
-);
+      body: tx.body,
+      categoryName: categoryName,
+      accountName: accountName,
+      accountKeywords: account.keywords,
+      description: tx.description,
+      amount: tx.amount,
+      type: tx.type,
+    );
 
     widget.onConfirmedOrDiscarded();
     _loadPendingData();
@@ -177,7 +189,7 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
   Future<void> _discardTransaction(int id) async {
     final dbService = DatabaseService.instance;
     final pending = _pendingTransactions.where((t) => t.id == id).toList();
-    
+
     if (pending.isNotEmpty && pending.first.body.isNotEmpty) {
       final bodyText = pending.first.body;
       // Active Learning: Train model that this pattern should be ignored
@@ -190,20 +202,25 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
     _loadPendingData();
 
     if (mounted) {
-      AppSnackBar.show(context, 'Discarded notification. AI learned to ignore similar alerts.', type: SnackBarType.neutral);
+      AppSnackBar.show(context,
+          'Discarded notification. AI learned to ignore similar alerts.',
+          type: SnackBarType.neutral);
     }
   }
 
   // Mute notifications from app and archive raw log
-  Future<void> _muteAppForLog(String packageName, int logId, String body) async {
+  Future<void> _muteAppForLog(
+      String packageName, int logId, String body) async {
     await AppSettings.muteApp(packageName);
-    await DatabaseService.instance.updateNotificationLogStatus(logId, 'archived');
-    
+    await DatabaseService.instance
+        .updateNotificationLogStatus(logId, 'archived');
+
     // Train classifier to ignore
     await _parser.trainType(body, 'ignore');
 
     if (mounted) {
-      AppSnackBar.show(context, 'Muted notifications from $packageName.', type: SnackBarType.neutral);
+      AppSnackBar.show(context, 'Muted notifications from $packageName.',
+          type: SnackBarType.neutral);
     }
 
     _loadPendingData();
@@ -211,25 +228,32 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
   }
 
   // Mute an entire app package and archive all its captured logs
-  Future<void> _muteEntireApp(String packageName, String appName, List<Map<String, dynamic>> alertsList) async {
+  Future<void> _muteEntireApp(String packageName, String appName,
+      List<Map<String, dynamic>> alertsList) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Mute $appName?', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text('Mute $appName?',
+            style: const TextStyle(
+                color: Colors.white, fontWeight: FontWeight.bold)),
         content: Text(
           'All future notifications from $appName will be automatically ignored. Also archives ${alertsList.length} captured ${alertsList.length == 1 ? "alert" : "alerts"} from this app.',
-          style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+          style:
+              const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white38)),
+            child:
+                const Text('Cancel', style: TextStyle(color: Colors.white38)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Mute App', style: TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.bold)),
+            child: const Text('Mute App',
+                style: TextStyle(
+                    color: Color(0xFFEF4444), fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -240,11 +264,13 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
       for (var alert in alertsList) {
         final logId = alert['id'] as int;
         final body = alert['body'] as String? ?? '';
-        await DatabaseService.instance.updateNotificationLogStatus(logId, 'archived');
+        await DatabaseService.instance
+            .updateNotificationLogStatus(logId, 'archived');
         await _parser.trainType(body, 'ignore');
       }
       if (mounted) {
-        AppSnackBar.show(context, 'Muted $appName and archived all alerts.', type: SnackBarType.neutral);
+        AppSnackBar.show(context, 'Muted $appName and archived all alerts.',
+            type: SnackBarType.neutral);
       }
       _loadPendingData();
       _loadCapturedAlerts();
@@ -262,19 +288,24 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Discard All Drafts?', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Text('Discard All Drafts?',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         content: Text(
           'Are you sure you want to discard all $count pending draft transactions? Unconfirmed drafts will be removed.',
-          style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+          style:
+              const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white38)),
+            child:
+                const Text('Cancel', style: TextStyle(color: Colors.white38)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Discard All', style: TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.bold)),
+            child: const Text('Discard All',
+                style: TextStyle(
+                    color: Color(0xFFEF4444), fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -287,7 +318,8 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
         }
       }
       if (mounted) {
-        AppSnackBar.show(context, '$count draft transactions discarded.', type: SnackBarType.neutral);
+        AppSnackBar.show(context, '$count draft transactions discarded.',
+            type: SnackBarType.neutral);
       }
       widget.onConfirmedOrDiscarded();
       _loadPendingData();
@@ -303,19 +335,24 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Archive All Alerts?', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Text('Archive All Alerts?',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         content: Text(
           'Are you sure you want to archive all $count captured alerts? They will be moved to your Archived Alerts feed.',
-          style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+          style:
+              const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white38)),
+            child:
+                const Text('Cancel', style: TextStyle(color: Colors.white38)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Archive All', style: TextStyle(color: Color(0xFF6366F1), fontWeight: FontWeight.bold)),
+            child: const Text('Archive All',
+                style: TextStyle(
+                    color: Color(0xFF6366F1), fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -325,11 +362,13 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
       for (var alert in _capturedAlerts) {
         final logId = alert['id'] as int;
         final body = alert['body'] as String? ?? '';
-        await DatabaseService.instance.updateNotificationLogStatus(logId, 'archived');
+        await DatabaseService.instance
+            .updateNotificationLogStatus(logId, 'archived');
         await _parser.trainType(body, 'ignore');
       }
       if (mounted) {
-        AppSnackBar.show(context, '$count captured alerts archived.', type: SnackBarType.neutral);
+        AppSnackBar.show(context, '$count captured alerts archived.',
+            type: SnackBarType.neutral);
       }
       _loadCapturedAlerts();
     }
@@ -364,18 +403,22 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
     int totalAlertsCount = 0;
 
     for (var pkg in selectedPkgs) {
-      final alertsForPkg = _capturedAlerts.where((a) => a['package_name'] == pkg).toList();
+      final alertsForPkg =
+          _capturedAlerts.where((a) => a['package_name'] == pkg).toList();
       totalAlertsCount += alertsForPkg.length;
       for (var alert in alertsForPkg) {
         final logId = alert['id'] as int;
         final body = alert['body'] as String? ?? '';
-        await DatabaseService.instance.updateNotificationLogStatus(logId, 'archived');
+        await DatabaseService.instance
+            .updateNotificationLogStatus(logId, 'archived');
         await _parser.trainType(body, 'ignore');
       }
     }
 
     if (mounted) {
-      AppSnackBar.show(context, 'Archived $totalAlertsCount alerts from ${selectedPkgs.length} app categories.', type: SnackBarType.neutral);
+      AppSnackBar.show(context,
+          'Archived $totalAlertsCount alerts from ${selectedPkgs.length} app categories.',
+          type: SnackBarType.neutral);
       setState(() {
         _isAppCategorySelectionMode = false;
         _selectedAppPackages.clear();
@@ -393,19 +436,25 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Mute ${selectedPkgs.length} Apps?', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text('Mute ${selectedPkgs.length} Apps?',
+            style: const TextStyle(
+                color: Colors.white, fontWeight: FontWeight.bold)),
         content: Text(
           'Future notifications from these ${selectedPkgs.length} selected apps will be automatically ignored.',
-          style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+          style:
+              const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white38)),
+            child:
+                const Text('Cancel', style: TextStyle(color: Colors.white38)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Mute & Archive', style: TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.bold)),
+            child: const Text('Mute & Archive',
+                style: TextStyle(
+                    color: Color(0xFFEF4444), fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -415,18 +464,22 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
       int totalAlertsCount = 0;
       for (var pkg in selectedPkgs) {
         await AppSettings.muteApp(pkg);
-        final alertsForPkg = _capturedAlerts.where((a) => a['package_name'] == pkg).toList();
+        final alertsForPkg =
+            _capturedAlerts.where((a) => a['package_name'] == pkg).toList();
         totalAlertsCount += alertsForPkg.length;
         for (var alert in alertsForPkg) {
           final logId = alert['id'] as int;
           final body = alert['body'] as String? ?? '';
-          await DatabaseService.instance.updateNotificationLogStatus(logId, 'archived');
+          await DatabaseService.instance
+              .updateNotificationLogStatus(logId, 'archived');
           await _parser.trainType(body, 'ignore');
         }
       }
 
       if (mounted) {
-        AppSnackBar.show(context, 'Muted ${selectedPkgs.length} apps and archived $totalAlertsCount alerts.', type: SnackBarType.neutral);
+        AppSnackBar.show(context,
+            'Muted ${selectedPkgs.length} apps and archived $totalAlertsCount alerts.',
+            type: SnackBarType.neutral);
         setState(() {
           _isAppCategorySelectionMode = false;
           _selectedAppPackages.clear();
@@ -435,7 +488,9 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
       _loadCapturedAlerts();
     }
   }
-  Future<void> _handleFeedback(int logId, String appName, String title, String body, bool isFinancial, bool isRelevant) async {
+
+  Future<void> _handleFeedback(int logId, String appName, String title,
+      String body, bool isFinancial, bool isRelevant) async {
     final dbService = DatabaseService.instance;
 
     if (!isFinancial || !isRelevant) {
@@ -446,7 +501,9 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
       await dbService.updateNotificationLogStatus(logId, 'archived');
 
       if (mounted) {
-        AppSnackBar.show(context, 'Captured alert archived. Model trained to ignore.', type: SnackBarType.neutral);
+        AppSnackBar.show(
+            context, 'Captured alert archived. Model trained to ignore.',
+            type: SnackBarType.neutral);
       }
     } else {
       // 1. Parse details
@@ -466,7 +523,8 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
           await dbService.updateNotificationLogStatus(logId, 'drafted');
 
           if (mounted) {
-            AppSnackBar.show(context, 'Promoted alert to Transaction Drafts!', type: SnackBarType.success);
+            AppSnackBar.show(context, 'Promoted alert to Transaction Drafts!',
+                type: SnackBarType.success);
           }
         } else {
           // Already exists or duplicate, archive it
@@ -490,7 +548,8 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
         await dbService.updateNotificationLogStatus(logId, 'drafted');
 
         if (mounted) {
-          AppSnackBar.show(context, 'Promoted alert to Transaction Drafts!', type: SnackBarType.success);
+          AppSnackBar.show(context, 'Promoted alert to Transaction Drafts!',
+              type: SnackBarType.success);
         }
       }
     }
@@ -501,12 +560,14 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
   }
 
   // Trigger user-clicked online search category lookup
-  Future<void> _triggerOnlineCategoryLookup(int txId, String merchantName) async {
+  Future<void> _triggerOnlineCategoryLookup(
+      int txId, String merchantName) async {
     setState(() {
       _lookupLoading[txId] = true;
     });
 
-    final suggestions = await MerchantSearchService.searchMerchantCategory(merchantName);
+    final suggestions =
+        await MerchantSearchService.searchMerchantCategory(merchantName);
 
     setState(() {
       _lookupLoading[txId] = false;
@@ -541,7 +602,9 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
       },
       child: Scaffold(
         appBar: AppBar(
-          backgroundColor: _isAppCategorySelectionMode ? const Color(0xFF1E293B) : Colors.transparent,
+          backgroundColor: _isAppCategorySelectionMode
+              ? const Color(0xFF1E293B)
+              : Colors.transparent,
           elevation: 0,
           leading: _isAppCategorySelectionMode
               ? IconButton(
@@ -563,26 +626,32 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
           actions: _isAppCategorySelectionMode
               ? [
                   IconButton(
-                    icon: const Icon(Icons.archive_outlined, color: Color(0xFF818CF8)),
+                    icon: const Icon(Icons.archive_outlined,
+                        color: Color(0xFF818CF8)),
                     tooltip: 'Archive Selected Apps',
                     onPressed: _archiveSelectedAppCategories,
                   ),
                   IconButton(
-                    icon: const Icon(Icons.volume_off_rounded, color: Color(0xFFEF4444)),
+                    icon: const Icon(Icons.volume_off_rounded,
+                        color: Color(0xFFEF4444)),
                     tooltip: 'Mute & Archive Selected',
                     onPressed: _muteAndArchiveSelectedAppCategories,
                   ),
                 ]
               : [
-                  if (_tabController.index == 0 && _pendingTransactions.isNotEmpty)
+                  if (_tabController.index == 0 &&
+                      _pendingTransactions.isNotEmpty)
                     IconButton(
-                      icon: const Icon(Icons.delete_sweep_outlined, color: Colors.white70),
+                      icon: const Icon(Icons.delete_sweep_outlined,
+                          color: Colors.white70),
                       tooltip: 'Discard All Drafts',
                       onPressed: _discardAllDrafts,
                     ),
-                  if (_tabController.index == 1 && _capturedAlerts.isNotEmpty) ...[
+                  if (_tabController.index == 1 &&
+                      _capturedAlerts.isNotEmpty) ...[
                     IconButton(
-                      icon: const Icon(Icons.checklist_rounded, color: Colors.white70),
+                      icon: const Icon(Icons.checklist_rounded,
+                          color: Colors.white70),
                       tooltip: 'Select Apps to Clear',
                       onPressed: () {
                         setState(() {
@@ -592,144 +661,155 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
                       },
                     ),
                     IconButton(
-                      icon: const Icon(Icons.archive_outlined, color: Colors.white70),
+                      icon: const Icon(Icons.archive_outlined,
+                          color: Colors.white70),
                       tooltip: 'Archive All Alerts',
                       onPressed: _archiveAllCapturedAlerts,
                     ),
                   ],
                 ],
         ),
-      body: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: Column(
-          children: [
-            // --- CUSTOM PREMIUM SEGMENTED TAB SWITCHER ---
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-              child: Container(
-                height: 48,
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.4),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withOpacity(0.08)),
-                ),
-                child: AnimatedBuilder(
-                  animation: _tabController.animation!,
-                  builder: (context, child) {
-                    final value = _tabController.animation!.value;
-                    return Stack(
-                      children: [
-                        // Sliding indicator
-                        LayoutBuilder(
-                          builder: (context, constraints) {
-                            final width = constraints.maxWidth / 2;
-                            return Transform.translate(
-                              offset: Offset(value * width, 0),
-                              child: Container(
-                                width: width,
-                                height: double.infinity,
-                                decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    colors: [
-                                      Color(0xFF6366F1), // Indigo
-                                      Color(0xFF818CF8), // Soft indigo
+        body: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: Column(
+            children: [
+              // --- CUSTOM PREMIUM SEGMENTED TAB SWITCHER ---
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                child: Container(
+                  height: 48,
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.4),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white.withOpacity(0.08)),
+                  ),
+                  child: AnimatedBuilder(
+                    animation: _tabController.animation!,
+                    builder: (context, child) {
+                      final value = _tabController.animation!.value;
+                      return Stack(
+                        children: [
+                          // Sliding indicator
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              final width = constraints.maxWidth / 2;
+                              return Transform.translate(
+                                offset: Offset(value * width, 0),
+                                child: Container(
+                                  width: width,
+                                  height: double.infinity,
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      colors: [
+                                        Color(0xFF6366F1), // Indigo
+                                        Color(0xFF818CF8), // Soft indigo
+                                      ],
+                                    ),
+                                    borderRadius: BorderRadius.circular(12),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFF6366F1)
+                                            .withOpacity(0.3),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      ),
                                     ],
                                   ),
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(0xFF6366F1).withOpacity(0.3),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
                                 ),
-                              ),
-                            );
-                          },
-                        ),
-                        // Tab items
-                        Row(
-                          children: [
-                            _buildTabItem(0, Icons.edit_note_rounded, 'Drafts', _pendingTransactions.length, value),
-                            _buildTabItem(1, Icons.receipt_long_rounded, 'Captured Alerts', _capturedAlerts.length, value),
-                          ],
-                        ),
-                      ],
-                    );
-                  },
+                              );
+                            },
+                          ),
+                          // Tab items
+                          Row(
+                            children: [
+                              _buildTabItem(0, Icons.edit_note_rounded,
+                                  'Drafts', _pendingTransactions.length, value),
+                              _buildTabItem(
+                                  1,
+                                  Icons.receipt_long_rounded,
+                                  'Captured Alerts',
+                                  _capturedAlerts.length,
+                                  value),
+                            ],
+                          ),
+                        ],
+                      );
+                    },
+                  ),
                 ),
               ),
-            ),
-            _buildBatchProgressBarWidget(),
-            _buildModelActivityBannerWidget(),
-            // --- TAB CONTENT ---
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildDraftsTab(),
-                  _buildCapturedAlertsTab(),
-                ],
+              _buildBatchProgressBarWidget(),
+              _buildModelActivityBannerWidget(),
+              // --- TAB CONTENT ---
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildDraftsTab(),
+                    _buildCapturedAlertsTab(),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   // --- TAB ITEM BUILDER ---
-  Widget _buildTabItem(int index, IconData icon, String label, int count, double animValue) {
-    // Calculate activation percentage for this tab index
-    final double percent = index == 0 ? (1 - animValue).clamp(0.0, 1.0) : animValue.clamp(0.0, 1.0);
-    final color = Color.lerp(Colors.white.withOpacity(0.4), Colors.white, percent)!;
-    
+  Widget _buildTabItem(
+      int index, IconData icon, String label, int count, double animValue) {
+    final double percent = index == 0
+        ? (1 - animValue).clamp(0.0, 1.0)
+        : animValue.clamp(0.0, 1.0);
+    final color =
+        Color.lerp(Colors.white.withOpacity(0.4), Colors.white, percent)!;
+
     return Expanded(
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: () {
-          _tabController.animateTo(index);
-        },
-        child: Center(
+        onTap: () => _tabController.animateTo(index),
+        child: Container(
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 2),
           child: Row(
+            mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 18, color: color),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  color: color,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
+              Icon(icon, size: 17, color: color),
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    color: color,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12.5, // Slightly smaller font
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ),
               if (count > 0) ...[
-                const SizedBox(width: 6),
+                const SizedBox(width: 4),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                   decoration: BoxDecoration(
-                    color: Color.lerp(
-                      Colors.white.withOpacity(0.1),
-                      Colors.white.withOpacity(0.2),
-                      percent,
-                    ),
-                    borderRadius: BorderRadius.circular(10),
+                    color: Color.lerp(Colors.white.withOpacity(0.1),
+                        Colors.white.withOpacity(0.25), percent),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    '$count',
+                    count > 99 ? '99+' : '$count',
                     style: TextStyle(
-                      fontSize: 10, 
-                      fontWeight: FontWeight.bold, 
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
                       color: Color.lerp(
-                        Colors.white.withOpacity(0.6),
-                        Colors.white,
-                        percent,
-                      ),
+                          Colors.white.withOpacity(0.7), Colors.white, percent),
                     ),
                   ),
                 ),
@@ -753,7 +833,8 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
           decoration: BoxDecoration(
             color: const Color(0xFF1E293B),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.3)),
+            border: Border.all(
+                color: const Color(0xFF6366F1).withValues(alpha: 0.3)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -768,19 +849,26 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
                         height: 14,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF818CF8)),
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Color(0xFF818CF8)),
                         ),
                       ),
                       const SizedBox(width: 10),
                       Text(
                         '⚡ Processing ${state.totalCount} incoming alerts...',
-                        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
                   Text(
                     '${state.processedCount}/${state.totalCount}',
-                    style: const TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                        color: Colors.white54,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
@@ -791,7 +879,8 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
                   value: state.progress,
                   minHeight: 4,
                   backgroundColor: Colors.white10,
-                  valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
+                  valueColor:
+                      const AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
                 ),
               ),
             ],
@@ -816,7 +905,8 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
           decoration: BoxDecoration(
             color: const Color(0xFF1E293B),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.2)),
+            border: Border.all(
+                color: const Color(0xFF6366F1).withValues(alpha: 0.2)),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.1),
@@ -834,21 +924,29 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
                   hasActivity
                       ? 'Model Activity Today: Auto-drafted $drafted, Auto-archived $archived'
                       : 'Model Activity: AI Active & Learning',
-                  style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w500),
+                  style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500),
                 ),
               ),
               GestureDetector(
                 onTap: () => _showModelAuditLogSheet(context),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: const Color(0xFF6366F1).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.4)),
+                    border: Border.all(
+                        color: const Color(0xFF6366F1).withValues(alpha: 0.4)),
                   ),
                   child: const Text(
                     'View Log',
-                    style: TextStyle(color: Color(0xFF818CF8), fontSize: 11, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                        color: Color(0xFF818CF8),
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -866,13 +964,13 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
       backgroundColor: Colors.transparent,
       builder: (context) {
         return Container(
-          height: MediaQuery.of(context).size.height * 0.75,
+          height: MediaQuery.of(context).size.height * 0.78,
           decoration: const BoxDecoration(
             color: Color(0xFF0F172A),
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
             border: Border(top: BorderSide(color: Color(0xFF334155), width: 1)),
           ),
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
           child: SafeArea(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -888,33 +986,96 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Row(
+
+                // Header
+                Row(
                   children: [
-                    Icon(Icons.auto_awesome, color: Color(0xFF818CF8), size: 22),
-                    SizedBox(width: 10),
-                    Text(
-                      'Model Automation Audit Log',
-                      style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                    const Icon(Icons.auto_awesome,
+                        color: Color(0xFF818CF8), size: 22),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Text(
+                        'On-Device Learning Algorithm Decisions',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_sweep_rounded,
+                          color: Color(0xFFEF4444), size: 24),
+                      tooltip: 'Clear All',
+                      onPressed: () async {
+                        final confirmed = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            backgroundColor: const Color(0xFF1E293B),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20)),
+                            title: const Text('Clear Audit Log?',
+                                style: TextStyle(color: Colors.white)),
+                            content: const Text(
+                              'This will clear the history of automatic decisions made by your learning algorithm.\n\n'
+                              'Your learning progress and confirmed transactions will not be affected.',
+                              style: TextStyle(color: Colors.white70),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: const Text('Cancel',
+                                    style: TextStyle(color: Colors.white54)),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, true),
+                                child: const Text('Clear All',
+                                    style: TextStyle(
+                                        color: Color(0xFFEF4444),
+                                        fontWeight: FontWeight.bold)),
+                              ),
+                            ],
+                          ),
+                        );
+
+                        if (confirmed == true) {
+                          await DatabaseService.instance
+                              .deleteAllModelAuditLogs();
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                            AppSnackBar.show(
+                                context, 'Automatic decision log cleared.',
+                                type: SnackBarType.neutral);
+                          }
+                        }
+                      },
                     ),
                   ],
                 ),
+
                 const SizedBox(height: 6),
                 const Text(
-                  'Full transparency into automatic actions performed by your on-device AI.',
+                  'Full transparency into automatic actions performed by your on-device learning algorithm.',
                   style: TextStyle(color: Colors.white54, fontSize: 12),
                 ),
                 const SizedBox(height: 16),
+
                 Expanded(
                   child: FutureBuilder<List<Map<String, dynamic>>>(
                     future: DatabaseService.instance.getModelAuditLogs(),
                     builder: (context, snapshot) {
                       if (!snapshot.hasData) {
-                        return const Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(Color(0xFF6366F1))));
+                        return const Center(
+                            child: CircularProgressIndicator(
+                                valueColor:
+                                    AlwaysStoppedAnimation(Color(0xFF6366F1))));
                       }
                       final logs = snapshot.data!;
                       if (logs.isEmpty) {
                         return const Center(
-                          child: Text('No automated actions logged yet today.', style: TextStyle(color: Colors.white38, fontSize: 13)),
+                          child: Text(
+                              'No automated decisions logged yet today.',
+                              style: TextStyle(
+                                  color: Colors.white38, fontSize: 13)),
                         );
                       }
                       return ListView.builder(
@@ -925,8 +1086,29 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
                           final appName = log['app_name'] as String? ?? 'App';
                           final title = log['title'] as String? ?? '';
                           final body = log['body'] as String? ?? '';
-                          final confidence = (log['confidence'] as num? ?? 0.85).toDouble();
+                          final confidence =
+                              (log['confidence'] as num? ?? 0.85).toDouble();
                           final isDrafted = action == 'auto_drafted';
+
+                          // Safely handle String, int (millis), or null values for date
+                          final rawDate = log['date'] ??
+                              log['created_at'] ??
+                              log['timestamp'];
+                          DateTime? date;
+
+                          if (rawDate is int) {
+                            date = DateTime.fromMillisecondsSinceEpoch(rawDate);
+                          } else if (rawDate is String) {
+                            date = DateTime.tryParse(rawDate) ??
+                                (int.tryParse(rawDate) != null
+                                    ? DateTime.fromMillisecondsSinceEpoch(
+                                        int.parse(rawDate))
+                                    : null);
+                          }
+
+                          final formattedTime = date != null
+                              ? DateFormat('dd MMM, hh:mm a').format(date)
+                              : '';
 
                           return Container(
                             margin: const EdgeInsets.only(bottom: 12),
@@ -935,7 +1117,11 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
                               color: const Color(0xFF1E293B),
                               borderRadius: BorderRadius.circular(14),
                               border: Border.all(
-                                color: isDrafted ? const Color(0xFF10B981).withValues(alpha: 0.3) : const Color(0xFF6366F1).withValues(alpha: 0.3),
+                                color: isDrafted
+                                    ? const Color(0xFF10B981)
+                                        .withValues(alpha: 0.3)
+                                    : const Color(0xFF6366F1)
+                                        .withValues(alpha: 0.3),
                               ),
                             ),
                             child: Column(
@@ -944,26 +1130,42 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
                                 Row(
                                   children: [
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 3),
                                       decoration: BoxDecoration(
-                                        color: isDrafted ? const Color(0xFF10B981).withValues(alpha: 0.15) : const Color(0xFF6366F1).withValues(alpha: 0.15),
+                                        color: isDrafted
+                                            ? const Color(0xFF10B981)
+                                                .withValues(alpha: 0.15)
+                                            : const Color(0xFF6366F1)
+                                                .withValues(alpha: 0.15),
                                         borderRadius: BorderRadius.circular(6),
                                       ),
                                       child: Text(
-                                        isDrafted ? 'AUTO-DRAFTED' : 'AUTO-ARCHIVED',
+                                        isDrafted
+                                            ? 'AUTO-DRAFTED'
+                                            : 'AUTO-ARCHIVED',
                                         style: TextStyle(
-                                          color: isDrafted ? const Color(0xFF34D399) : const Color(0xFF818CF8),
+                                          color: isDrafted
+                                              ? const Color(0xFF34D399)
+                                              : const Color(0xFF818CF8),
                                           fontSize: 10,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
                                     ),
                                     const SizedBox(width: 8),
-                                    Text(appName, style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600)),
+                                    Text(appName,
+                                        style: const TextStyle(
+                                            color: Colors.white70,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600)),
                                     const Spacer(),
                                     Text(
-                                      '${(confidence * 100).toInt()}% Conf.',
-                                      style: const TextStyle(color: Colors.white38, fontSize: 11),
+                                      formattedTime.isNotEmpty
+                                          ? formattedTime
+                                          : 'Recent',
+                                      style: const TextStyle(
+                                          color: Colors.white38, fontSize: 11),
                                     ),
                                   ],
                                 ),
@@ -972,37 +1174,60 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
                                   title.isNotEmpty ? '$title: $body' : body,
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(color: Colors.white, fontSize: 13),
+                                  style: const TextStyle(
+                                      color: Colors.white, fontSize: 13),
                                 ),
                                 const SizedBox(height: 10),
-                                Align(
-                                  alignment: Alignment.centerRight,
-                                  child: InkWell(
-                                    onTap: () {
-                                      Navigator.pop(context);
-                                      _undoAuditAction(log);
-                                    },
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withValues(alpha: 0.06),
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(color: Colors.white12),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          const Icon(Icons.undo_rounded, size: 14, color: Color(0xFF818CF8)),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            isDrafted ? 'Undo Auto-Draft' : 'Undo Auto-Archive',
-                                            style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600),
-                                          ),
-                                        ],
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      '${(confidence * 100).toInt()}% Conf.',
+                                      style: const TextStyle(
+                                        color: Colors.white38,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w500,
                                       ),
                                     ),
-                                  ),
+                                    InkWell(
+                                      onTap: () {
+                                        Navigator.pop(context);
+                                        _undoAuditAction(log);
+                                      },
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 10, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white
+                                              .withValues(alpha: 0.06),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                          border:
+                                              Border.all(color: Colors.white12),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(Icons.undo_rounded,
+                                                size: 14,
+                                                color: Color(0xFF818CF8)),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              isDrafted
+                                                  ? 'Undo Auto-Draft'
+                                                  : 'Undo Auto-Archive',
+                                              style: const TextStyle(
+                                                  color: Colors.white70,
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.w600),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -1027,14 +1252,15 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
     final body = auditLog['body'] as String? ?? '';
     final dbService = DatabaseService.instance;
 
-  if (actionType == 'auto_archived') {
-    if (logId != null) {
-      await dbService.updateNotificationLogStatus(logId, 'unclassified');
-    }
-    if (mounted) {
-      AppSnackBar.show(context, 'Restored to Captured Alerts!', type: SnackBarType.success);
-    }
-  } else if (actionType == 'auto_drafted') {
+    if (actionType == 'auto_archived') {
+      if (logId != null) {
+        await dbService.updateNotificationLogStatus(logId, 'unclassified');
+      }
+      if (mounted) {
+        AppSnackBar.show(context, 'Restored to Captured Alerts!',
+            type: SnackBarType.success);
+      }
+    } else if (actionType == 'auto_drafted') {
       if (logId != null) {
         await dbService.updateNotificationLogStatus(logId, 'unclassified');
       }
@@ -1043,7 +1269,9 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
         await PerceptronStorageService.instance.saveWeights();
       }
       if (mounted) {
-        AppSnackBar.show(context, 'Moved back to Captured Alerts. AI learned to ignore similar alerts.', type: SnackBarType.neutral);
+        AppSnackBar.show(context,
+            'Moved back to Captured Alerts. AI learned to ignore similar alerts.',
+            type: SnackBarType.neutral);
       }
     }
 
@@ -1082,11 +1310,15 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       if (_isServiceEnabled) ...[
-                        const Icon(Icons.mark_email_read_outlined, size: 64, color: Colors.white24),
+                        const Icon(Icons.mark_email_read_outlined,
+                            size: 64, color: Colors.white24),
                         const SizedBox(height: 16),
                         const Text(
                           'All caught up!',
-                          style: TextStyle(fontSize: 18, color: Colors.white70, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.white70,
+                              fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 6),
                         const Text(
@@ -1110,12 +1342,16 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
                         const SizedBox(height: 24),
                         const Text(
                           'Smart Tracking Disabled',
-                          style: TextStyle(fontSize: 20, color: Colors.white, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                              fontSize: 20,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 10),
                         const Text(
                           'Enable Smart Tracking to automatically detect, parse, and review transaction notifications here.',
-                          style: TextStyle(fontSize: 13, color: Colors.white54, height: 1.5),
+                          style: TextStyle(
+                              fontSize: 13, color: Colors.white54, height: 1.5),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 24),
@@ -1123,7 +1359,8 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF6366F1),
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 24, vertical: 14),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
@@ -1133,7 +1370,8 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
                           icon: const Icon(Icons.bolt_rounded, size: 20),
                           label: const Text(
                             'Enable Smart Tracking',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 14),
                           ),
                         ),
                       ],
@@ -1162,7 +1400,10 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
                         children: [
                           Icon(Icons.delete, color: Color(0xFFEF4444)),
                           SizedBox(width: 8),
-                          Text('Discard', style: TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.bold)),
+                          Text('Discard',
+                              style: TextStyle(
+                                  color: Color(0xFFEF4444),
+                                  fontWeight: FontWeight.bold)),
                         ],
                       ),
                     ),
@@ -1208,14 +1449,18 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
               const SizedBox(height: 24),
               const Text(
                 'No Captured Alerts',
-                style: TextStyle(fontSize: 20, color: Colors.white, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                    fontSize: 20,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 10),
               Text(
                 _isServiceEnabled
                     ? 'Notifications that aren\'t auto-classified will appear here for your review.'
                     : 'Enable Smart Tracking to capture and classify notifications.',
-                style: const TextStyle(fontSize: 13, color: Colors.white54, height: 1.5),
+                style: const TextStyle(
+                    fontSize: 13, color: Colors.white54, height: 1.5),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -1249,12 +1494,15 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
       itemBuilder: (context, index) {
         final pkg = sortedPackages[index];
         final alertsList = groups[pkg]!;
-        final fallbackAppName = alertsList.first['app_name'] as String? ?? 'Unknown';
-        final resolvedAppName = AppIconCacheService.instance.getCachedAppName(pkg, defaultFallback: fallbackAppName);
+        final fallbackAppName =
+            alertsList.first['app_name'] as String? ?? 'Unknown';
+        final resolvedAppName = AppIconCacheService.instance
+            .getCachedAppName(pkg, defaultFallback: fallbackAppName);
         final isSelected = _selectedAppPackages.contains(pkg);
 
         return _CapturedAppGroupTile(
-          key: ValueKey('captured_group_${pkg}_${_isAppCategorySelectionMode}_$isSelected'),
+          key: ValueKey(
+              'captured_group_${pkg}_${_isAppCategorySelectionMode}_$isSelected'),
           pkg: pkg,
           fallbackAppName: resolvedAppName,
           alertsList: alertsList,
@@ -1272,7 +1520,6 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> w
   }
 
   // --- CARD WIDGET BUILDER ---
-
 }
 
 class PendingTransactionCard extends StatefulWidget {
@@ -1314,7 +1561,8 @@ class _PendingTransactionCardState extends State<PendingTransactionCard> {
   @override
   void initState() {
     super.initState();
-    _amountController = TextEditingController(text: widget.tx.amount.toString());
+    _amountController =
+        TextEditingController(text: widget.tx.amount.toString());
     _descController = TextEditingController(text: widget.tx.description);
     _type = widget.tx.type;
     _accountId = widget.tx.accountId;
@@ -1330,7 +1578,8 @@ class _PendingTransactionCardState extends State<PendingTransactionCard> {
     super.dispose();
   }
 
-  void _showAccountPicker(String pickerTitle, int currentSelected, Function(int) onSelected) {
+  void _showAccountPicker(
+      String pickerTitle, int currentSelected, Function(int) onSelected) {
     FocusManager.instance.primaryFocus?.unfocus();
     final double maxFraction = 0.85;
     final double initialFraction = widget.accounts.length <= 3 ? 0.55 : 0.75;
@@ -1366,7 +1615,8 @@ class _PendingTransactionCardState extends State<PendingTransactionCard> {
                   ),
                   Text(
                     pickerTitle,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
@@ -1379,12 +1629,17 @@ class _PendingTransactionCardState extends State<PendingTransactionCard> {
                         final isSelected = acc.id == currentSelected;
                         IconData getIcon(String t) {
                           switch (t) {
-                            case 'bank': return Icons.account_balance;
-                            case 'credit_card': return Icons.credit_card;
-                            case 'wallet': return Icons.account_balance_wallet;
-                            default: return Icons.money;
+                            case 'bank':
+                              return Icons.account_balance;
+                            case 'credit_card':
+                              return Icons.credit_card;
+                            case 'wallet':
+                              return Icons.account_balance_wallet;
+                            default:
+                              return Icons.money;
                           }
                         }
+
                         return InkWell(
                           onTap: () {
                             onSelected(acc.id!);
@@ -1393,14 +1648,15 @@ class _PendingTransactionCardState extends State<PendingTransactionCard> {
                           borderRadius: BorderRadius.circular(16),
                           child: Container(
                             margin: const EdgeInsets.symmetric(vertical: 6),
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12),
                             decoration: BoxDecoration(
-                              color: isSelected 
+                              color: isSelected
                                   ? const Color(0xFF6366F1).withOpacity(0.15)
                                   : const Color(0xFF1E293B),
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: isSelected 
+                                color: isSelected
                                     ? const Color(0xFF6366F1).withOpacity(0.4)
                                     : Colors.white.withOpacity(0.05),
                                 width: isSelected ? 1.5 : 1.0,
@@ -1411,7 +1667,8 @@ class _PendingTransactionCardState extends State<PendingTransactionCard> {
                                 Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF6366F1).withOpacity(0.15),
+                                    color: const Color(0xFF6366F1)
+                                        .withOpacity(0.15),
                                     shape: BoxShape.circle,
                                   ),
                                   child: Icon(
@@ -1423,12 +1680,15 @@ class _PendingTransactionCardState extends State<PendingTransactionCard> {
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         acc.name,
                                         style: TextStyle(
-                                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                          fontWeight: isSelected
+                                              ? FontWeight.bold
+                                              : FontWeight.normal,
                                           fontSize: 14,
                                           color: Colors.white,
                                         ),
@@ -1445,7 +1705,8 @@ class _PendingTransactionCardState extends State<PendingTransactionCard> {
                                   ),
                                 ),
                                 if (isSelected)
-                                  const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 20),
+                                  const Icon(Icons.check_circle_rounded,
+                                      color: Color(0xFF10B981), size: 20),
                               ],
                             ),
                           ),
@@ -1517,14 +1778,15 @@ class _PendingTransactionCardState extends State<PendingTransactionCard> {
                           borderRadius: BorderRadius.circular(16),
                           child: Container(
                             margin: const EdgeInsets.symmetric(vertical: 6),
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12),
                             decoration: BoxDecoration(
-                              color: isSelected 
+                              color: isSelected
                                   ? const Color(0xFF6366F1).withOpacity(0.15)
                                   : const Color(0xFF1E293B),
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: isSelected 
+                                color: isSelected
                                     ? const Color(0xFF6366F1).withOpacity(0.4)
                                     : Colors.white.withOpacity(0.05),
                                 width: isSelected ? 1.5 : 1.0,
@@ -1549,14 +1811,17 @@ class _PendingTransactionCardState extends State<PendingTransactionCard> {
                                   child: Text(
                                     cat.name,
                                     style: TextStyle(
-                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                      fontWeight: isSelected
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
                                       fontSize: 14,
                                       color: Colors.white,
                                     ),
                                   ),
                                 ),
                                 if (isSelected)
-                                  const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 20),
+                                  const Icon(Icons.check_circle_rounded,
+                                      color: Color(0xFF10B981), size: 20),
                               ],
                             ),
                           ),
@@ -1586,7 +1851,8 @@ class _PendingTransactionCardState extends State<PendingTransactionCard> {
           decoration: BoxDecoration(
             color: isActive ? const Color(0xFF6366F1) : const Color(0xFF0F172A),
             borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: isActive ? const Color(0xFF6366F1) : Colors.white10),
+            border: Border.all(
+                color: isActive ? const Color(0xFF6366F1) : Colors.white10),
           ),
           alignment: Alignment.center,
           child: Text(
@@ -1604,18 +1870,26 @@ class _PendingTransactionCardState extends State<PendingTransactionCard> {
 
   @override
   Widget build(BuildContext context) {
-    final selectedCategory = widget.categories.firstWhere((c) => c.id == _categoryId, orElse: () => widget.categories.last);
-    final selectedAcc = widget.accounts.firstWhere((a) => a.id == _accountId, orElse: () => widget.accounts.first);
+    final selectedCategory = widget.categories.firstWhere(
+        (c) => c.id == _categoryId,
+        orElse: () => widget.categories.last);
+    final selectedAcc = widget.accounts.firstWhere((a) => a.id == _accountId,
+        orElse: () => widget.accounts.first);
     final selectedToAcc = _type == 'transfer' && _toAccountId != null
-        ? widget.accounts.firstWhere((a) => a.id == _toAccountId, orElse: () => widget.accounts.first)
+        ? widget.accounts.firstWhere((a) => a.id == _toAccountId,
+            orElse: () => widget.accounts.first)
         : null;
 
     IconData getAccountIcon(String t) {
       switch (t) {
-        case 'bank': return Icons.account_balance;
-        case 'credit_card': return Icons.credit_card;
-        case 'wallet': return Icons.account_balance_wallet;
-        default: return Icons.money;
+        case 'bank':
+          return Icons.account_balance;
+        case 'credit_card':
+          return Icons.credit_card;
+        case 'wallet':
+          return Icons.account_balance_wallet;
+        default:
+          return Icons.money;
       }
     }
 
@@ -1642,23 +1916,30 @@ class _PendingTransactionCardState extends State<PendingTransactionCard> {
                       child: Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
                               color: const Color(0xFF6366F1).withOpacity(0.15),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
                               widget.tx.appName ?? 'INTERCEPTED',
-                              style: const TextStyle(fontSize: 10, color: Color(0xFF6366F1), fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                  fontSize: 10,
+                                  color: Color(0xFF6366F1),
+                                  fontWeight: FontWeight.bold),
                             ),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              widget.tx.title.isNotEmpty ? widget.tx.title : 'SMS notification',
+                              widget.tx.title.isNotEmpty
+                                  ? widget.tx.title
+                                  : 'SMS notification',
                               overflow: TextOverflow.ellipsis,
                               maxLines: 1,
-                              style: const TextStyle(fontSize: 12, color: Colors.white38),
+                              style: const TextStyle(
+                                  fontSize: 12, color: Colors.white38),
                             ),
                           ),
                         ],
@@ -1669,14 +1950,16 @@ class _PendingTransactionCardState extends State<PendingTransactionCard> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.expand_more, color: Colors.white70),
+                          icon: const Icon(Icons.expand_more,
+                              color: Colors.white70),
                           onPressed: () => setState(() => _isExpanded = true),
                           constraints: const BoxConstraints(),
                           padding: EdgeInsets.zero,
                         ),
                         const SizedBox(width: 12),
                         IconButton(
-                          icon: const Icon(Icons.close, color: Colors.white38, size: 20),
+                          icon: const Icon(Icons.close,
+                              color: Colors.white38, size: 20),
                           onPressed: () => widget.onDiscard(widget.tx.id!),
                           constraints: const BoxConstraints(),
                           padding: EdgeInsets.zero,
@@ -1697,20 +1980,28 @@ class _PendingTransactionCardState extends State<PendingTransactionCard> {
                   children: [
                     Text(
                       '${AppSettings.currencySymbol}${_amountController.text}',
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                      style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white),
                     ),
                     const SizedBox(width: 10),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: _type == 'debit' ? const Color(0xFFEF4444).withOpacity(0.15) : const Color(0xFF10B981).withOpacity(0.15),
+                        color: _type == 'debit'
+                            ? const Color(0xFFEF4444).withOpacity(0.15)
+                            : const Color(0xFF10B981).withOpacity(0.15),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
                         _type.toUpperCase(),
                         style: TextStyle(
-                          fontSize: 9, 
-                          color: _type == 'debit' ? const Color(0xFFEF4444) : const Color(0xFF10B981),
+                          fontSize: 9,
+                          color: _type == 'debit'
+                              ? const Color(0xFFEF4444)
+                              : const Color(0xFF10B981),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -1718,17 +2009,20 @@ class _PendingTransactionCardState extends State<PendingTransactionCard> {
                     const SizedBox(width: 8),
                     Text(
                       '•  ${widget.accounts.firstWhere((a) => a.id == _accountId, orElse: () => widget.accounts.first).name}',
-                      style: const TextStyle(fontSize: 11, color: Colors.white38),
+                      style:
+                          const TextStyle(fontSize: 11, color: Colors.white38),
                     ),
                     const SizedBox(width: 8),
                     Text(
                       '•  ${selectedCategory.name}',
-                      style: const TextStyle(fontSize: 11, color: Colors.white38),
+                      style:
+                          const TextStyle(fontSize: 11, color: Colors.white38),
                     ),
                     const Spacer(),
                     Text(
                       DateFormat('dd MMM, hh:mm a').format(widget.tx.date),
-                      style: const TextStyle(fontSize: 11, color: Colors.white38),
+                      style:
+                          const TextStyle(fontSize: 11, color: Colors.white38),
                     ),
                   ],
                 ),
@@ -1763,23 +2057,30 @@ class _PendingTransactionCardState extends State<PendingTransactionCard> {
                       child: Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
                               color: const Color(0xFF6366F1).withOpacity(0.15),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
                               widget.tx.appName ?? 'INTERCEPTED',
-                              style: const TextStyle(fontSize: 10, color: Color(0xFF6366F1), fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                  fontSize: 10,
+                                  color: Color(0xFF6366F1),
+                                  fontWeight: FontWeight.bold),
                             ),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              widget.tx.title.isNotEmpty ? widget.tx.title : 'SMS notification',
+                              widget.tx.title.isNotEmpty
+                                  ? widget.tx.title
+                                  : 'SMS notification',
                               overflow: TextOverflow.ellipsis,
                               maxLines: 1,
-                              style: const TextStyle(fontSize: 12, color: Colors.white38),
+                              style: const TextStyle(
+                                  fontSize: 12, color: Colors.white38),
                             ),
                           ),
                         ],
@@ -1788,14 +2089,16 @@ class _PendingTransactionCardState extends State<PendingTransactionCard> {
                     Row(
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.expand_less, color: Colors.white70),
+                          icon: const Icon(Icons.expand_less,
+                              color: Colors.white70),
                           onPressed: () => setState(() => _isExpanded = false),
                           constraints: const BoxConstraints(),
                           padding: EdgeInsets.zero,
                         ),
                         const SizedBox(width: 12),
                         IconButton(
-                          icon: const Icon(Icons.close, color: Colors.white38, size: 20),
+                          icon: const Icon(Icons.close,
+                              color: Colors.white38, size: 20),
                           onPressed: () => widget.onDiscard(widget.tx.id!),
                           constraints: const BoxConstraints(),
                           padding: EdgeInsets.zero,
@@ -1825,23 +2128,30 @@ class _PendingTransactionCardState extends State<PendingTransactionCard> {
                   flex: 4,
                   child: TextField(
                     controller: _amountController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
                     style: const TextStyle(color: Colors.white, fontSize: 14),
                     decoration: InputDecoration(
                       labelText: 'Amount (${AppSettings.currencySymbol})',
-                      labelStyle: const TextStyle(color: Colors.white54, fontSize: 11),
+                      labelStyle:
+                          const TextStyle(color: Colors.white54, fontSize: 11),
                       filled: true,
                       fillColor: const Color(0xFF0F172A),
                       prefixText: '${AppSettings.currencySymbol} ',
-                      prefixStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                      prefixStyle: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: Colors.white),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 12),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: const BorderSide(color: Colors.white24),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFF6366F1), width: 1.5),
+                        borderSide: const BorderSide(
+                            color: Color(0xFF6366F1), width: 1.5),
                       ),
                     ),
                   ),
@@ -1880,8 +2190,11 @@ class _PendingTransactionCardState extends State<PendingTransactionCard> {
                           isActive: _type == 'transfer',
                           onTap: () => setState(() {
                             _type = 'transfer';
-                            if (_toAccountId == null && widget.accounts.length > 1) {
-                              _toAccountId = widget.accounts.firstWhere((a) => a.id != _accountId).id;
+                            if (_toAccountId == null &&
+                                widget.accounts.length > 1) {
+                              _toAccountId = widget.accounts
+                                  .firstWhere((a) => a.id != _accountId)
+                                  .id;
                             }
                           }),
                         ),
@@ -1898,12 +2211,16 @@ class _PendingTransactionCardState extends State<PendingTransactionCard> {
               icon: getAccountIcon(selectedAcc.type),
               onTap: () {
                 _showAccountPicker(
-                  _type == 'transfer' ? 'Select Source Account' : 'Select Account',
+                  _type == 'transfer'
+                      ? 'Select Source Account'
+                      : 'Select Account',
                   _accountId,
                   (selectedId) => setState(() {
                     _accountId = selectedId;
                     if (_type == 'transfer' && _toAccountId == _accountId) {
-                      _toAccountId = widget.accounts.firstWhere((a) => a.id != _accountId).id;
+                      _toAccountId = widget.accounts
+                          .firstWhere((a) => a.id != _accountId)
+                          .id;
                     }
                   }),
                 );
@@ -1942,27 +2259,44 @@ class _PendingTransactionCardState extends State<PendingTransactionCard> {
                 spacing: 8,
                 runSpacing: 6,
                 children: widget.suggestions.map((suggestName) {
-                  final isNew = !widget.categories.any((c) => c.name.toLowerCase() == suggestName.toLowerCase());
-                  final label = isNew ? '✨ Suggest New Category: $suggestName' : '✨ $suggestName';
+                  final isNew = !widget.categories.any(
+                      (c) => c.name.toLowerCase() == suggestName.toLowerCase());
+                  final label = isNew
+                      ? '✨ Suggest New Category: $suggestName'
+                      : '✨ $suggestName';
 
                   return InkWell(
                     onTap: () async {
                       if (isNew) {
                         final dbService = DatabaseService.instance;
-                        final colorList = [0xFFFF8A80, 0xFFFFD180, 0xFF80D8FF, 0xFFEA80FC, 0xFFB9F6CA, 0xFFCFD8DC];
-                        final randCol = colorList[widget.tx.id! % colorList.length];
+                        final colorList = [
+                          0xFFFF8A80,
+                          0xFFFFD180,
+                          0xFF80D8FF,
+                          0xFFEA80FC,
+                          0xFFB9F6CA,
+                          0xFFCFD8DC
+                        ];
+                        final randCol =
+                            colorList[widget.tx.id! % colorList.length];
                         final newCatId = await dbService.insertCategory(
-                          CategoryModel(name: suggestName, color: randCol, icon: 'more_horiz'),
+                          CategoryModel(
+                              name: suggestName,
+                              color: randCol,
+                              icon: 'more_horiz'),
                         );
-                        
+
                         if (mounted) {
-                          AppSnackBar.show(context, 'Created & assigned category "$suggestName"!', type: SnackBarType.success);
+                          AppSnackBar.show(context,
+                              'Created & assigned category "$suggestName"!',
+                              type: SnackBarType.success);
                         }
                         setState(() {
                           _categoryId = newCatId;
                         });
                       } else {
-                        final match = widget.categories.firstWhere((c) => c.name.toLowerCase() == suggestName.toLowerCase());
+                        final match = widget.categories.firstWhere((c) =>
+                            c.name.toLowerCase() == suggestName.toLowerCase());
                         setState(() {
                           _categoryId = match.id!;
                         });
@@ -1970,15 +2304,16 @@ class _PendingTransactionCardState extends State<PendingTransactionCard> {
                     },
                     borderRadius: BorderRadius.circular(16),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: isNew 
-                            ? const Color(0xFF10B981).withValues(alpha: 0.15) 
+                        color: isNew
+                            ? const Color(0xFF10B981).withValues(alpha: 0.15)
                             : const Color(0xFF6366F1).withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: isNew 
-                              ? const Color(0xFF34D399).withValues(alpha: 0.4) 
+                          color: isNew
+                              ? const Color(0xFF34D399).withValues(alpha: 0.4)
                               : const Color(0xFF818CF8).withValues(alpha: 0.4),
                         ),
                       ),
@@ -1986,9 +2321,13 @@ class _PendingTransactionCardState extends State<PendingTransactionCard> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            isNew ? Icons.add_circle_outline_rounded : Icons.auto_awesome_rounded,
+                            isNew
+                                ? Icons.add_circle_outline_rounded
+                                : Icons.auto_awesome_rounded,
                             size: 13,
-                            color: isNew ? const Color(0xFF34D399) : const Color(0xFF818CF8),
+                            color: isNew
+                                ? const Color(0xFF34D399)
+                                : const Color(0xFF818CF8),
                           ),
                           const SizedBox(width: 4),
                           Text(
@@ -1996,7 +2335,9 @@ class _PendingTransactionCardState extends State<PendingTransactionCard> {
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
-                              color: isNew ? const Color(0xFF34D399) : const Color(0xFF818CF8),
+                              color: isNew
+                                  ? const Color(0xFF34D399)
+                                  : const Color(0xFF818CF8),
                             ),
                           ),
                         ],
@@ -2016,17 +2357,20 @@ class _PendingTransactionCardState extends State<PendingTransactionCard> {
                     style: const TextStyle(color: Colors.white, fontSize: 13),
                     decoration: InputDecoration(
                       labelText: 'Description',
-                      labelStyle: const TextStyle(color: Colors.white54, fontSize: 11),
+                      labelStyle:
+                          const TextStyle(color: Colors.white54, fontSize: 11),
                       filled: true,
                       fillColor: const Color(0xFF0F172A),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 12),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: const BorderSide(color: Colors.white24),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFF6366F1), width: 1.5),
+                        borderSide: const BorderSide(
+                            color: Color(0xFF6366F1), width: 1.5),
                       ),
                     ),
                   ),
@@ -2073,11 +2417,15 @@ class _PendingTransactionCardState extends State<PendingTransactionCard> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.calendar_today, color: Color(0xFF6366F1), size: 14),
+                          const Icon(Icons.calendar_today,
+                              color: Color(0xFF6366F1), size: 14),
                           const SizedBox(width: 6),
                           Text(
                             DateFormat('dd MMM, hh:mm').format(_selectedDate),
-                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
+                            style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white),
                           ),
                         ],
                       ),
@@ -2092,12 +2440,14 @@ class _PendingTransactionCardState extends State<PendingTransactionCard> {
                 backgroundColor: const Color(0xFF10B981),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
               ),
               onPressed: () {
                 final amt = double.tryParse(_amountController.text) ?? 0.0;
                 if (amt <= 0) {
-                  AppSnackBar.show(context, 'Please enter a valid amount', type: SnackBarType.warning);
+                  AppSnackBar.show(context, 'Please enter a valid amount',
+                      type: SnackBarType.warning);
                   return;
                 }
 
@@ -2116,7 +2466,8 @@ class _PendingTransactionCardState extends State<PendingTransactionCard> {
 
                 widget.onConfirm(updatedTx, selectedCategory.name);
               },
-              child: const Text('Verify & Confirm', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+              child: const Text('Verify & Confirm',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
             ),
           ],
         ),
@@ -2169,12 +2520,16 @@ class CustomSelectField extends StatelessWidget {
                   children: [
                     Text(
                       label,
-                      style: const TextStyle(fontSize: 10, color: Colors.white54),
+                      style:
+                          const TextStyle(fontSize: 10, color: Colors.white54),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       value,
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                      style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white),
                     ),
                   ],
                 ),
@@ -2233,7 +2588,9 @@ class _CapturedAppGroupTileState extends State<_CapturedAppGroupTile> {
             : const Color(0xFF1E293B),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: widget.isSelected ? const Color(0xFF6366F1) : const Color(0xFF334155),
+          color: widget.isSelected
+              ? const Color(0xFF6366F1)
+              : const Color(0xFF334155),
           width: widget.isSelected ? 1.5 : 1.0,
         ),
         boxShadow: [
@@ -2264,17 +2621,22 @@ class _CapturedAppGroupTileState extends State<_CapturedAppGroupTile> {
                   duration: const Duration(milliseconds: 150),
                   padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
-                    color: widget.isSelected ? const Color(0xFF6366F1) : Colors.transparent,
+                    color: widget.isSelected
+                        ? const Color(0xFF6366F1)
+                        : Colors.transparent,
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: widget.isSelected ? const Color(0xFF6366F1) : Colors.white30,
+                      color: widget.isSelected
+                          ? const Color(0xFF6366F1)
+                          : Colors.white30,
                       width: 1.5,
                     ),
                   ),
                   child: Icon(
                     Icons.check_rounded,
                     size: 14,
-                    color: widget.isSelected ? Colors.white : Colors.transparent,
+                    color:
+                        widget.isSelected ? Colors.white : Colors.transparent,
                   ),
                 )
               : widget.leadingWidget,
@@ -2290,28 +2652,36 @@ class _CapturedAppGroupTileState extends State<_CapturedAppGroupTile> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF59E0B).withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.3)),
+                  border: Border.all(
+                      color: const Color(0xFFF59E0B).withValues(alpha: 0.3)),
                 ),
                 child: Text(
                   '${widget.alertsList.length} ${widget.alertsList.length == 1 ? "Alert" : "Alerts"}',
-                  style: const TextStyle(color: Color(0xFFFBBF24), fontSize: 11, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                      color: Color(0xFFFBBF24),
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold),
                 ),
               ),
               if (!widget.isSelectionMode) ...[
                 const SizedBox(width: 2),
                 IconButton(
-                  icon: const Icon(Icons.volume_off_rounded, color: Colors.white38, size: 18),
+                  icon: const Icon(Icons.volume_off_rounded,
+                      color: Colors.white38, size: 18),
                   tooltip: 'Mute ${widget.fallbackAppName}',
-                  onPressed: () => widget.onMuteEntireApp(widget.pkg, widget.fallbackAppName, widget.alertsList),
+                  onPressed: () => widget.onMuteEntireApp(
+                      widget.pkg, widget.fallbackAppName, widget.alertsList),
                 ),
                 AnimatedRotation(
                   turns: _isExpanded ? 0.5 : 0.0,
                   duration: const Duration(milliseconds: 200),
-                  child: const Icon(Icons.keyboard_arrow_down_rounded, size: 20, color: Colors.white30),
+                  child: const Icon(Icons.keyboard_arrow_down_rounded,
+                      size: 20, color: Colors.white30),
                 ),
               ],
             ],
@@ -2351,7 +2721,8 @@ class CapturedAlertCard extends StatelessWidget {
     final body = alert['body'] as String? ?? '';
     final dateStr = alert['date'] as String? ?? '';
     final date = DateTime.tryParse(dateStr);
-    final formattedDate = date != null ? DateFormat('dd MMM, hh:mm a').format(date) : '';
+    final formattedDate =
+        date != null ? DateFormat('dd MMM, hh:mm a').format(date) : '';
 
     return Container(
       margin: const EdgeInsets.only(top: 10),
@@ -2376,7 +2747,10 @@ class CapturedAlertCard extends StatelessWidget {
                 ),
                 child: Text(
                   formattedDate,
-                  style: const TextStyle(fontSize: 10, color: Colors.white38, fontWeight: FontWeight.w500),
+                  style: const TextStyle(
+                      fontSize: 10,
+                      color: Colors.white38,
+                      fontWeight: FontWeight.w500),
                 ),
               ),
             ],
@@ -2387,13 +2761,17 @@ class CapturedAlertCard extends StatelessWidget {
           if (title.isNotEmpty) ...[
             Text(
               title,
-              style: const TextStyle(fontSize: 13, color: Colors.white, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                  fontSize: 13,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 4),
           ],
           Text(
             body,
-            style: const TextStyle(fontSize: 12, color: Colors.white70, height: 1.4),
+            style: const TextStyle(
+                fontSize: 12, color: Colors.white70, height: 1.4),
           ),
           const SizedBox(height: 14),
 
@@ -2403,11 +2781,14 @@ class CapturedAlertCard extends StatelessWidget {
               Expanded(
                 child: ElevatedButton.icon(
                   icon: const Icon(Icons.add_chart_rounded, size: 15),
-                  label: const Text('Track Transaction', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                  label: const Text('Track Transaction',
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF10B981),
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
                     padding: const EdgeInsets.symmetric(vertical: 10),
                     elevation: 0,
                   ),
@@ -2420,11 +2801,14 @@ class CapturedAlertCard extends StatelessWidget {
               Expanded(
                 child: OutlinedButton.icon(
                   icon: const Icon(Icons.block_rounded, size: 15),
-                  label: const Text('Ignore', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                  label: const Text('Ignore',
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.white60,
                     side: const BorderSide(color: Colors.white24),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
                     padding: const EdgeInsets.symmetric(vertical: 10),
                   ),
                   onPressed: () {
