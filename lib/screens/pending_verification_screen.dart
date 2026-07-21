@@ -7,7 +7,6 @@ import 'package:finance_tracker/features/inbox/widgets/pending_transaction_card.
 import 'package:finance_tracker/features/inbox/widgets/draft_editor_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
 import '../models/transaction_model.dart';
 import '../models/account_model.dart';
 import '../models/category_model.dart';
@@ -40,6 +39,7 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
   List<CategoryModel> _categories = [];
   final TransactionParser _parser = TransactionParser();
   bool _isServiceEnabled = false;
+  bool _hasModelActivity = false;
 
   // Dual-tab controller
   late TabController _tabController;
@@ -219,6 +219,10 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
       await Future.wait([
         _loadPendingData(),
         _loadCapturedAlerts(),
+        () async {
+          _hasModelActivity =
+              await DatabaseService.instance.hasTodayModelActivity();
+        }(),
       ]);
     } catch (e) {
       debugPrint('Refresh failed: $e');
@@ -753,12 +757,13 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
                 ),
               ),
               const BatchProgressBanner(),
-              ModelActivityBanner(
-                onViewLogPressed: () => showAuditLogBottomSheet(
-                  context: context,
-                  onUndo: _undoAuditAction,
+              if (_hasModelActivity)
+                ModelActivityBanner(
+                  onViewLogPressed: () => showAuditLogBottomSheet(
+                    context: context,
+                    onUndo: _undoAuditAction,
+                  ),
                 ),
-              ),
               // --- TAB CONTENT ---
               Expanded(
                 child: TabBarView(

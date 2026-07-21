@@ -17,7 +17,6 @@ class ModelActivityBanner extends StatelessWidget {
         final counts = snapshot.data ?? {};
         final drafted = counts['auto_drafted'] ?? 0;
         final archived = counts['auto_archived'] ?? 0;
-        final hasActivity = drafted > 0 || archived > 0;
 
         return Container(
           margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
@@ -41,9 +40,7 @@ class ModelActivityBanner extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  hasActivity
-                      ? 'Model Activity Today: Auto-drafted $drafted, Auto-archived $archived'
-                      : 'Model Activity: AI Active & Learning',
+                  'Today\'s Automated Decisions: Auto-drafted $drafted, Auto-cleared $archived',
                   style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 12,
