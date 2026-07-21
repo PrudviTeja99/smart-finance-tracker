@@ -13,7 +13,7 @@ class DraftEditor extends StatefulWidget {
   final TransactionModel tx;
   final List<AccountModel> accounts;
   final List<CategoryModel> categories;
-  final Function(TransactionModel, String) onConfirm;
+  final Future<bool> Function(TransactionModel, String) onConfirm;
   final Function(int) onDiscard;
   final Function(int, String) onOnlineLookup;
   final bool isLookupLoading;
@@ -428,7 +428,7 @@ class _DraftEditorState extends State<DraftEditor> {
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
               ),
-              onPressed: () {
+              onPressed: () async {
                 final amt = double.tryParse(_amountController.text) ?? 0.0;
                 if (amt <= 0) {
                   AppSnackBar.show(context, 'Please enter a valid amount',
@@ -449,7 +449,14 @@ class _DraftEditorState extends State<DraftEditor> {
                   date: _selectedDate,
                 );
 
-                widget.onConfirm(updatedTx, selectedCategory.name);
+                final success =
+                    await widget.onConfirm(updatedTx, selectedCategory.name);
+
+                if (!mounted) return;
+
+                if (success) {
+                  Navigator.pop(context);
+                }
               },
               child: const Text('Verify & Confirm',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),

@@ -165,13 +165,6 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
   // Confirm and train Naive Bayes models with user verified data
   Future<void> _confirmTransaction(
       TransactionModel tx, String categoryName) async {
-    // Show SnackBar synchronously first to avoid queuing delays
-    if (mounted) {
-      AppSnackBar.show(context,
-          'Confirmed transaction under "$categoryName"! Learned this pattern.',
-          type: SnackBarType.success);
-    }
-
     final dbService = DatabaseService.instance;
 
     // Update status to confirmed and save edits
@@ -181,13 +174,12 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
     // Look up the name of the selected account
     final account = _accounts.firstWhere((a) => a.id == tx.accountId,
         orElse: () => _accounts.first);
-    final accountName = account.name;
 
     // Self-Learning: Train type, category, account, and description classifiers on-device
     await _parser.trainConfirm(
       body: tx.body,
       categoryName: categoryName,
-      accountName: accountName,
+      accountName: account.name,
       accountKeywords: account.keywords,
       description: tx.description,
       amount: tx.amount,
@@ -195,7 +187,6 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
     );
 
     widget.onConfirmedOrDiscarded();
-    _refreshAll();
   }
 
   // Delete pending transaction and train model to ignore similar patterns
@@ -1134,7 +1125,20 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
             tx: tx,
             accounts: _accounts,
             categories: _categories,
-            onConfirm: _confirmTransaction,
+            onConfirm: (updatedTx, categoryName) async {
+              await _confirmTransaction(updatedTx, categoryName);
+              await _refreshAll();
+
+              if (!mounted) return true;
+
+              AppSnackBar.show(
+                context,
+                'Confirmed transaction under "$categoryName"! Learned this pattern.',
+                type: SnackBarType.success,
+              );
+
+              return true;
+            },
             onDiscard: _discardTransaction,
             onOnlineLookup: _triggerOnlineCategoryLookup,
             isLookupLoading: _lookupLoading[tx.id] ?? false,
