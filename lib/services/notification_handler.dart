@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_notification_listener/flutter_notification_listener.dart';
 import 'database_service.dart';
 import 'perceptron_storage_service.dart';
+import '../services/developer/log_service.dart';
 import '../utils/transaction_parser.dart';
 import '../utils/app_settings.dart';
 
@@ -21,7 +22,7 @@ class NotificationHandler {
     IsolateNameServer.registerPortWithName(_receivePort!.sendPort, portName);
 
     _receivePort!.listen((message) {
-      if(message == "refresh"){
+      if (message == "refresh") {
         onRefreshRequested();
       }
     });
@@ -52,6 +53,17 @@ class NotificationHandler {
 
   static Future<void> openPermissionSettings() async {
     await NotificationsListener.openPermissionSettings();
+  }
+
+  static Future<void> openAutoStartSettings() async {
+    try {
+      await const MethodChannel('com.example.finance_tracker/app_info')
+          .invokeMethod('openAutoStartSettings');
+    } catch (e) {
+      debugPrint('Failed to open auto start settings: $e');
+      // Graceful fallback to app settings
+      await openAppSystemSettings();
+    }
   }
 
   static Future<void> openAppSystemSettings() async {
@@ -89,14 +101,22 @@ class NotificationHandler {
 
     try {
       // Awaited now — the isolate must not be allowed to die before this completes.
-      await DatabaseService.instance.insertRawNotification(
+      final insertResult = await DatabaseService.instance.insertRawNotification(
         packageName: event.packageName!,
         title: title,
         body: body,
         timestamp: event.timestamp ?? DateTime.now().millisecondsSinceEpoch,
       );
+      if (insertResult == -1) {
+        LogService.logFromAnyIsolate(
+            '⏭️ Skipped as duplicate: ${event.packageName} — "$body"');
+      } else {
+        LogService.logFromAnyIsolate(
+            '✅ Queued raw notification from ${event.packageName}');
+      }
     } catch (e, st) {
-      debugPrint('⚠️ Failed to queue background notification: $e\n$st');
+      LogService.logFromAnyIsolate(
+          '⚠️ Failed to queue background notification: $e\n$st');
       return; // don't attempt to notify UI if the write itself failed
     }
 
@@ -147,8 +167,28 @@ class NotificationHandler {
 
       // 3. Rule-based Pre-filter for non-financial ignore-keywords & promotional marketing
       final cleanBody = body.toLowerCase();
-      final ignoreKeywords = ['balance', 'bal', 'available limit', 'otp', 'verification code', 'security code', 'login'];
-      final promoKeywords = ['50% off', '% off', 'discount', 'cashback offer', 'use code', 'upgrade your', 'subscription', 'newsletter', 'flash sale', 'exclusive offer', 'promo'];
+      final ignoreKeywords = [
+        'balance',
+        'bal',
+        'available limit',
+        'otp',
+        'verification code',
+        'security code',
+        'login'
+      ];
+      final promoKeywords = [
+        '50% off',
+        '% off',
+        'discount',
+        'cashback offer',
+        'use code',
+        'upgrade your',
+        'subscription',
+        'newsletter',
+        'flash sale',
+        'exclusive offer',
+        'promo'
+      ];
 
       bool isIgnore = false;
       String archiveReason = 'auto_archived';
@@ -184,6 +224,10 @@ class NotificationHandler {
           confidence: archiveConfidence,
           logId: logId,
         );
+
+        LogService.logFromAnyIsolate(
+            '🗄️ Auto-archived ($archiveReason): $appName — "$body"');
+
         return 'archived';
       }
 
@@ -211,22 +255,33 @@ class NotificationHandler {
             logId: logId,
           );
 
+          LogService.logFromAnyIsolate(
+              '📝 Auto-drafted transaction: $appName — ₹${tx.amount} (${tx.type})');
+
           return 'drafted';
+        } else {
+          LogService.logFromAnyIsolate(
+              '⚠️ Duplicate transaction detected, skipped: $appName — ₹${tx.amount}');
         }
       }
 
       // 5. Tier 3: Captured Alerts Review (Uncertain Score < 85%)
       // Notification remains as 'unclassified' in Captured Alerts for 1-tap user guidance
+      LogService.logFromAnyIsolate(
+          '❓ Left unclassified for review: $appName — "$body"');
       return 'unclassified';
     } catch (e) {
-      print('Background notification processing error: $e');
+      LogService.logFromAnyIsolate(
+          '❌ Background notification processing error: $e');
       return 'error';
     }
   }
 
   // Helper to map package names to readable display names
   static String _getAppNameFromPackage(String package) {
-    if (package.contains('messaging') || package.contains('android.apps.messaging') || package.contains('samsung.android.messaging')) {
+    if (package.contains('messaging') ||
+        package.contains('android.apps.messaging') ||
+        package.contains('samsung.android.messaging')) {
       return 'SMS';
     } else if (package.contains('phonepe')) {
       return 'PhonePe';
@@ -244,7 +299,25 @@ class NotificationHandler {
   /// Intelligently formats package names like 'com.instagram.android' -> 'Instagram'
   static String formatPackageNameFallback(String package) {
     final parts = package.split('.');
-    final ignored = {'com', 'org', 'net', 'gov', 'edu', 'android', 'app', 'apps', 'mobile', 'lite', 'client', 'main', 'service', 'ui', 'in', 'us', 'uk'};
+    final ignored = {
+      'com',
+      'org',
+      'net',
+      'gov',
+      'edu',
+      'android',
+      'app',
+      'apps',
+      'mobile',
+      'lite',
+      'client',
+      'main',
+      'service',
+      'ui',
+      'in',
+      'us',
+      'uk'
+    };
 
     // Find the first meaningful word from the end that isn't ignored
     for (int i = parts.length - 1; i >= 0; i--) {
@@ -256,6 +329,8 @@ class NotificationHandler {
 
     // Ultimate fallback
     final last = parts.last;
-    return last.isNotEmpty ? last[0].toUpperCase() + last.substring(1) : package;
+    return last.isNotEmpty
+        ? last[0].toUpperCase() + last.substring(1)
+        : package;
   }
 }

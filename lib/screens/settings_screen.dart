@@ -16,6 +16,7 @@ import '../services/perceptron_storage_service.dart';
 import 'archived_alerts_screen.dart';
 import 'model_training_screen.dart';
 import 'package:flutter/cupertino.dart';
+import 'developer/log_inspector_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -24,7 +25,8 @@ class SettingsScreen extends StatefulWidget {
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObserver {
+class _SettingsScreenState extends State<SettingsScreen>
+    with WidgetsBindingObserver {
   bool _isServiceEnabled = false;
   List<AccountModel> _accounts = [];
   List<CategoryModel> _categories = [];
@@ -98,9 +100,12 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
         context: context,
         builder: (context) => AlertDialog(
           backgroundColor: const Color(0xFF1E293B),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          icon: const Icon(Icons.warning_amber_rounded, color: Color(0xFFF59E0B), size: 36),
-          title: const Text('Disable Smart Tracking?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          icon: const Icon(Icons.warning_amber_rounded,
+              color: Color(0xFFF59E0B), size: 36),
+          title: const Text('Disable Smart Tracking?',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
           content: const Text(
             'The app will stop listening to incoming notifications in the background. '
             'New transactions will not be captured automatically until you re-enable this.\n\n'
@@ -111,11 +116,15 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Keep Enabled', style: TextStyle(color: Colors.white54, fontWeight: FontWeight.bold)),
+              child: const Text('Keep Enabled',
+                  style: TextStyle(
+                      color: Colors.white54, fontWeight: FontWeight.bold)),
             ),
             TextButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Disable', style: TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.bold)),
+              child: const Text('Disable',
+                  style: TextStyle(
+                      color: Color(0xFFEF4444), fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -135,7 +144,8 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
         dbService.deleteAllModelAuditLogs(),
         dbService.deleteProcessedRawNotifications(),
       ]).then((_) {
-        debugPrint('🧹 Background cleanup complete: archived alerts, audit logs, and processed queue cleared.');
+        debugPrint(
+            '🧹 Background cleanup complete: archived alerts, audit logs, and processed queue cleared.');
       });
     }
     _loadSettingsData();
@@ -157,7 +167,9 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
         if (mounted) {
           AppSnackBar.show(
             context,
-            success ? 'Database restored successfully!' : 'Invalid backup file.',
+            success
+                ? 'Database restored successfully!'
+                : 'Invalid backup file.',
             type: success ? SnackBarType.success : SnackBarType.error,
           );
           if (success) {
@@ -177,8 +189,10 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
     final units = ['days', 'months', 'years'];
     final unitIndex = units.indexOf(tempUnit).clamp(0, 2);
 
-    final valueScrollController = FixedExtentScrollController(initialItem: tempValue - 1);
-    final unitScrollController = FixedExtentScrollController(initialItem: unitIndex);
+    final valueScrollController =
+        FixedExtentScrollController(initialItem: tempValue - 1);
+    final unitScrollController =
+        FixedExtentScrollController(initialItem: unitIndex);
     final textController = TextEditingController(text: '$tempValue');
 
     bool isUpdatingFromWheel = false;
@@ -229,10 +243,14 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                     children: [
                       const Text(
                         'Auto-Delete Retention',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                        style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.close, color: Colors.white54, size: 20),
+                        icon: const Icon(Icons.close,
+                            color: Colors.white54, size: 20),
                         onPressed: () => Navigator.pop(context),
                       ),
                     ],
@@ -251,7 +269,8 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                       decoration: BoxDecoration(
                         color: Colors.black.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFF6366F1).withOpacity(0.3)),
+                        border: Border.all(
+                            color: const Color(0xFF6366F1).withOpacity(0.3)),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -270,7 +289,8 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                               ),
                               decoration: const InputDecoration(
                                 border: InputBorder.none,
-                                contentPadding: EdgeInsets.symmetric(vertical: 6),
+                                contentPadding:
+                                    EdgeInsets.symmetric(vertical: 6),
                                 hintText: '00',
                                 hintStyle: TextStyle(color: Colors.white12),
                               ),
@@ -307,18 +327,25 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                               isUpdatingFromWheel = true;
                               tempValue = index + 1;
                               textController.text = '$tempValue';
-                              textController.selection = TextSelection.fromPosition(
-                                TextPosition(offset: textController.text.length),
+                              textController.selection =
+                                  TextSelection.fromPosition(
+                                TextPosition(
+                                    offset: textController.text.length),
                               );
                               isUpdatingFromWheel = false;
                               setSheetState(() {});
                             },
-                            children: List.generate(90, (index) => Center(
-                              child: Text(
-                                '${index + 1}',
-                                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                              ),
-                            )),
+                            children: List.generate(
+                                90,
+                                (index) => Center(
+                                      child: Text(
+                                        '${index + 1}',
+                                        style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                    )),
                           ),
                         ),
                         // Unit Picker (days, months, years)
@@ -330,12 +357,17 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                               tempUnit = units[index];
                               setSheetState(() {});
                             },
-                            children: units.map((u) => Center(
-                              child: Text(
-                                u,
-                                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                              ),
-                            )).toList(),
+                            children: units
+                                .map((u) => Center(
+                                      child: Text(
+                                        u,
+                                        style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                    ))
+                                .toList(),
                           ),
                         ),
                       ],
@@ -347,18 +379,22 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                       backgroundColor: const Color(0xFF6366F1),
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16)),
                     ),
                     onPressed: () async {
-                      final enteredValue = int.tryParse(textController.text) ?? tempValue;
-                      await AppSettings.setAutoDeleteValue(enteredValue.clamp(1, 999));
+                      final enteredValue =
+                          int.tryParse(textController.text) ?? tempValue;
+                      await AppSettings.setAutoDeleteValue(
+                          enteredValue.clamp(1, 999));
                       await AppSettings.setAutoDeleteUnit(tempUnit);
                       if (context.mounted) {
                         Navigator.pop(context);
                       }
                       setState(() {});
                     },
-                    child: const Text('Save Retention Period', style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: const Text('Save Retention Period',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                   const SizedBox(height: 20),
                 ],
@@ -376,7 +412,8 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Settings',
+            style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -396,7 +433,8 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
             ),
           ),
           ListView(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 100), // padding for bottom navigation strap
+            padding: const EdgeInsets.fromLTRB(
+                16, 8, 16, 100), // padding for bottom navigation strap
             children: [
               // 1. Preferences Card (Top)
               _buildSettingsGroup(
@@ -404,31 +442,44 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                 icon: Icons.tune_rounded,
                 children: [
                   ListTile(
-                    leading: const Icon(Icons.account_balance_wallet_rounded, color: Color(0xFF6366F1)),
-                    title: const Text('Manage Payment Accounts', style: TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text('${_accounts.length} active accounts', style: const TextStyle(fontSize: 11)),
-                    trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.white54),
+                    leading: const Icon(Icons.account_balance_wallet_rounded,
+                        color: Color(0xFF6366F1)),
+                    title: const Text('Manage Payment Accounts',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text('${_accounts.length} active accounts',
+                        style: const TextStyle(fontSize: 11)),
+                    trailing: const Icon(Icons.arrow_forward_ios_rounded,
+                        size: 16, color: Colors.white54),
                     onTap: _showManageAccountsSheet,
                   ),
                   const Divider(color: Colors.white10),
                   ListTile(
-                    leading: const Icon(Icons.category_rounded, color: Color(0xFF6366F1)),
-                    title: const Text('Manage Transaction Categories', style: TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text('${_categories.length} active categories', style: const TextStyle(fontSize: 11)),
-                    trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.white54),
+                    leading: const Icon(Icons.category_rounded,
+                        color: Color(0xFF6366F1)),
+                    title: const Text('Manage Transaction Categories',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text('${_categories.length} active categories',
+                        style: const TextStyle(fontSize: 11)),
+                    trailing: const Icon(Icons.arrow_forward_ios_rounded,
+                        size: 16, color: Colors.white54),
                     onTap: _showManageCategoriesSheet,
                   ),
                   const Divider(color: Colors.white10),
                   ListTile(
-                    leading: const Icon(Icons.monetization_on_rounded, color: Color(0xFF6366F1)),
-                    title: const Text('Currency Symbol', style: TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: const Text('Display currency across the app', style: TextStyle(fontSize: 11)),
+                    leading: const Icon(Icons.monetization_on_rounded,
+                        color: Color(0xFF6366F1)),
+                    title: const Text('Currency Symbol',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: const Text('Display currency across the app',
+                        style: TextStyle(fontSize: 11)),
                     trailing: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: const Color(0xFF6366F1).withOpacity(0.12),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFF6366F1).withOpacity(0.25)),
+                        border: Border.all(
+                            color: const Color(0xFF6366F1).withOpacity(0.25)),
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
@@ -442,15 +493,22 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                           ),
                           icon: const Padding(
                             padding: EdgeInsets.only(left: 4),
-                            child: Icon(Icons.arrow_drop_down, color: Color(0xFF6366F1), size: 18),
+                            child: Icon(Icons.arrow_drop_down,
+                                color: Color(0xFF6366F1), size: 18),
                           ),
                           items: const [
-                            DropdownMenuItem(value: '₹', child: Text('INR (₹)')),
-                            DropdownMenuItem(value: '\$', child: Text('USD (\$)')),
-                            DropdownMenuItem(value: '€', child: Text('EUR (€)')),
-                            DropdownMenuItem(value: '£', child: Text('GBP (£)')),
-                            DropdownMenuItem(value: '¥', child: Text('JPY/CNY (¥)')),
-                            DropdownMenuItem(value: '₩', child: Text('KRW (₩)')),
+                            DropdownMenuItem(
+                                value: '₹', child: Text('INR (₹)')),
+                            DropdownMenuItem(
+                                value: '\$', child: Text('USD (\$)')),
+                            DropdownMenuItem(
+                                value: '€', child: Text('EUR (€)')),
+                            DropdownMenuItem(
+                                value: '£', child: Text('GBP (£)')),
+                            DropdownMenuItem(
+                                value: '¥', child: Text('JPY/CNY (¥)')),
+                            DropdownMenuItem(
+                                value: '₩', child: Text('KRW (₩)')),
                           ],
                           onChanged: (val) async {
                             if (val != null) {
@@ -464,11 +522,16 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                   ),
                   const Divider(color: Colors.white10),
                   SwitchListTile(
-                    title: const Text('Auto-Hide Balances on Entry', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                    subtitle: const Text('Masks Dashboard values when app opens', style: TextStyle(fontSize: 11)),
+                    title: const Text('Auto-Hide Balances on Entry',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 14)),
+                    subtitle: const Text(
+                        'Masks Dashboard values when app opens',
+                        style: TextStyle(fontSize: 11)),
                     value: AppSettings.autoHideEnabled,
                     activeColor: const Color(0xFF6366F1),
-                    secondary: const Icon(Icons.visibility_off_rounded, color: Color(0xFF6366F1)),
+                    secondary: const Icon(Icons.visibility_off_rounded,
+                        color: Color(0xFF6366F1)),
                     onChanged: (val) async {
                       await AppSettings.setAutoHideEnabled(val);
                       setState(() {});
@@ -476,19 +539,25 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                   ),
                   if (AppSettings.autoHideEnabled)
                     Container(
-                      margin: const EdgeInsets.only(left: 56, right: 16, bottom: 12),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                      margin: const EdgeInsets.only(
+                          left: 56, right: 16, bottom: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 6),
                       decoration: BoxDecoration(
                         color: Colors.black.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.white.withOpacity(0.02)),
+                        border:
+                            Border.all(color: Colors.white.withOpacity(0.02)),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text(
                             'Hide Duration',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white70),
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                                color: Colors.white70),
                           ),
                           Row(
                             mainAxisSize: MainAxisSize.min,
@@ -496,12 +565,15 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                               IconButton(
                                 icon: Icon(
                                   Icons.remove_circle_outline,
-                                  color: AppSettings.autoHideSeconds > 1 ? Colors.white60 : Colors.white24,
+                                  color: AppSettings.autoHideSeconds > 1
+                                      ? Colors.white60
+                                      : Colors.white24,
                                   size: 22,
                                 ),
                                 onPressed: AppSettings.autoHideSeconds > 1
                                     ? () async {
-                                        await AppSettings.setAutoHideSeconds(AppSettings.autoHideSeconds - 1);
+                                        await AppSettings.setAutoHideSeconds(
+                                            AppSettings.autoHideSeconds - 1);
                                         setState(() {});
                                       }
                                     : null,
@@ -511,9 +583,12 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                                 width: 56,
                                 alignment: Alignment.center,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF6366F1).withOpacity(0.12),
+                                  color:
+                                      const Color(0xFF6366F1).withOpacity(0.12),
                                   borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: const Color(0xFF6366F1).withOpacity(0.25)),
+                                  border: Border.all(
+                                      color: const Color(0xFF6366F1)
+                                          .withOpacity(0.25)),
                                 ),
                                 child: DropdownButtonHideUnderline(
                                   child: DropdownButton<int>(
@@ -522,25 +597,41 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                                     icon: const SizedBox.shrink(),
                                     alignment: Alignment.center,
                                     isDense: true,
-                                    padding: const EdgeInsets.symmetric(vertical: 8),
+                                    padding:
+                                        const EdgeInsets.symmetric(vertical: 8),
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       color: Color(0xFF6366F1),
                                       fontSize: 13,
                                     ),
                                     items: (() {
-                                      final presets = [1, 2, 3, 5, 10, 15, 30, 45, 60];
-                                      final currentVal = AppSettings.autoHideSeconds;
-                                      final itemsList = presets.contains(currentVal)
-                                          ? presets
-                                          : (List<int>.from(presets)..add(currentVal)..sort());
+                                      final presets = [
+                                        1,
+                                        2,
+                                        3,
+                                        5,
+                                        10,
+                                        15,
+                                        30,
+                                        45,
+                                        60
+                                      ];
+                                      final currentVal =
+                                          AppSettings.autoHideSeconds;
+                                      final itemsList =
+                                          presets.contains(currentVal)
+                                              ? presets
+                                              : (List<int>.from(presets)
+                                                ..add(currentVal)
+                                                ..sort());
                                       return itemsList.map((val) {
                                         return DropdownMenuItem<int>(
                                           value: val,
                                           child: Center(
                                             child: Text(
                                               '${val}s',
-                                              style: const TextStyle(fontWeight: FontWeight.bold),
+                                              style: const TextStyle(
+                                                  fontWeight: FontWeight.bold),
                                             ),
                                           ),
                                         );
@@ -548,7 +639,8 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                                     })(),
                                     onChanged: (val) async {
                                       if (val != null) {
-                                        await AppSettings.setAutoHideSeconds(val);
+                                        await AppSettings.setAutoHideSeconds(
+                                            val);
                                         setState(() {});
                                       }
                                     },
@@ -559,12 +651,15 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                               IconButton(
                                 icon: Icon(
                                   Icons.add_circle_outline,
-                                  color: AppSettings.autoHideSeconds < 60 ? Colors.white60 : Colors.white24,
+                                  color: AppSettings.autoHideSeconds < 60
+                                      ? Colors.white60
+                                      : Colors.white24,
                                   size: 22,
                                 ),
                                 onPressed: AppSettings.autoHideSeconds < 60
                                     ? () async {
-                                        await AppSettings.setAutoHideSeconds(AppSettings.autoHideSeconds + 1);
+                                        await AppSettings.setAutoHideSeconds(
+                                            AppSettings.autoHideSeconds + 1);
                                         setState(() {});
                                       }
                                     : null,
@@ -588,18 +683,26 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                 icon: Icons.sync_rounded,
                 children: [
                   ListTile(
-                    leading: const Icon(Icons.table_rows_rounded, color: Color(0xFF10B981)),
-                    title: const Text('Export Ledger to CSV', style: TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: const Text('Share transactions as Excel-compatible file', style: TextStyle(fontSize: 11)),
+                    leading: const Icon(Icons.table_rows_rounded,
+                        color: Color(0xFF10B981)),
+                    title: const Text('Export Ledger to CSV',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: const Text(
+                        'Share transactions as Excel-compatible file',
+                        style: TextStyle(fontSize: 11)),
                     onTap: () async {
                       await BackupService.exportToCSV();
                     },
                   ),
                   const Divider(color: Colors.white10),
                   ListTile(
-                    leading: const Icon(Icons.download, color: Color(0xFF6366F1)),
-                    title: const Text('Backup Data (JSON)', style: TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: const Text('Generate database backup file to share', style: TextStyle(fontSize: 11)),
+                    leading:
+                        const Icon(Icons.download, color: Color(0xFF6366F1)),
+                    title: const Text('Backup Data (JSON)',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: const Text(
+                        'Generate database backup file to share',
+                        style: TextStyle(fontSize: 11)),
                     onTap: () async {
                       await BackupService.exportBackupJSON();
                     },
@@ -607,8 +710,11 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                   const Divider(color: Colors.white10),
                   ListTile(
                     leading: const Icon(Icons.upload, color: Color(0xFFEA80FC)),
-                    title: const Text('Restore Data (JSON)', style: TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: const Text('Select JSON backup file to overwrite database', style: TextStyle(fontSize: 11)),
+                    title: const Text('Restore Data (JSON)',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: const Text(
+                        'Select JSON backup file to overwrite database',
+                        style: TextStyle(fontSize: 11)),
                     onTap: _importJSONBackup,
                   ),
                 ],
@@ -617,6 +723,11 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
 
               // 3. Advanced Settings (Bottom)
               _buildAdvancedSettingsCard(),
+
+              const SizedBox(height: 16),
+
+              // 4. Developer Options (Bottom)
+              _buildDeveloperOptionsCard(),
             ],
           ),
         ],
@@ -639,10 +750,14 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
           builder: (context, setSheetState) {
             IconData getIcon(String type) {
               switch (type) {
-                case 'bank': return Icons.account_balance;
-                case 'credit_card': return Icons.credit_card;
-                case 'wallet': return Icons.account_balance_wallet;
-                default: return Icons.money;
+                case 'bank':
+                  return Icons.account_balance;
+                case 'credit_card':
+                  return Icons.credit_card;
+                case 'wallet':
+                  return Icons.account_balance_wallet;
+                default:
+                  return Icons.money;
               }
             }
 
@@ -657,16 +772,21 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                     children: [
                       const Text(
                         'Manage Accounts',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                        style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white),
                       ),
                       Row(
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.add_circle, color: Color(0xFF10B981), size: 28),
+                            icon: const Icon(Icons.add_circle,
+                                color: Color(0xFF10B981), size: 28),
                             onPressed: () async {
                               await _openAccountFormDialog(null);
                               final dbService = DatabaseService.instance;
-                              final accountsList = await dbService.getAllAccounts();
+                              final accountsList =
+                                  await dbService.getAllAccounts();
                               setState(() {
                                 _accounts = accountsList;
                               });
@@ -674,7 +794,8 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                             },
                           ),
                           IconButton(
-                            icon: const Icon(Icons.close, color: Colors.white70),
+                            icon:
+                                const Icon(Icons.close, color: Colors.white70),
                             onPressed: () => Navigator.pop(context),
                           ),
                         ],
@@ -700,40 +821,60 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                                 decoration: BoxDecoration(
                                   color: const Color(0xFF1E293B),
                                   borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(color: Colors.white.withOpacity(0.03)),
+                                  border: Border.all(
+                                      color: Colors.white.withOpacity(0.03)),
                                 ),
                                 child: Row(
                                   children: [
                                     Container(
                                       padding: const EdgeInsets.all(10),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFF6366F1).withOpacity(0.1),
+                                        color: const Color(0xFF6366F1)
+                                            .withOpacity(0.1),
                                         shape: BoxShape.circle,
                                       ),
-                                      child: Icon(getIcon(acc.type), color: const Color(0xFF6366F1), size: 20),
+                                      child: Icon(getIcon(acc.type),
+                                          color: const Color(0xFF6366F1),
+                                          size: 20),
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
-                                          Text(acc.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                                          Text(acc.name,
+                                              style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 14)),
                                           const SizedBox(height: 6),
                                           Wrap(
                                             spacing: 4,
                                             runSpacing: 4,
-                                            children: acc.keywords.split(',').map((kw) {
+                                            children: acc.keywords
+                                                .split(',')
+                                                .map((kw) {
                                               final clean = kw.trim();
-                                              if (clean.isEmpty) return const SizedBox.shrink();
+                                              if (clean.isEmpty)
+                                                return const SizedBox.shrink();
                                               return Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 6,
+                                                        vertical: 2),
                                                 decoration: BoxDecoration(
-                                                  color: Colors.white.withOpacity(0.05),
-                                                  borderRadius: BorderRadius.circular(6),
+                                                  color: Colors.white
+                                                      .withOpacity(0.05),
+                                                  borderRadius:
+                                                      BorderRadius.circular(6),
                                                 ),
                                                 child: Text(
                                                   clean,
-                                                  style: const TextStyle(fontSize: 8, color: Colors.white60, fontWeight: FontWeight.w500),
+                                                  style: const TextStyle(
+                                                      fontSize: 8,
+                                                      color: Colors.white60,
+                                                      fontWeight:
+                                                          FontWeight.w500),
                                                 ),
                                               );
                                             }).toList(),
@@ -742,11 +883,14 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                                       ),
                                     ),
                                     IconButton(
-                                      icon: const Icon(Icons.edit, size: 18, color: Colors.white60),
+                                      icon: const Icon(Icons.edit,
+                                          size: 18, color: Colors.white60),
                                       onPressed: () async {
                                         await _openAccountFormDialog(acc);
-                                        final dbService = DatabaseService.instance;
-                                        final accountsList = await dbService.getAllAccounts();
+                                        final dbService =
+                                            DatabaseService.instance;
+                                        final accountsList =
+                                            await dbService.getAllAccounts();
                                         setState(() {
                                           _accounts = accountsList;
                                         });
@@ -754,13 +898,19 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                                       },
                                     ),
                                     IconButton(
-                                      icon: const Icon(Icons.delete, size: 18, color: Color(0xFFEF4444)),
+                                      icon: const Icon(Icons.delete,
+                                          size: 18, color: Color(0xFFEF4444)),
                                       onPressed: () async {
-                                        final confirm = await _showConfirmDeleteDialog(acc.name);
+                                        final confirm =
+                                            await _showConfirmDeleteDialog(
+                                                acc.name);
                                         if (confirm == true) {
-                                          await DatabaseService.instance.deleteAccount(acc.id!);
-                                          final dbService = DatabaseService.instance;
-                                          final accountsList = await dbService.getAllAccounts();
+                                          await DatabaseService.instance
+                                              .deleteAccount(acc.id!);
+                                          final dbService =
+                                              DatabaseService.instance;
+                                          final accountsList =
+                                              await dbService.getAllAccounts();
                                           setState(() {
                                             _accounts = accountsList;
                                           });
@@ -806,16 +956,21 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                     children: [
                       const Text(
                         'Manage Categories',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                        style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white),
                       ),
                       Row(
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.add_circle, color: Color(0xFF10B981), size: 28),
+                            icon: const Icon(Icons.add_circle,
+                                color: Color(0xFF10B981), size: 28),
                             onPressed: () async {
                               await _openCategoryFormDialog(null);
                               final dbService = DatabaseService.instance;
-                              final categoriesList = await dbService.getAllCategories();
+                              final categoriesList =
+                                  await dbService.getAllCategories();
                               setState(() {
                                 _categories = categoriesList;
                               });
@@ -823,7 +978,8 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                             },
                           ),
                           IconButton(
-                            icon: const Icon(Icons.close, color: Colors.white70),
+                            icon:
+                                const Icon(Icons.close, color: Colors.white70),
                             onPressed: () => Navigator.pop(context),
                           ),
                         ],
@@ -849,31 +1005,39 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                                 decoration: BoxDecoration(
                                   color: const Color(0xFF1E293B),
                                   borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(color: Colors.white.withOpacity(0.03)),
+                                  border: Border.all(
+                                      color: Colors.white.withOpacity(0.03)),
                                 ),
                                 child: Row(
                                   children: [
                                     Container(
                                       padding: const EdgeInsets.all(10),
                                       decoration: BoxDecoration(
-                                        color: Color(cat.color).withOpacity(0.15),
+                                        color:
+                                            Color(cat.color).withOpacity(0.15),
                                         shape: BoxShape.circle,
                                       ),
-                                      child: Icon(IconHelper.getIcon(cat.icon), color: Color(cat.color), size: 20),
+                                      child: Icon(IconHelper.getIcon(cat.icon),
+                                          color: Color(cat.color), size: 20),
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Text(
                                         cat.name,
-                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14),
                                       ),
                                     ),
                                     IconButton(
-                                      icon: const Icon(Icons.edit, size: 18, color: Colors.white60),
+                                      icon: const Icon(Icons.edit,
+                                          size: 18, color: Colors.white60),
                                       onPressed: () async {
                                         await _openCategoryFormDialog(cat);
-                                        final dbService = DatabaseService.instance;
-                                        final categoriesList = await dbService.getAllCategories();
+                                        final dbService =
+                                            DatabaseService.instance;
+                                        final categoriesList =
+                                            await dbService.getAllCategories();
                                         setState(() {
                                           _categories = categoriesList;
                                         });
@@ -882,13 +1046,20 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                                     ),
                                     if (cat.name != 'Others')
                                       IconButton(
-                                        icon: const Icon(Icons.delete, size: 18, color: Color(0xFFEF4444)),
+                                        icon: const Icon(Icons.delete,
+                                            size: 18, color: Color(0xFFEF4444)),
                                         onPressed: () async {
-                                          final confirm = await _showConfirmDeleteDialog(cat.name);
+                                          final confirm =
+                                              await _showConfirmDeleteDialog(
+                                                  cat.name);
                                           if (confirm == true) {
-                                            await DatabaseService.instance.deleteCategory(cat.id!);
-                                            final dbService = DatabaseService.instance;
-                                            final categoriesList = await dbService.getAllCategories();
+                                            await DatabaseService.instance
+                                                .deleteCategory(cat.id!);
+                                            final dbService =
+                                                DatabaseService.instance;
+                                            final categoriesList =
+                                                await dbService
+                                                    .getAllCategories();
                                             setState(() {
                                               _categories = categoriesList;
                                             });
@@ -941,7 +1112,8 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
         Card(
           color: const Color(0xFF1E293B),
           margin: EdgeInsets.zero,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Column(children: children),
@@ -951,225 +1123,340 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
     );
   }
 
-  Widget _buildSmartTrackingCard() {
-  return _buildSettingsGroup(
-    title: 'Smart Tracking',
-    icon: Icons.notifications_active_rounded,
-    children: [
-      // Smart Tracking Toggle
-      SwitchListTile(
-        title: const Text('Smart Tracking', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-        subtitle: const Text('Read incoming transaction notifications in background', style: TextStyle(fontSize: 11)),
-        activeColor: const Color(0xFF6366F1),
-        value: _isServiceEnabled,
-        onChanged: _toggleService,
-        secondary: const Icon(Icons.receipt_long_rounded, color: Color(0xFF6366F1)),
-      ),
-
-      if (_isServiceEnabled) ...[
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1E293B),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFF334155)),
+  // Reusable reliability recommendation block
+  Widget _buildReliabilityAction({
+    required IconData icon,
+    required String title,
+    required String description,
+    required String buttonText,
+    required VoidCallback onTap,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, color: const Color(0xFF6366F1), size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: Colors.white,
+                ),
+              ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          description,
+          style: const TextStyle(
+            color: Colors.white54,
+            fontSize: 12,
+            height: 1.4,
+          ),
+        ),
+        const SizedBox(height: 12),
+        InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFF6366F1).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: const Color(0xFF6366F1).withOpacity(0.3),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                const Row(
-                  children: [
-                    Icon(Icons.battery_saver_rounded, color: Color(0xFF6366F1), size: 16),
-                    SizedBox(width: 8),
-                    Text(
-                      'Reliability Recommendation',
-                      style: TextStyle(color: Color(0xFFE2E8F0), fontSize: 12, fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'To prevent Android from putting the background listener to sleep, please set this app to "Unrestricted" in battery settings. This will NOT drain your battery because the app only wakes up for 5-10ms when a notification is received.',
-                  style: TextStyle(color: Colors.white54, fontSize: 11, height: 1.4),
-                ),
-                const SizedBox(height: 10),
-                InkWell(
-                  onTap: () {
-                    NotificationHandler.requestBatteryExemption();
-                  },
-                  borderRadius: BorderRadius.circular(8),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF6366F1).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.3)),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.bolt_rounded, size: 12, color: Color(0xFF818CF8)),
-                        SizedBox(width: 6),
-                        Text(
-                          'Enable Unrestricted Run',
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF818CF8)),
-                        ),
-                      ],
-                    ),
+                const Icon(Icons.settings_rounded,
+                    size: 16, color: Color(0xFF818CF8)),
+                const SizedBox(width: 8),
+                Text(
+                  buttonText,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF818CF8),
                   ),
                 ),
               ],
             ),
           ),
         ),
-        const Divider(color: Colors.white10),
-      ] else
-        const Divider(color: Colors.white10),
+      ],
+    );
+  }
 
-      // Auto-Delete Archived Alerts
-      Opacity(
-        opacity: _isServiceEnabled ? 1.0 : 0.4,
-        child: AbsorbPointer(
-          absorbing: !_isServiceEnabled,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SwitchListTile(
-                title: const Text('Auto-Delete Archived Alerts', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                subtitle: Text(
-                  _isServiceEnabled ? 'Automatically purge old ignored notification logs' : 'Requires Smart Tracking to be enabled',
-                  style: const TextStyle(fontSize: 11),
-                ),
-                value: AppSettings.autoDeleteArchive,
-                activeColor: const Color(0xFF6366F1),
-                secondary: const Icon(Icons.auto_delete_rounded, color: Color(0xFF6366F1)),
-                onChanged: (val) async {
-                  if (!val) {
-                    final confirmed = await showDialog<bool>(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        backgroundColor: const Color(0xFF1E293B),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                        icon: const Icon(Icons.auto_delete_rounded, color: Color(0xFFF59E0B), size: 36),
-                        title: const Text('Disable Auto-Delete?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
-                        content: const Text(
-                          'Archived alerts will no longer be automatically cleaned up. '
-                          'Over time, this may increase storage usage as old notification logs accumulate.\n\n'
-                          'You can still manually delete alerts from the Archived Alerts screen.',
-                          style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.5),
+  Widget _buildSmartTrackingCard() {
+    return _buildSettingsGroup(
+      title: 'Smart Tracking',
+      icon: Icons.notifications_active_rounded,
+      children: [
+        // Smart Tracking Toggle
+        SwitchListTile(
+          title: const Text('Smart Tracking',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          subtitle: const Text(
+              'Read incoming transaction notifications in background',
+              style: TextStyle(fontSize: 11)),
+          activeColor: const Color(0xFF6366F1),
+          value: _isServiceEnabled,
+          onChanged: _toggleService,
+          secondary:
+              const Icon(Icons.receipt_long_rounded, color: Color(0xFF6366F1)),
+        ),
+
+        // Reliability Recommendations - always shown when toggle is present
+        if (_isServiceEnabled) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E293B),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFF334155)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.shield_rounded,
+                          color: Color(0xFF6366F1), size: 20),
+                      SizedBox(width: 8),
+                      Text(
+                        'Reliability Recommendations',
+                        style: TextStyle(
+                            color: Color(0xFFE2E8F0),
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Configure the options below to maximize Smart Tracking reliability, especially on devices with aggressive background management.',
+                    style: TextStyle(
+                        color: Colors.white54, fontSize: 12, height: 1.4),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildReliabilityAction(
+                    icon: Icons.rocket_launch_rounded,
+                    title: 'Enable Auto Start (Highly Recommended)',
+                    description:
+                        'Allows Android to automatically start Smart Finance Tracker after reboot and when notifications arrive. This improves notification capture reliability on many devices with aggressive battery management.',
+                    buttonText: 'Enable Auto Start',
+                    onTap: () => NotificationHandler.openAutoStartSettings(),
+                  ),
+                  const Divider(color: Colors.white10, height: 24),
+                  _buildReliabilityAction(
+                    icon: Icons.battery_saver_rounded,
+                    title: 'Enable Unrestricted Run',
+                    description:
+                        'Prevent Android from putting Smart Finance Tracker\'s notification listener to sleep. The app only wakes for a few milliseconds when a notification arrives, so battery impact is minimal.',
+                    buttonText: 'Enable Unrestricted Run',
+                    onTap: () => NotificationHandler.requestBatteryExemption(),
+                  ),
+                  const Divider(color: Colors.white10, height: 24),
+                  _buildReliabilityAction(
+                    icon: Icons.notifications_active_rounded,
+                    title: 'Keep Notification Access Enabled',
+                    description:
+                        'Smart Tracking requires notification access to capture incoming transaction alerts. If notification access is disabled, automatic transaction detection will stop working.',
+                    buttonText: 'Open Notification Access',
+                    onTap: () => NotificationHandler.openPermissionSettings(),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const Divider(color: Colors.white10),
+        ] else
+          const Divider(color: Colors.white10),
+
+        // Auto-Delete Archived Alerts
+        Opacity(
+          opacity: _isServiceEnabled ? 1.0 : 0.4,
+          child: AbsorbPointer(
+            absorbing: !_isServiceEnabled,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SwitchListTile(
+                  title: const Text('Auto-Delete Archived Alerts',
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  subtitle: Text(
+                    _isServiceEnabled
+                        ? 'Automatically purge old ignored notification logs'
+                        : 'Requires Smart Tracking to be enabled',
+                    style: const TextStyle(fontSize: 11),
+                  ),
+                  value: AppSettings.autoDeleteArchive,
+                  activeColor: const Color(0xFF6366F1),
+                  secondary: const Icon(Icons.auto_delete_rounded,
+                      color: Color(0xFF6366F1)),
+                  onChanged: (val) async {
+                    if (!val) {
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          backgroundColor: const Color(0xFF1E293B),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20)),
+                          icon: const Icon(Icons.auto_delete_rounded,
+                              color: Color(0xFFF59E0B), size: 36),
+                          title: const Text('Disable Auto-Delete?',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 17)),
+                          content: const Text(
+                            'Archived alerts will no longer be automatically cleaned up. '
+                            'Over time, this may increase storage usage as old notification logs accumulate.\n\n'
+                            'You can still manually delete alerts from the Archived Alerts screen.',
+                            style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 13,
+                                height: 1.5),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: const Text('Keep Enabled',
+                                  style: TextStyle(
+                                      color: Colors.white54,
+                                      fontWeight: FontWeight.bold)),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              child: const Text('Disable',
+                                  style: TextStyle(
+                                      color: Color(0xFFEF4444),
+                                      fontWeight: FontWeight.bold)),
+                            ),
+                          ],
                         ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, false),
-                            child: const Text('Keep Enabled', style: TextStyle(color: Colors.white54, fontWeight: FontWeight.bold)),
+                      );
+                      if (confirmed != true) return;
+                    }
+                    await AppSettings.setAutoDeleteArchive(val);
+                    if (val) {
+                      await AppSettings.setAutoDeleteValue(1);
+                      await AppSettings.setAutoDeleteUnit('months');
+                    }
+                    setState(() {});
+                  },
+                ),
+                if (_isServiceEnabled && AppSettings.autoDeleteArchive)
+                  Container(
+                    margin: const EdgeInsets.fromLTRB(56, 0, 16, 12),
+                    child: ListTile(
+                      dense: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 4),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      tileColor: Colors.black.withOpacity(0.15),
+                      title: const Text('Delete older than',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white70,
+                              fontSize: 13)),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF6366F1).withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                  color: const Color(0xFF6366F1)
+                                      .withOpacity(0.25)),
+                            ),
+                            child: Text(
+                              '${AppSettings.autoDeleteValue} ${AppSettings.autoDeleteUnit}',
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF818CF8),
+                                  fontSize: 13),
+                            ),
                           ),
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, true),
-                            child: const Text('Disable', style: TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.bold)),
-                          ),
+                          const SizedBox(width: 8),
+                          const Icon(Icons.arrow_forward_ios_rounded,
+                              size: 12, color: Colors.white30),
                         ],
                       ),
-                    );
-                    if (confirmed != true) return;
-                  }
-                  await AppSettings.setAutoDeleteArchive(val);
-                  if (val) {
-                    await AppSettings.setAutoDeleteValue(1);
-                    await AppSettings.setAutoDeleteUnit('months');
-                  }
-                  setState(() {});
-                },
-              ),
-              if (_isServiceEnabled && AppSettings.autoDeleteArchive)
-                Container(
-                  margin: const EdgeInsets.fromLTRB(56, 0, 16, 12),
-                  child: ListTile(
-                    dense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    tileColor: Colors.black.withOpacity(0.15),
-                    title: const Text('Delete older than', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white70, fontSize: 13)),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF6366F1).withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: const Color(0xFF6366F1).withOpacity(0.25)),
-                          ),
-                          child: Text(
-                            '${AppSettings.autoDeleteValue} ${AppSettings.autoDeleteUnit}',
-                            style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF818CF8), fontSize: 13),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        const Icon(Icons.arrow_forward_ios_rounded, size: 12, color: Colors.white30),
-                      ],
+                      onTap: _showDurationPickerSheet,
                     ),
-                    onTap: _showDurationPickerSheet,
                   ),
-                ),
-            ],
-          ),
-        ),
-      ),
-
-      const Divider(color: Colors.white10),
-
-      // View Archived Alerts
-      Opacity(
-        opacity: _isServiceEnabled ? 1.0 : 0.4,
-        child: AbsorbPointer(
-          absorbing: !_isServiceEnabled,
-          child: ListTile(
-            leading: const Icon(Icons.archive_rounded, color: Color(0xFF6366F1)),
-            title: const Text('View Archived Alerts', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-            subtitle: Text(
-              _isServiceEnabled ? 'View and restore ignored notifications' : 'Requires Smart Tracking to be enabled',
-              style: const TextStyle(fontSize: 11),
+              ],
             ),
-            trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.white54),
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const ArchivedAlertsScreen()));
-            },
           ),
         ),
-      ),
 
-      const Divider(color: Colors.white10),
+        const Divider(color: Colors.white10),
 
-       // Model Automation Audit Log
-        ListTile(
-          leading: const Icon(Icons.auto_awesome_rounded, color: Color(0xFF818CF8)),
-          title: const Text('Model Automation Audit Log', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-          subtitle: const Text('View AI triage history and 1-tap undo automated actions', style: TextStyle(fontSize: 11)),
-          trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.white54),
-          onTap: () => _showModelAuditLogSheet(context),
+        // View Archived Alerts
+        Opacity(
+          opacity: _isServiceEnabled ? 1.0 : 0.4,
+          child: AbsorbPointer(
+            absorbing: !_isServiceEnabled,
+            child: ListTile(
+              leading:
+                  const Icon(Icons.archive_rounded, color: Color(0xFF6366F1)),
+              title: const Text('View Archived Alerts',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              subtitle: Text(
+                _isServiceEnabled
+                    ? 'View and restore ignored notifications'
+                    : 'Requires Smart Tracking to be enabled',
+                style: const TextStyle(fontSize: 11),
+              ),
+              trailing: const Icon(Icons.arrow_forward_ios_rounded,
+                  size: 16, color: Colors.white54),
+              onTap: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const ArchivedAlertsScreen()));
+              },
+            ),
+          ),
         ),
-    ],
-  );
-}
+      ],
+    );
+  }
 
   Widget _buildAdvancedSettingsCard() {
     return _buildSettingsGroup(
       title: 'Advanced Settings',
       icon: Icons.construction_rounded,
       children: [
-
         // Train Your Model
         ListTile(
-          leading: const Icon(Icons.psychology_rounded, color: Color(0xFF818CF8)),
-          title: const Text('Train Your Model', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-          subtitle: const Text('Manually teach the AI using sample notifications', style: TextStyle(fontSize: 11)),
-          trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.white54),
+          leading:
+              const Icon(Icons.psychology_rounded, color: Color(0xFF818CF8)),
+          title: const Text('Train Your Model',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          subtitle: const Text(
+              'Manually teach the AI using sample notifications',
+              style: TextStyle(fontSize: 11)),
+          trailing: const Icon(Icons.arrow_forward_ios_rounded,
+              size: 16, color: Colors.white54),
           onTap: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const ModelTrainingScreen()),
+              MaterialPageRoute(
+                  builder: (context) => const ModelTrainingScreen()),
             );
           },
         ),
@@ -1179,14 +1466,18 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
         // SnackBar Display Duration
         ListTile(
           leading: const Icon(Icons.timer_rounded, color: Color(0xFF6366F1)),
-          title: const Text('SnackBar Display Duration', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-          subtitle: Text('${(AppSettings.snackBarDurationMs / 1000).toStringAsFixed(1)} seconds', style: const TextStyle(fontSize: 11)),
+          title: const Text('SnackBar Display Duration',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          subtitle: Text(
+              '${(AppSettings.snackBarDurationMs / 1000).toStringAsFixed(1)} seconds',
+              style: const TextStyle(fontSize: 11)),
           trailing: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               color: const Color(0xFF6366F1).withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.25)),
+              border: Border.all(
+                  color: const Color(0xFF6366F1).withValues(alpha: 0.25)),
             ),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<int>(
@@ -1200,7 +1491,8 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                 ),
                 icon: const Padding(
                   padding: EdgeInsets.only(left: 4),
-                  child: Icon(Icons.arrow_drop_down, color: Color(0xFF6366F1), size: 18),
+                  child: Icon(Icons.arrow_drop_down,
+                      color: Color(0xFF6366F1), size: 18),
                 ),
                 items: const [
                   DropdownMenuItem(value: 1000, child: Text('1.0s')),
@@ -1218,6 +1510,31 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
               ),
             ),
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDeveloperOptionsCard() {
+    return _buildSettingsGroup(
+      title: 'Developer Options',
+      icon: Icons.bug_report_rounded,
+      children: [
+        ListTile(
+          leading: const Icon(Icons.terminal_rounded, color: Color(0xFF818CF8)),
+          title: const Text('Log Inspector',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          subtitle: const Text('View live app logs in real time',
+              style: TextStyle(fontSize: 11)),
+          trailing: const Icon(Icons.arrow_forward_ios_rounded,
+              size: 16, color: Colors.white54),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => const LogInspectorScreen()),
+            );
+          },
         ),
       ],
     );
@@ -1254,11 +1571,15 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                 const SizedBox(height: 16),
                 const Row(
                   children: [
-                    Icon(Icons.auto_awesome, color: Color(0xFF818CF8), size: 22),
+                    Icon(Icons.auto_awesome,
+                        color: Color(0xFF818CF8), size: 22),
                     SizedBox(width: 10),
                     Text(
                       'Model Automation Audit Log',
-                      style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -1273,12 +1594,17 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                     future: DatabaseService.instance.getModelAuditLogs(),
                     builder: (context, snapshot) {
                       if (!snapshot.hasData) {
-                        return const Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(Color(0xFF6366F1))));
+                        return const Center(
+                            child: CircularProgressIndicator(
+                                valueColor:
+                                    AlwaysStoppedAnimation(Color(0xFF6366F1))));
                       }
                       final logs = snapshot.data!;
                       if (logs.isEmpty) {
                         return const Center(
-                          child: Text('No automated actions logged yet today.', style: TextStyle(color: Colors.white38, fontSize: 13)),
+                          child: Text('No automated actions logged yet today.',
+                              style: TextStyle(
+                                  color: Colors.white38, fontSize: 13)),
                         );
                       }
                       return ListView.builder(
@@ -1289,7 +1615,8 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                           final appName = log['app_name'] as String? ?? 'App';
                           final title = log['title'] as String? ?? '';
                           final body = log['body'] as String? ?? '';
-                          final confidence = (log['confidence'] as num? ?? 0.85).toDouble();
+                          final confidence =
+                              (log['confidence'] as num? ?? 0.85).toDouble();
                           final isDrafted = action == 'auto_drafted';
 
                           return Container(
@@ -1299,7 +1626,11 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                               color: const Color(0xFF1E293B),
                               borderRadius: BorderRadius.circular(14),
                               border: Border.all(
-                                color: isDrafted ? const Color(0xFF10B981).withValues(alpha: 0.3) : const Color(0xFF6366F1).withValues(alpha: 0.3),
+                                color: isDrafted
+                                    ? const Color(0xFF10B981)
+                                        .withValues(alpha: 0.3)
+                                    : const Color(0xFF6366F1)
+                                        .withValues(alpha: 0.3),
                               ),
                             ),
                             child: Column(
@@ -1308,26 +1639,40 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                                 Row(
                                   children: [
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 3),
                                       decoration: BoxDecoration(
-                                        color: isDrafted ? const Color(0xFF10B981).withValues(alpha: 0.15) : const Color(0xFF6366F1).withValues(alpha: 0.15),
+                                        color: isDrafted
+                                            ? const Color(0xFF10B981)
+                                                .withValues(alpha: 0.15)
+                                            : const Color(0xFF6366F1)
+                                                .withValues(alpha: 0.15),
                                         borderRadius: BorderRadius.circular(6),
                                       ),
                                       child: Text(
-                                        isDrafted ? 'AUTO-DRAFTED' : 'AUTO-ARCHIVED',
+                                        isDrafted
+                                            ? 'AUTO-DRAFTED'
+                                            : 'AUTO-ARCHIVED',
                                         style: TextStyle(
-                                          color: isDrafted ? const Color(0xFF34D399) : const Color(0xFF818CF8),
+                                          color: isDrafted
+                                              ? const Color(0xFF34D399)
+                                              : const Color(0xFF818CF8),
                                           fontSize: 10,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
                                     ),
                                     const SizedBox(width: 8),
-                                    Text(appName, style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600)),
+                                    Text(appName,
+                                        style: const TextStyle(
+                                            color: Colors.white70,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600)),
                                     const Spacer(),
                                     Text(
                                       '${(confidence * 100).toInt()}% Conf.',
-                                      style: const TextStyle(color: Colors.white38, fontSize: 11),
+                                      style: const TextStyle(
+                                          color: Colors.white38, fontSize: 11),
                                     ),
                                   ],
                                 ),
@@ -1336,7 +1681,8 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                                   title.isNotEmpty ? '$title: $body' : body,
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(color: Colors.white, fontSize: 13),
+                                  style: const TextStyle(
+                                      color: Colors.white, fontSize: 13),
                                 ),
                                 const SizedBox(height: 10),
                                 Align(
@@ -1348,20 +1694,30 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                                     },
                                     borderRadius: BorderRadius.circular(8),
                                     child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: Colors.white.withValues(alpha: 0.06),
+                                        color: Colors.white
+                                            .withValues(alpha: 0.06),
                                         borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(color: Colors.white12),
+                                        border:
+                                            Border.all(color: Colors.white12),
                                       ),
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          const Icon(Icons.undo_rounded, size: 14, color: Color(0xFF818CF8)),
+                                          const Icon(Icons.undo_rounded,
+                                              size: 14,
+                                              color: Color(0xFF818CF8)),
                                           const SizedBox(width: 4),
                                           Text(
-                                            isDrafted ? 'Undo Auto-Draft' : 'Undo Auto-Archive',
-                                            style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600),
+                                            isDrafted
+                                                ? 'Undo Auto-Draft'
+                                                : 'Undo Auto-Archive',
+                                            style: const TextStyle(
+                                                color: Colors.white70,
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w600),
                                           ),
                                         ],
                                       ),
@@ -1397,7 +1753,8 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
         await dbService.updateNotificationLogStatus(logId, 'unclassified');
       }
       if (mounted) {
-        AppSnackBar.show(context, 'Restored to Captured Alerts!', type: SnackBarType.success);
+        AppSnackBar.show(context, 'Restored to Captured Alerts!',
+            type: SnackBarType.success);
       }
     } else if (actionType == 'auto_drafted') {
       if (logId != null) {
@@ -1408,7 +1765,9 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
         await PerceptronStorageService.instance.saveWeights();
       }
       if (mounted) {
-        AppSnackBar.show(context, 'Moved back to Captured Alerts. AI learned to ignore similar alerts.', type: SnackBarType.neutral);
+        AppSnackBar.show(context,
+            'Moved back to Captured Alerts. AI learned to ignore similar alerts.',
+            type: SnackBarType.neutral);
       }
     }
 
@@ -1432,11 +1791,13 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
+            child:
+                const Text('Cancel', style: TextStyle(color: Colors.white70)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete', style: TextStyle(color: Color(0xFFEF4444))),
+            child: const Text('Delete',
+                style: TextStyle(color: Color(0xFFEF4444))),
           ),
         ],
       ),
@@ -1445,15 +1806,22 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
 
   Future<void> _openAccountFormDialog(AccountModel? editAcc) async {
     final isEdit = editAcc != null;
-    final nameController = TextEditingController(text: isEdit ? editAcc.name : '');
-    final kwController = TextEditingController(text: isEdit ? editAcc.keywords : '');
-    final balController = TextEditingController(text: isEdit ? editAcc.balance.toString() : '0.0');
+    final nameController =
+        TextEditingController(text: isEdit ? editAcc.name : '');
+    final kwController =
+        TextEditingController(text: isEdit ? editAcc.keywords : '');
+    final balController = TextEditingController(
+        text: isEdit ? editAcc.balance.toString() : '0.0');
     String type = isEdit ? editAcc.type : 'bank';
 
     final types = [
       {'value': 'bank', 'label': 'Bank', 'icon': Icons.account_balance},
       {'value': 'credit_card', 'label': 'Card', 'icon': Icons.credit_card},
-      {'value': 'wallet', 'label': 'Wallet', 'icon': Icons.account_balance_wallet},
+      {
+        'value': 'wallet',
+        'label': 'Wallet',
+        'icon': Icons.account_balance_wallet
+      },
       {'value': 'cash', 'label': 'Cash', 'icon': Icons.money},
     ];
 
@@ -1492,11 +1860,13 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                     const SizedBox(height: 16),
                     Text(
                       isEdit ? 'Edit Account' : 'Add Account',
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                          fontSize: 20, fontWeight: FontWeight.bold),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 20),
-                    const Text('Account Type', style: TextStyle(fontSize: 12, color: Colors.white54)),
+                    const Text('Account Type',
+                        style: TextStyle(fontSize: 12, color: Colors.white54)),
                     const SizedBox(height: 8),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1504,28 +1874,40 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                         final isSel = type == t['value'];
                         return Expanded(
                           child: GestureDetector(
-                            onTap: () => setDialogState(() => type = t['value'] as String),
+                            onTap: () => setDialogState(
+                                () => type = t['value'] as String),
                             child: Container(
                               margin: const EdgeInsets.symmetric(horizontal: 4),
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               decoration: BoxDecoration(
-                                color: isSel ? const Color(0xFF6366F1).withOpacity(0.15) : const Color(0xFF0F172A),
+                                color: isSel
+                                    ? const Color(0xFF6366F1).withOpacity(0.15)
+                                    : const Color(0xFF0F172A),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: isSel ? const Color(0xFF6366F1) : Colors.white.withOpacity(0.05),
+                                  color: isSel
+                                      ? const Color(0xFF6366F1)
+                                      : Colors.white.withOpacity(0.05),
                                   width: 1.5,
                                 ),
                               ),
                               child: Column(
                                 children: [
-                                  Icon(t['icon'] as IconData, color: isSel ? const Color(0xFF6366F1) : Colors.white38, size: 20),
+                                  Icon(t['icon'] as IconData,
+                                      color: isSel
+                                          ? const Color(0xFF6366F1)
+                                          : Colors.white38,
+                                      size: 20),
                                   const SizedBox(height: 4),
                                   Text(
                                     t['label'] as String,
                                     style: TextStyle(
                                       fontSize: 10,
-                                      fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
-                                      color: isSel ? Colors.white : Colors.white54,
+                                      fontWeight: isSel
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
+                                      color:
+                                          isSel ? Colors.white : Colors.white54,
                                     ),
                                   ),
                                 ],
@@ -1551,18 +1933,22 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                         labelText: 'Matching Keywords (comma separated)',
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.vpn_key_outlined),
-                        helperText: 'E.g. "5678, SBI" (used to auto-predict this account)',
+                        helperText:
+                            'E.g. "5678, SBI" (used to auto-predict this account)',
                       ),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: balController,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
                       decoration: InputDecoration(
-                        labelText: 'Starting Balance (${AppSettings.currencySymbol})',
+                        labelText:
+                            'Starting Balance (${AppSettings.currencySymbol})',
                         border: const OutlineInputBorder(),
                         prefixText: '${AppSettings.currencySymbol} ',
-                        prefixStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        prefixStyle: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 16),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -1572,10 +1958,12 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                           child: OutlinedButton(
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
                             ),
                             onPressed: () => Navigator.pop(context),
-                            child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
+                            child: const Text('Cancel',
+                                style: TextStyle(color: Colors.white70)),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -1585,12 +1973,14 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                               backgroundColor: const Color(0xFF6366F1),
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
                             ),
                             onPressed: () async {
                               final name = nameController.text.trim();
                               final kw = kwController.text.trim();
-                              final bal = double.tryParse(balController.text) ?? 0.0;
+                              final bal =
+                                  double.tryParse(balController.text) ?? 0.0;
                               if (name.isEmpty) return;
 
                               final acc = AccountModel(
@@ -1602,15 +1992,19 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                               );
 
                               if (isEdit) {
-                                await DatabaseService.instance.updateAccount(acc);
+                                await DatabaseService.instance
+                                    .updateAccount(acc);
                               } else {
-                                await DatabaseService.instance.insertAccount(acc);
+                                await DatabaseService.instance
+                                    .insertAccount(acc);
                               }
 
                               Navigator.pop(context);
                               _loadSettingsData();
                             },
-                            child: Text(isEdit ? 'Save' : 'Add', style: const TextStyle(fontWeight: FontWeight.bold)),
+                            child: Text(isEdit ? 'Save' : 'Add',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold)),
                           ),
                         ),
                       ],
@@ -1628,7 +2022,8 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
 
   Future<void> _openCategoryFormDialog(CategoryModel? editCat) async {
     final isEdit = editCat != null;
-    final nameController = TextEditingController(text: isEdit ? editCat.name : '');
+    final nameController =
+        TextEditingController(text: isEdit ? editCat.name : '');
     final nameFocusNode = FocusNode();
     int colorValue = isEdit ? editCat.color : 0xFF6366F1;
     String icon = isEdit ? editCat.icon : 'more_horiz';
@@ -1666,222 +2061,256 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
               onTap: () => FocusScope.of(context).unfocus(),
               behavior: HitTestBehavior.opaque,
               child: Padding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom,
-                left: 20,
-                right: 20,
-                top: 20,
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: Colors.white24,
-                          borderRadius: BorderRadius.circular(2),
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).viewInsets.bottom,
+                  left: 20,
+                  right: 20,
+                  top: 20,
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: Colors.white24,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      isEdit ? 'Edit Category' : 'Add Category',
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 20),
-                    TextField(
-                      controller: nameController,
-                      focusNode: nameFocusNode,
-                      decoration: const InputDecoration(
-                        labelText: 'Category Name',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.category_outlined),
+                      const SizedBox(height: 16),
+                      Text(
+                        isEdit ? 'Edit Category' : 'Add Category',
+                        style: const TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.bold),
+                        textAlign: TextAlign.center,
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text('Theme Color', style: TextStyle(fontSize: 12, color: Colors.white54)),
-                    const SizedBox(height: 8),
-                    Center(
-                      child: Wrap(
-                        spacing: 12,
-                        runSpacing: 8,
-                        children: [
-                          ...colors.map((colVal) {
-                            final isSel = colorValue == colVal;
-                            return GestureDetector(
+                      const SizedBox(height: 20),
+                      TextField(
+                        controller: nameController,
+                        focusNode: nameFocusNode,
+                        decoration: const InputDecoration(
+                          labelText: 'Category Name',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.category_outlined),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text('Theme Color',
+                          style:
+                              TextStyle(fontSize: 12, color: Colors.white54)),
+                      const SizedBox(height: 8),
+                      Center(
+                        child: Wrap(
+                          spacing: 12,
+                          runSpacing: 8,
+                          children: [
+                            ...colors.map((colVal) {
+                              final isSel = colorValue == colVal;
+                              return GestureDetector(
+                                onTap: () {
+                                  nameFocusNode.unfocus();
+                                  setDialogState(() => colorValue = colVal);
+                                },
+                                child: Container(
+                                  width: 32,
+                                  height: 32,
+                                  decoration: BoxDecoration(
+                                    color: Color(colVal),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: isSel
+                                          ? Colors.white
+                                          : Colors.transparent,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: isSel
+                                      ? const Icon(Icons.check,
+                                          size: 16, color: Colors.white)
+                                      : null,
+                                ),
+                              );
+                            }),
+                            // Custom color picker button
+                            GestureDetector(
                               onTap: () {
                                 nameFocusNode.unfocus();
-                                setDialogState(() => colorValue = colVal);
+                                _showColorSpectrumPicker(context, colorValue,
+                                    (selectedColor) {
+                                  setDialogState(() {
+                                    colorValue = selectedColor;
+                                  });
+                                });
                               },
                               child: Container(
                                 width: 32,
                                 height: 32,
                                 decoration: BoxDecoration(
-                                  color: Color(colVal),
                                   shape: BoxShape.circle,
+                                  gradient: const SweepGradient(
+                                    colors: [
+                                      Colors.red,
+                                      Colors.orange,
+                                      Colors.yellow,
+                                      Colors.green,
+                                      Colors.cyan,
+                                      Colors.blue,
+                                      Colors.purple,
+                                      Colors.red,
+                                    ],
+                                  ),
                                   border: Border.all(
-                                    color: isSel ? Colors.white : Colors.transparent,
+                                    color: !colors.contains(colorValue)
+                                        ? Colors.white
+                                        : Colors.transparent,
                                     width: 2,
                                   ),
                                 ),
-                                child: isSel
-                                    ? const Icon(Icons.check, size: 16, color: Colors.white)
-                                    : null,
+                                child: !colors.contains(colorValue)
+                                    ? const Icon(Icons.check,
+                                        size: 16, color: Colors.white)
+                                    : const Icon(Icons.colorize_rounded,
+                                        size: 14, color: Colors.white),
                               ),
-                            );
-                          }),
-                          // Custom color picker button
-                          GestureDetector(
-                            onTap: () {
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      const Text('Category Icon',
+                          style:
+                              TextStyle(fontSize: 12, color: Colors.white54)),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Color(colorValue).withOpacity(0.12),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                  color: Color(colorValue).withOpacity(0.25),
+                                  width: 1.5),
+                            ),
+                            child: Icon(IconHelper.getIcon(icon),
+                                color: Color(colorValue), size: 24),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Icon: "${icon.replaceAll('_', ' ')}"',
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14),
+                                ),
+                                const SizedBox(height: 2),
+                                const Text(
+                                  'Search from 60+ modern icons',
+                                  style: TextStyle(
+                                      fontSize: 10, color: Colors.white38),
+                                ),
+                              ],
+                            ),
+                          ),
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF0F172A),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 10),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                side: BorderSide(
+                                    color: Colors.white.withOpacity(0.05)),
+                              ),
+                              elevation: 0,
+                            ),
+                            icon: const Icon(Icons.search_rounded,
+                                size: 14, color: Color(0xFF6366F1)),
+                            label: const Text('Browse',
+                                style: TextStyle(
+                                    fontSize: 12, fontWeight: FontWeight.bold)),
+                            onPressed: () {
                               nameFocusNode.unfocus();
-                              _showColorSpectrumPicker(context, colorValue, (selectedColor) {
+                              _showSearchableIconPicker(context, colorValue,
+                                  (selectedIcon) {
                                 setDialogState(() {
-                                  colorValue = selectedColor;
+                                  icon = selectedIcon;
                                 });
                               });
                             },
-                            child: Container(
-                              width: 32,
-                              height: 32,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: const SweepGradient(
-                                  colors: [
-                                    Colors.red,
-                                    Colors.orange,
-                                    Colors.yellow,
-                                    Colors.green,
-                                    Colors.cyan,
-                                    Colors.blue,
-                                    Colors.purple,
-                                    Colors.red,
-                                  ],
-                                ),
-                                border: Border.all(
-                                  color: !colors.contains(colorValue) ? Colors.white : Colors.transparent,
-                                  width: 2,
-                                ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
                               ),
-                              child: !colors.contains(colorValue)
-                                  ? const Icon(Icons.check, size: 16, color: Colors.white)
-                                  : const Icon(Icons.colorize_rounded, size: 14, color: Colors.white),
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('Cancel',
+                                  style: TextStyle(color: Colors.white70)),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF6366F1),
+                                foregroundColor: Colors.white,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                              ),
+                              onPressed: () async {
+                                final name = nameController.text.trim();
+                                if (name.isEmpty) return;
+
+                                final cat = CategoryModel(
+                                  id: isEdit ? editCat.id : null,
+                                  name: name,
+                                  color: colorValue,
+                                  icon: icon,
+                                );
+
+                                if (isEdit) {
+                                  await DatabaseService.instance
+                                      .updateCategory(cat);
+                                } else {
+                                  await DatabaseService.instance
+                                      .insertCategory(cat);
+                                }
+
+                                Navigator.pop(context);
+                                _loadSettingsData();
+                              },
+                              child: Text(isEdit ? 'Save' : 'Add',
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold)),
                             ),
                           ),
                         ],
                       ),
-                    ),
-                    const SizedBox(height: 20),
-                    const Text('Category Icon', style: TextStyle(fontSize: 12, color: Colors.white54)),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Color(colorValue).withOpacity(0.12),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Color(colorValue).withOpacity(0.25), width: 1.5),
-                          ),
-                          child: Icon(IconHelper.getIcon(icon), color: Color(colorValue), size: 24),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Icon: "${icon.replaceAll('_', ' ')}"',
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                              ),
-                              const SizedBox(height: 2),
-                              const Text(
-                                'Search from 60+ modern icons',
-                                style: TextStyle(fontSize: 10, color: Colors.white38),
-                              ),
-                            ],
-                          ),
-                        ),
-                        ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF0F172A),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              side: BorderSide(color: Colors.white.withOpacity(0.05)),
-                            ),
-                            elevation: 0,
-                          ),
-                          icon: const Icon(Icons.search_rounded, size: 14, color: Color(0xFF6366F1)),
-                          label: const Text('Browse', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                          onPressed: () {
-                            nameFocusNode.unfocus();
-                            _showSearchableIconPicker(context, colorValue, (selectedIcon) {
-                              setDialogState(() {
-                                icon = selectedIcon;
-                              });
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF6366F1),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                            onPressed: () async {
-                              final name = nameController.text.trim();
-                              if (name.isEmpty) return;
-
-                              final cat = CategoryModel(
-                                id: isEdit ? editCat.id : null,
-                                name: name,
-                                color: colorValue,
-                                icon: icon,
-                              );
-
-                              if (isEdit) {
-                                await DatabaseService.instance.updateCategory(cat);
-                              } else {
-                                await DatabaseService.instance.insertCategory(cat);
-                              }
-
-                              Navigator.pop(context);
-                              _loadSettingsData();
-                            },
-                            child: Text(isEdit ? 'Save' : 'Add', style: const TextStyle(fontWeight: FontWeight.bold)),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                  ],
+                      const SizedBox(height: 24),
+                    ],
+                  ),
                 ),
               ),
-            ),
             );
           },
         );
@@ -1889,7 +2318,8 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
     );
   }
 
-  void _showSearchableIconPicker(BuildContext context, int colorValue, Function(String) onSelected) {
+  void _showSearchableIconPicker(
+      BuildContext context, int colorValue, Function(String) onSelected) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1903,7 +2333,8 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
     );
   }
 
-  void _showColorSpectrumPicker(BuildContext context, int currentColor, Function(int) onSelected) {
+  void _showColorSpectrumPicker(
+      BuildContext context, int currentColor, Function(int) onSelected) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -2001,10 +2432,12 @@ class _SearchableIconPickerState extends State<SearchableIconPicker> {
                   decoration: InputDecoration(
                     hintText: 'Search by keyword (e.g. food, taxi, bill...)',
                     hintStyle: const TextStyle(color: Colors.white38),
-                    prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF6366F1)),
+                    prefixIcon: const Icon(Icons.search_rounded,
+                        color: Color(0xFF6366F1)),
                     suffixIcon: _query.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.clear_rounded, color: Colors.white38),
+                            icon: const Icon(Icons.clear_rounded,
+                                color: Colors.white38),
                             onPressed: () {
                               _searchController.clear();
                             },
@@ -2030,7 +2463,8 @@ class _SearchableIconPickerState extends State<SearchableIconPicker> {
                         )
                       : GridView.builder(
                           controller: scrollController,
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 4,
                             crossAxisSpacing: 12,
                             mainAxisSpacing: 12,
@@ -2050,16 +2484,20 @@ class _SearchableIconPickerState extends State<SearchableIconPicker> {
                                 decoration: BoxDecoration(
                                   color: const Color(0xFF1E293B),
                                   borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(color: Colors.white.withOpacity(0.03)),
+                                  border: Border.all(
+                                      color: Colors.white.withOpacity(0.03)),
                                 ),
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(iconData, color: Color(widget.colorValue), size: 28),
+                                    Icon(iconData,
+                                        color: Color(widget.colorValue),
+                                        size: 28),
                                     const SizedBox(height: 6),
                                     Text(
                                       key.replaceAll('_', ' '),
-                                      style: const TextStyle(fontSize: 9, color: Colors.white60),
+                                      style: const TextStyle(
+                                          fontSize: 9, color: Colors.white60),
                                       textAlign: TextAlign.center,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
@@ -2108,7 +2546,8 @@ class _ColorSpectrumPickerState extends State<ColorSpectrumPicker> {
     _lightness = hsl.lightness;
   }
 
-  Color get _currentColor => HSLColor.fromAHSL(1.0, _hue, _saturation, _lightness).toColor();
+  Color get _currentColor =>
+      HSLColor.fromAHSL(1.0, _hue, _saturation, _lightness).toColor();
 
   @override
   Widget build(BuildContext context) {
@@ -2181,7 +2620,8 @@ class _ColorSpectrumPickerState extends State<ColorSpectrumPicker> {
           // Saturation x Lightness grid
           const Align(
             alignment: Alignment.centerLeft,
-            child: Text('Shade', style: TextStyle(fontSize: 11, color: Colors.white54)),
+            child: Text('Shade',
+                style: TextStyle(fontSize: 11, color: Colors.white54)),
           ),
           const SizedBox(height: 8),
           SizedBox(
@@ -2189,8 +2629,10 @@ class _ColorSpectrumPickerState extends State<ColorSpectrumPicker> {
             child: LayoutBuilder(
               builder: (context, constraints) {
                 return GestureDetector(
-                  onPanDown: (d) => _updateSatLight(d.localPosition, constraints),
-                  onPanUpdate: (d) => _updateSatLight(d.localPosition, constraints),
+                  onPanDown: (d) =>
+                      _updateSatLight(d.localPosition, constraints),
+                  onPanUpdate: (d) =>
+                      _updateSatLight(d.localPosition, constraints),
                   child: CustomPaint(
                     size: Size(constraints.maxWidth, 160),
                     painter: _SatLightPainter(_hue, _saturation, _lightness),
@@ -2203,7 +2645,8 @@ class _ColorSpectrumPickerState extends State<ColorSpectrumPicker> {
           // Hue slider
           const Align(
             alignment: Alignment.centerLeft,
-            child: Text('Hue', style: TextStyle(fontSize: 11, color: Colors.white54)),
+            child: Text('Hue',
+                style: TextStyle(fontSize: 11, color: Colors.white54)),
           ),
           const SizedBox(height: 8),
           SizedBox(
@@ -2211,8 +2654,10 @@ class _ColorSpectrumPickerState extends State<ColorSpectrumPicker> {
             child: LayoutBuilder(
               builder: (context, constraints) {
                 return GestureDetector(
-                  onPanDown: (d) => _updateHue(d.localPosition.dx, constraints.maxWidth),
-                  onPanUpdate: (d) => _updateHue(d.localPosition.dx, constraints.maxWidth),
+                  onPanDown: (d) =>
+                      _updateHue(d.localPosition.dx, constraints.maxWidth),
+                  onPanUpdate: (d) =>
+                      _updateHue(d.localPosition.dx, constraints.maxWidth),
                   child: CustomPaint(
                     size: Size(constraints.maxWidth, 28),
                     painter: _HueBarPainter(_hue),
@@ -2230,13 +2675,15 @@ class _ColorSpectrumPickerState extends State<ColorSpectrumPicker> {
                 backgroundColor: _currentColor,
                 foregroundColor: _lightness > 0.5 ? Colors.black : Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
               ),
               onPressed: () {
                 widget.onSelected(_currentColor.value);
                 Navigator.pop(context);
               },
-              child: const Text('Select Color', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+              child: const Text('Select Color',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
             ),
           ),
         ],
@@ -2337,5 +2784,7 @@ class _SatLightPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _SatLightPainter old) =>
-      old.hue != hue || old.saturation != saturation || old.lightness != lightness;
+      old.hue != hue ||
+      old.saturation != saturation ||
+      old.lightness != lightness;
 }
