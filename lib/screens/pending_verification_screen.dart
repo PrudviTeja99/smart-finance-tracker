@@ -1,8 +1,10 @@
 import 'package:finance_tracker/features/inbox/widgets/audit_log_bottom_sheet.dart';
 import 'package:finance_tracker/features/inbox/widgets/batch_progress_banner.dart';
 import 'package:finance_tracker/features/inbox/widgets/captured_app_group_tile.dart';
+import 'package:finance_tracker/features/inbox/widgets/draft_editor.dart';
 import 'package:finance_tracker/features/inbox/widgets/model_activity_banner.dart';
 import 'package:finance_tracker/features/inbox/widgets/pending_transaction_card.dart';
+import 'package:finance_tracker/features/inbox/widgets/draft_editor_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -1015,6 +1017,10 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
                       onOnlineLookup: _triggerOnlineCategoryLookup,
                       isLookupLoading: _lookupLoading[tx.id] ?? false,
                       suggestions: _categorySuggestions[tx.id] ?? [],
+                      onTap: () {
+                        debugPrint("CARD TAPPED");
+                        _showDraftEditor(tx);
+                      },
                     ),
                   );
                 },
@@ -1117,5 +1123,25 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
     );
   }
 
-  // --- CARD WIDGET BUILDER ---
+  Future<void> _showDraftEditor(TransactionModel tx) async {
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) {
+        return DraftEditorBottomSheet(
+          child: DraftEditor(
+            tx: tx,
+            accounts: _accounts,
+            categories: _categories,
+            onConfirm: _confirmTransaction,
+            onDiscard: _discardTransaction,
+            onOnlineLookup: _triggerOnlineCategoryLookup,
+            isLookupLoading: _lookupLoading[tx.id] ?? false,
+            suggestions: _categorySuggestions[tx.id] ?? [],
+          ),
+        );
+      },
+    );
+  }
 }
