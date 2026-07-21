@@ -66,9 +66,11 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(_onTabChanged);
+
     PerceptronStorageService.instance.loadWeights();
-    _loadPendingData();
-    _loadCapturedAlerts();
+
+    _refreshAll();
 
     // Listen for foreground refresh signals (new notifications while app is open)
     widget.refreshSignal?.addListener(_onForegroundRefresh);
@@ -76,24 +78,29 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
     // Trigger foreground batch processor for raw background notifications
     WidgetsBinding.instance.addPostFrameCallback((_) {
       BatchProcessorService.instance.processQueue(onCompleted: () {
-        if (mounted) {
-          _loadPendingData();
-          _loadCapturedAlerts();
-        }
+        if (mounted) _refreshAll();
       });
     });
   }
 
+  void _onTabChanged() {
+    // Only rebuild once the tab has actually settled on a new index,
+    // not on every intermediate frame of the swipe animation.
+    if (!_tabController.indexIsChanging && mounted) {
+      setState(() {});
+    }
+  }
+
   void _onForegroundRefresh() {
     if (mounted) {
-      _loadPendingData();
-      _loadCapturedAlerts();
+      _refreshAll();
     }
   }
 
   @override
   void dispose() {
     widget.refreshSignal?.removeListener(_onForegroundRefresh);
+    _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
     super.dispose();
   }
@@ -117,25 +124,26 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
     final permission = await NotificationHandler.hasPermission();
     final serviceEnabled = running && permission;
 
-    if (mounted) {
-      // Check if we actually need to update the state to prevent infinite build loops
-      final hasPendingChanged = _pendingTransactions.length != pending.length ||
-          _pendingTransactions.any((tx) => !pending.any((p) => p.id == tx.id));
-      final hasAccountsChanged = _accounts.length != accountsList.length;
-      final hasCategoriesChanged = _categories.length != categoriesList.length;
-      final hasServiceChanged = _isServiceEnabled != serviceEnabled;
+    if (!mounted) return;
 
-      if (hasPendingChanged ||
-          hasAccountsChanged ||
-          hasCategoriesChanged ||
-          hasServiceChanged) {
-        setState(() {
-          _pendingTransactions = pending;
-          _accounts = accountsList;
-          _categories = categoriesList;
-          _isServiceEnabled = serviceEnabled;
-        });
-      }
+    final pendingIds = pending.map((t) => t.id).toSet();
+    final currentIds = _pendingTransactions.map((t) => t.id).toSet();
+
+    final hasAccountsChanged = _accounts.length != accountsList.length;
+    final hasCategoriesChanged = _categories.length != categoriesList.length;
+    final hasServiceChanged = _isServiceEnabled != serviceEnabled;
+
+    if (pendingIds.difference(currentIds).isNotEmpty ||
+        currentIds.difference(pendingIds).isNotEmpty ||
+        hasAccountsChanged ||
+        hasCategoriesChanged ||
+        hasServiceChanged) {
+      setState(() {
+        _pendingTransactions = pending;
+        _accounts = accountsList;
+        _categories = categoriesList;
+        _isServiceEnabled = serviceEnabled;
+      });
     }
   }
 
@@ -146,7 +154,7 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
     } else {
       await NotificationHandler.startService();
     }
-    await _loadPendingData();
+    await _refreshAll();
   }
 
   // Confirm and train Naive Bayes models with user verified data
@@ -182,7 +190,7 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
     );
 
     widget.onConfirmedOrDiscarded();
-    _loadPendingData();
+    _refreshAll();
   }
 
   // Delete pending transaction and train model to ignore similar patterns
@@ -199,12 +207,25 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
 
     await dbService.deleteTransaction(id);
     widget.onConfirmedOrDiscarded();
-    _loadPendingData();
+    _refreshAll();
 
     if (mounted) {
       AppSnackBar.show(context,
           'Discarded notification. AI learned to ignore similar alerts.',
           type: SnackBarType.neutral);
+    }
+  }
+
+  Future<void> _refreshAll() async {
+    if (!mounted) return;
+
+    try {
+      await Future.wait([
+        _loadPendingData(),
+        _loadCapturedAlerts(),
+      ]);
+    } catch (e) {
+      debugPrint('Refresh failed: $e');
     }
   }
 
@@ -223,8 +244,7 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
           type: SnackBarType.neutral);
     }
 
-    _loadPendingData();
-    _loadCapturedAlerts();
+    _refreshAll();
   }
 
   // Mute an entire app package and archive all its captured logs
@@ -272,8 +292,7 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
         AppSnackBar.show(context, 'Muted $appName and archived all alerts.',
             type: SnackBarType.neutral);
       }
-      _loadPendingData();
-      _loadCapturedAlerts();
+      _refreshAll();
     }
   }
 
@@ -322,7 +341,7 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
             type: SnackBarType.neutral);
       }
       widget.onConfirmedOrDiscarded();
-      _loadPendingData();
+      _refreshAll();
     }
   }
 
@@ -335,10 +354,10 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Archive All Alerts?',
+        title: const Text('Clear All Alerts?',
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         content: Text(
-          'Are you sure you want to archive all $count captured alerts? They will be moved to your Archived Alerts feed.',
+          'Are you sure you want to clear all $count captured alerts? They will be moved to your Archived Alerts feed.',
           style:
               const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
         ),
@@ -350,7 +369,7 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Archive All',
+            child: const Text('Clear All',
                 style: TextStyle(
                     color: Color(0xFF6366F1), fontWeight: FontWeight.bold)),
           ),
@@ -370,7 +389,7 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
         AppSnackBar.show(context, '$count captured alerts archived.',
             type: SnackBarType.neutral);
       }
-      _loadCapturedAlerts();
+      _refreshAll();
     }
   }
 
@@ -424,7 +443,8 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
         _selectedAppPackages.clear();
       });
     }
-    _loadCapturedAlerts();
+
+    _refreshAll();
   }
 
   Future<void> _muteAndArchiveSelectedAppCategories() async {
@@ -485,7 +505,8 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
           _selectedAppPackages.clear();
         });
       }
-      _loadCapturedAlerts();
+
+      _refreshAll();
     }
   }
 
@@ -554,8 +575,7 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
       }
     }
 
-    _loadPendingData();
-    _loadCapturedAlerts();
+    _refreshAll();
     widget.onConfirmedOrDiscarded();
   }
 
@@ -577,9 +597,6 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
 
   @override
   Widget build(BuildContext context) {
-    _loadPendingData(); // Lazy refresh
-    _loadCapturedAlerts(); // Lazy refresh alerts
-
     final currentBottomInset = MediaQuery.of(context).viewInsets.bottom;
     final isKeyboardNowOpen = currentBottomInset > 0;
     if (_isKeyboardOpen && !isKeyboardNowOpen) {
@@ -626,16 +643,16 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
           actions: _isAppCategorySelectionMode
               ? [
                   IconButton(
-                    icon: const Icon(Icons.archive_outlined,
-                        color: Color(0xFF818CF8)),
-                    tooltip: 'Archive Selected Apps',
-                    onPressed: _archiveSelectedAppCategories,
-                  ),
-                  IconButton(
                     icon: const Icon(Icons.volume_off_rounded,
                         color: Color(0xFFEF4444)),
-                    tooltip: 'Mute & Archive Selected',
+                    tooltip: 'Mute & Clear Selected',
                     onPressed: _muteAndArchiveSelectedAppCategories,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_sweep_outlined,
+                        color: Color(0xFFEF4444)),
+                    tooltip: 'Clear Selected Apps',
+                    onPressed: _archiveSelectedAppCategories,
                   ),
                 ]
               : [
@@ -661,9 +678,8 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
                       },
                     ),
                     IconButton(
-                      icon: const Icon(Icons.archive_outlined,
-                          color: Colors.white70),
-                      tooltip: 'Archive All Alerts',
+                      icon: const Icon(Icons.delete_outline, color: Colors.red),
+                      tooltip: 'Clear All Alerts',
                       onPressed: _archiveAllCapturedAlerts,
                     ),
                   ],
@@ -1279,9 +1295,7 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
     await db.delete('model_audit_log', where: 'id = ?', whereArgs: [auditId]);
 
     if (mounted) {
-      _loadPendingData();
-      _loadCapturedAlerts();
-      setState(() {});
+      _refreshAll();
     }
   }
 
