@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
@@ -32,6 +33,16 @@ class AppIconCacheService {
       _cacheDir = Directory('${baseDir.path}/media_cache');
       if (!await _cacheDir!.exists()) {
         await _cacheDir!.create(recursive: true);
+      }
+
+      // Load cached app names from disk
+      final namesFile = File('${_cacheDir!.path}/app_names.json');
+      if (await namesFile.exists()) {
+        final jsonStr = await namesFile.readAsString();
+        final Map<String, dynamic> map = json.decode(jsonStr);
+        map.forEach((k, v) {
+          _appNameCache[k] = v.toString();
+        });
       }
     } catch (e) {
       // Fallback if temp dir is unavailable
@@ -81,6 +92,23 @@ class AppIconCacheService {
     }
   }
 
+  /// Persists the app names map to disk.
+  Future<void> _saveAppNamesToDisk() async {
+    if (_cacheDir == null) return;
+    try {
+      final namesFile = File('${_cacheDir!.path}/app_names.json');
+      await namesFile.writeAsString(json.encode(_appNameCache), flush: true);
+    } catch (_) {}
+  }
+
+  /// Manually caches an app's friendly name and writes it to disk.
+  Future<void> cacheAppName(String packageName, String name) async {
+    if (name.isNotEmpty) {
+      _appNameCache[packageName] = name;
+      await _saveAppNamesToDisk();
+    }
+  }
+
   /// Clear memory and disk cache for a given namespace (or all)
   Future<void> clear({String? namespace}) async {
     if (namespace == null) {
@@ -92,6 +120,15 @@ class AppIconCacheService {
       }
     } else {
       _memoryCache.removeWhere((k, _) => k.startsWith('$namespace:'));
+      if (namespace == 'app_icons') {
+        _appNameCache.clear();
+        try {
+          final namesFile = File('${_cacheDir!.path}/app_names.json');
+          if (await namesFile.exists()) {
+            await namesFile.delete();
+          }
+        } catch (_) {}
+      }
       final nsDir = await _getNamespaceDirectory(namespace);
       if (nsDir != null && await nsDir.exists()) {
         await nsDir.delete(recursive: true);
@@ -128,6 +165,7 @@ class AppIconCacheService {
         final iconBytes = result['iconBytes'] as Uint8List?;
 
         _appNameCache[packageName] = appName;
+        await _saveAppNamesToDisk();
 
         if (iconBytes != null && iconBytes.isNotEmpty) {
           await putBytes(packageName, iconBytes, namespace: 'app_icons');

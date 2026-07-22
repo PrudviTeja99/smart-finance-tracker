@@ -93,6 +93,18 @@ class NotificationHandler {
 
     if (event.packageName == null) return;
 
+    // Load settings to fetch user selected allowed apps list
+    await AppSettings.load();
+    final pkg = event.packageName!;
+    final isSms = pkg == 'com.android.messaging' ||
+        pkg == 'com.google.android.apps.messaging' ||
+        pkg == 'com.samsung.android.messaging';
+
+    final isAllowed = isSms || AppSettings.allowedNotificationApps.contains(pkg);
+    if (!isAllowed) {
+      return;
+    }
+
     final title = event.title ?? '';
     final text = event.text ?? '';
     final body = text.isNotEmpty ? text : title;
@@ -155,15 +167,11 @@ class NotificationHandler {
         status: 'unclassified',
       );
 
-      // Load Settings and Perceptron weights in background isolate to get latest mutedApps & AI weights
+      // Load Settings and Perceptron weights in background isolate to get latest AI weights
       await AppSettings.load();
       await PerceptronStorageService.instance.loadWeights();
 
-      // 2. Check if the App is Muted
-      if (AppSettings.mutedApps.contains(event.packageName!)) {
-        await dbService.updateNotificationLogStatus(logId, 'archived');
-        return 'archived';
-      }
+
 
       // 3. Rule-based Pre-filter for non-financial ignore-keywords & promotional marketing
       final cleanBody = body.toLowerCase();
@@ -191,7 +199,7 @@ class NotificationHandler {
       ];
 
       bool isIgnore = false;
-      String archiveReason = 'auto_archived';
+      String archiveReason = 'auto_dismissed';
       double archiveConfidence = 0.90;
 
       for (var kw in ignoreKeywords) {
@@ -226,7 +234,7 @@ class NotificationHandler {
         );
 
         LogService.logFromAnyIsolate(
-            '🗄️ Auto-archived ($archiveReason): $appName — "$body"');
+            '🗄️ Auto-dismissed ($archiveReason): $appName — "$body"');
 
         return 'archived';
       }
