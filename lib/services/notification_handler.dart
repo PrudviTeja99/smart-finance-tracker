@@ -191,7 +191,7 @@ class NotificationHandler {
       ];
 
       bool isIgnore = false;
-      String archiveReason = 'auto_archived';
+      String archiveReason = 'auto_dismissed';
       double archiveConfidence = 0.90;
 
       for (var kw in ignoreKeywords) {
@@ -226,7 +226,7 @@ class NotificationHandler {
         );
 
         LogService.logFromAnyIsolate(
-            '🗄️ Auto-archived ($archiveReason): $appName — "$body"');
+            '🗄️ Auto-dismissed ($archiveReason): $appName — "$body"');
 
         return 'archived';
       }

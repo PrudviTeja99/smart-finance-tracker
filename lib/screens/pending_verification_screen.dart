@@ -5,6 +5,7 @@ import 'package:finance_tracker/features/inbox/widgets/draft_editor.dart';
 import 'package:finance_tracker/features/inbox/widgets/model_activity_banner.dart';
 import 'package:finance_tracker/features/inbox/widgets/pending_transaction_card.dart';
 import 'package:finance_tracker/features/inbox/widgets/draft_editor_bottom_sheet.dart';
+import 'package:finance_tracker/features/inbox/widgets/app_selection_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/transaction_model.dart';
@@ -664,24 +665,31 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
                       tooltip: 'Discard All Drafts',
                       onPressed: _discardAllDrafts,
                     ),
-                  if (_tabController.index == 1 &&
-                      _capturedAlerts.isNotEmpty) ...[
+                  if (_tabController.index == 1) ...[
                     IconButton(
-                      icon: const Icon(Icons.checklist_rounded,
-                          color: Colors.white70),
-                      tooltip: 'Select Apps to Clear',
-                      onPressed: () {
-                        setState(() {
-                          _isAppCategorySelectionMode = true;
-                          _selectedAppPackages.clear();
-                        });
-                      },
+                      icon: const Icon(Icons.app_settings_alt_rounded,
+                          color: Color(0xFF818CF8)),
+                      tooltip: 'Track App Notifications',
+                      onPressed: _showAppSelectionBottomSheet,
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline, color: Colors.red),
-                      tooltip: 'Clear All Alerts',
-                      onPressed: _archiveAllCapturedAlerts,
-                    ),
+                    if (_capturedAlerts.isNotEmpty) ...[
+                      IconButton(
+                        icon: const Icon(Icons.checklist_rounded,
+                            color: Colors.white70),
+                        tooltip: 'Select Apps to Clear',
+                        onPressed: () {
+                          setState(() {
+                            _isAppCategorySelectionMode = true;
+                            _selectedAppPackages.clear();
+                          });
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline, color: Colors.red),
+                        tooltip: 'Clear All Alerts',
+                        onPressed: _archiveAllCapturedAlerts,
+                      ),
+                    ],
                   ],
                 ],
         ),
@@ -850,7 +858,7 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
     final body = auditLog['body'] as String? ?? '';
     final dbService = DatabaseService.instance;
 
-    if (actionType == 'auto_archived') {
+    if (actionType == 'auto_archived' || actionType == 'auto_dismissed') {
       if (logId != null) {
         await dbService.updateNotificationLogStatus(logId, 'unclassified');
       }
@@ -1152,5 +1160,18 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
         );
       },
     );
+  }
+
+  void _showAppSelectionBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return const AppSelectionBottomSheet();
+      },
+    ).then((_) {
+      _refreshAll();
+    });
   }
 }

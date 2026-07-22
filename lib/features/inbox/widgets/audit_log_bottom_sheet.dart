@@ -191,7 +191,7 @@ Future<void> showAuditLogBottomSheet({
                                     child: Text(
                                       isDrafted
                                           ? 'AUTO-DRAFTED'
-                                          : 'AUTO-ARCHIVED',
+                                          : 'AUTO-DISMISSED',
                                       style: TextStyle(
                                         color: isDrafted
                                             ? const Color(0xFF34D399)
@@ -264,7 +264,7 @@ Future<void> showAuditLogBottomSheet({
                                           Text(
                                             isDrafted
                                                 ? 'Undo Auto-Draft'
-                                                : 'Undo Auto-Archive',
+                                                : 'Undo Auto-Dismiss',
                                             style: const TextStyle(
                                                 color: Colors.white70,
                                                 fontSize: 11,

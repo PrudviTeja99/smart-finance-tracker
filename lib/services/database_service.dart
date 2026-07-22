@@ -791,7 +791,7 @@ class DatabaseService {
       final action = row['action_type'] as String;
       final count = row['cnt'] as int;
       if (action == 'auto_drafted') autoDrafted = count;
-      if (action == 'auto_archived') autoArchived = count;
+      if (action == 'auto_archived' || action == 'auto_dismissed') autoArchived += count;
     }
 
     return {'auto_drafted': autoDrafted, 'auto_archived': autoArchived};

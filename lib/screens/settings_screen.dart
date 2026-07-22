@@ -1652,7 +1652,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                                       child: Text(
                                         isDrafted
                                             ? 'AUTO-DRAFTED'
-                                            : 'AUTO-ARCHIVED',
+                                            : 'AUTO-DISMISSED',
                                         style: TextStyle(
                                           color: isDrafted
                                               ? const Color(0xFF34D399)
@@ -1713,7 +1713,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                                           Text(
                                             isDrafted
                                                 ? 'Undo Auto-Draft'
-                                                : 'Undo Auto-Archive',
+                                                : 'Undo Auto-Dismiss',
                                             style: const TextStyle(
                                                 color: Colors.white70,
                                                 fontSize: 11,
@@ -1748,7 +1748,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     final dbService = DatabaseService.instance;
     final parser = TransactionParser();
 
-    if (actionType == 'auto_archived') {
+    if (actionType == 'auto_archived' || actionType == 'auto_dismissed') {
       if (logId != null) {
         await dbService.updateNotificationLogStatus(logId, 'unclassified');
       }

@@ -10,6 +10,7 @@ class AppSettings {
   static int autoDeleteValue = 30;
   static String autoDeleteUnit = 'days'; // 'days', 'months', 'years'
   static bool smartTrackingEnabled = true;
+  static List<String> allowedNotificationApps = [];
 
   static Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
@@ -22,6 +23,7 @@ class AppSettings {
     autoDeleteValue = prefs.getInt('auto_delete_value') ?? 30;
     autoDeleteUnit = prefs.getString('auto_delete_unit') ?? 'days';
     smartTrackingEnabled = prefs.getBool('smart_tracking_enabled') ?? true;
+    allowedNotificationApps = prefs.getStringList('allowed_notification_apps') ?? [];
   }
 
   static Future<void> setSnackBarDuration(int ms) async {
@@ -86,5 +88,11 @@ class AppSettings {
       mutedApps.remove(packageName);
       await prefs.setStringList('muted_apps', mutedApps);
     }
+  }
+
+  static Future<void> setAllowedNotificationApps(List<String> packages) async {
+    final prefs = await SharedPreferences.getInstance();
+    allowedNotificationApps = List.from(packages);
+    await prefs.setStringList('allowed_notification_apps', packages);
   }
 }

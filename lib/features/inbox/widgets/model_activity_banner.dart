@@ -40,7 +40,7 @@ class ModelActivityBanner extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Today\'s Automated Decisions: Auto-drafted $drafted, Auto-cleared $archived',
+                  'Today\'s Automated Decisions: Auto-drafted $drafted, Auto-dismissed $archived',
                   style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 12,
