@@ -73,8 +73,10 @@ class DatabaseService {
     ''');
 
     // Create Index on date for range filtering performance
-    await db.execute('CREATE INDEX idx_transactions_date ON transactions (date);');
-    await db.execute('CREATE INDEX idx_transactions_status ON transactions (status);');
+    await db
+        .execute('CREATE INDEX idx_transactions_date ON transactions (date);');
+    await db.execute(
+        'CREATE INDEX idx_transactions_status ON transactions (status);');
 
     // 4. Create classifier_state table to store model training weights
     await db.execute('''
@@ -121,9 +123,18 @@ class DatabaseService {
   Future<void> _seedDefaultData(Database db) async {
     // Seed default accounts
     final defaultAccounts = [
-      AccountModel(name: 'Cash', type: 'cash', keywords: 'cash, physical', balance: 0.0),
-      AccountModel(name: 'Bank Account', type: 'bank', keywords: 'a/c, bank, transfer, deposited, xx', balance: 0.0),
-      AccountModel(name: 'Credit Card', type: 'credit_card', keywords: 'card, visa, mastercard, ending, spent on', balance: 0.0),
+      AccountModel(
+          name: 'Cash', type: 'cash', keywords: 'cash, physical', balance: 0.0),
+      AccountModel(
+          name: 'Bank Account',
+          type: 'bank',
+          keywords: 'a/c, bank, transfer, deposited, xx',
+          balance: 0.0),
+      AccountModel(
+          name: 'Credit Card',
+          type: 'credit_card',
+          keywords: 'card, visa, mastercard, ending, spent on',
+          balance: 0.0),
     ];
 
     for (var account in defaultAccounts) {
@@ -132,14 +143,34 @@ class DatabaseService {
 
     // Seed default categories
     final defaultCategories = [
-      CategoryModel(name: 'Food', color: 0xFFFF8A80, icon: 'restaurant'), // Light red
-      CategoryModel(name: 'Shopping', color: 0xFFFFD180, icon: 'shopping_bag'), // Light orange
-      CategoryModel(name: 'Travel', color: 0xFF80D8FF, icon: 'directions_car'), // Light blue
-      CategoryModel(name: 'Bills & Utilities', color: 0xFFEA80FC, icon: 'receipt'), // Light purple
-      CategoryModel(name: 'Salary', color: 0xFFB9F6CA, icon: 'attach_money'), // Light green
-      CategoryModel(name: 'Sent Money', color: 0xFFF87171, icon: 'credit_card'), // Soft Red
-      CategoryModel(name: 'Received Money', color: 0xFF34D399, icon: 'monetization_on'), // Soft Emerald
-      CategoryModel(name: 'Others', color: 0xFFCFD8DC, icon: 'more_horiz'), // Grey
+      CategoryModel(
+          name: 'Food', color: 0xFFFF8A80, icon: 'restaurant'), // Light red
+      CategoryModel(
+          name: 'Shopping',
+          color: 0xFFFFD180,
+          icon: 'shopping_bag'), // Light orange
+      CategoryModel(
+          name: 'Travel',
+          color: 0xFF80D8FF,
+          icon: 'directions_car'), // Light blue
+      CategoryModel(
+          name: 'Bills & Utilities',
+          color: 0xFFEA80FC,
+          icon: 'receipt'), // Light purple
+      CategoryModel(
+          name: 'Salary',
+          color: 0xFFB9F6CA,
+          icon: 'attach_money'), // Light green
+      CategoryModel(
+          name: 'Sent Money',
+          color: 0xFFF87171,
+          icon: 'credit_card'), // Soft Red
+      CategoryModel(
+          name: 'Received Money',
+          color: 0xFF34D399,
+          icon: 'monetization_on'), // Soft Emerald
+      CategoryModel(
+          name: 'Others', color: 0xFFCFD8DC, icon: 'more_horiz'), // Grey
     ];
 
     for (var category in defaultCategories) {
@@ -217,8 +248,10 @@ class DatabaseService {
         status TEXT NOT NULL DEFAULT 'unclassified'
       )
     ''');
-    await db.execute('CREATE INDEX idx_notification_logs_status ON notification_logs (status);');
-    await db.execute('CREATE INDEX idx_notification_logs_date ON notification_logs (date);');
+    await db.execute(
+        'CREATE INDEX idx_notification_logs_status ON notification_logs (status);');
+    await db.execute(
+        'CREATE INDEX idx_notification_logs_date ON notification_logs (date);');
   }
 
   Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
@@ -270,7 +303,8 @@ class DatabaseService {
     return jsonDecode(maps.first['value'] as String) as Map<String, dynamic>;
   }
 
-  Future<void> saveClassifierState(String key, Map<String, dynamic> state) async {
+  Future<void> saveClassifierState(
+      String key, Map<String, dynamic> state) async {
     final db = await database;
     await db.insert(
       'classifier_state',
@@ -343,7 +377,8 @@ class DatabaseService {
   Future<void> clearNotificationLogs({String? status}) async {
     final db = await database;
     if (status != null) {
-      await db.delete('notification_logs', where: 'status = ?', whereArgs: [status]);
+      await db.delete('notification_logs',
+          where: 'status = ?', whereArgs: [status]);
     } else {
       await db.delete('notification_logs');
     }
@@ -384,7 +419,7 @@ class DatabaseService {
   // Calculate account balances dynamically based on confirmed transactions
   Future<double> getAccountBalance(int accountId) async {
     final db = await database;
-    
+
     // Fetch starting balance
     final accountMap = await db.query(
       'accounts',
@@ -414,14 +449,16 @@ class DatabaseService {
       SELECT SUM(amount) as total FROM transactions 
       WHERE to_account_id = ? AND type = 'transfer' AND status = 'confirmed'
     ''', [accountId]);
-    double transferIn = (transferInResult.first['total'] as num?)?.toDouble() ?? 0.0;
+    double transferIn =
+        (transferInResult.first['total'] as num?)?.toDouble() ?? 0.0;
 
     // 4. Subtract outgoing transfers (account_id = accountId)
     final transferOutResult = await db.rawQuery('''
       SELECT SUM(amount) as total FROM transactions 
       WHERE account_id = ? AND type = 'transfer' AND status = 'confirmed'
     ''', [accountId]);
-    double transferOut = (transferOutResult.first['total'] as num?)?.toDouble() ?? 0.0;
+    double transferOut =
+        (transferOutResult.first['total'] as num?)?.toDouble() ?? 0.0;
 
     return balance + credits - debits + transferIn - transferOut;
   }
@@ -474,18 +511,18 @@ class DatabaseService {
 
     // Deduplication filter: check for identical amount, type, account within a 2-minute window
     final dateIso = tx.date.toIso8601String();
-    final twoMinBefore = tx.date.subtract(const Duration(minutes: 2)).toIso8601String();
-    final twoMinAfter = tx.date.add(const Duration(minutes: 2)).toIso8601String();
+    final twoMinBefore =
+        tx.date.subtract(const Duration(minutes: 2)).toIso8601String();
+    final twoMinAfter =
+        tx.date.add(const Duration(minutes: 2)).toIso8601String();
 
-    final duplicateCount = Sqflite.firstIntValue(
-      await db.rawQuery('''
+    final duplicateCount = Sqflite.firstIntValue(await db.rawQuery('''
         SELECT COUNT(*) FROM transactions
         WHERE amount = ? 
           AND type = ? 
           AND account_id = ? 
           AND date BETWEEN ? AND ?
-      ''', [tx.amount, tx.type, tx.accountId, twoMinBefore, twoMinAfter])
-    );
+      ''', [tx.amount, tx.type, tx.accountId, twoMinBefore, twoMinAfter]));
 
     if (duplicateCount != null && duplicateCount > 0) {
       // Duplicate detected! Skip insertion.
@@ -556,8 +593,7 @@ class DatabaseService {
   Future<List<String>> getUniqueDescriptions() async {
     final db = await database;
     final result = await db.rawQuery(
-      "SELECT DISTINCT description FROM transactions WHERE status = 'confirmed' AND description != ''"
-    );
+        "SELECT DISTINCT description FROM transactions WHERE status = 'confirmed' AND description != ''");
     return result.map((row) => row['description'] as String).toList();
   }
 
@@ -657,7 +693,6 @@ class DatabaseService {
       'timestamp': timestamp,
       'status': 'pending',
     });
-
   }
 
   Future<List<Map<String, dynamic>>> getPendingRawNotifications() async {
@@ -739,7 +774,9 @@ class DatabaseService {
         log_id INTEGER
       )
     ''');
-    final startOfDay = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day).millisecondsSinceEpoch;
+    final startOfDay =
+        DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day)
+            .millisecondsSinceEpoch;
     final result = await db.rawQuery('''
       SELECT action_type, COUNT(*) as cnt
       FROM model_audit_log
@@ -754,10 +791,16 @@ class DatabaseService {
       final action = row['action_type'] as String;
       final count = row['cnt'] as int;
       if (action == 'auto_drafted') autoDrafted = count;
-      if (action == 'auto_archived') autoArchived = count;
+      if (action == 'auto_archived' || action == 'auto_dismissed') autoArchived += count;
     }
 
     return {'auto_drafted': autoDrafted, 'auto_archived': autoArchived};
+  }
+
+  Future<bool> hasTodayModelActivity() async {
+    final counts = await getDailyAuditCounts();
+
+    return counts.values.any((count) => count > 0);
   }
 
   Future<void> close() async {

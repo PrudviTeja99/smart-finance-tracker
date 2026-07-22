@@ -1536,7 +1536,28 @@ class _SettingsScreenState extends State<SettingsScreen>
             );
           },
         ),
+        ListTile(
+          leading: const Icon(Icons.playlist_add_rounded, color: Color(0xFF10B981)),
+          title: const Text('Simulate Notification',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          subtitle: const Text('Simulate incoming notifications for testing parser/AI',
+              style: TextStyle(fontSize: 11)),
+          trailing: const Icon(Icons.arrow_forward_ios_rounded,
+              size: 16, color: Colors.white54),
+          onTap: () => _showSimulateNotificationBottomSheet(),
+        ),
       ],
+    );
+  }
+
+  void _showSimulateNotificationBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return const _SimulateNotificationSheet();
+      },
     );
   }
 
@@ -1652,7 +1673,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                                       child: Text(
                                         isDrafted
                                             ? 'AUTO-DRAFTED'
-                                            : 'AUTO-ARCHIVED',
+                                            : 'AUTO-DISMISSED',
                                         style: TextStyle(
                                           color: isDrafted
                                               ? const Color(0xFF34D399)
@@ -1713,7 +1734,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                                           Text(
                                             isDrafted
                                                 ? 'Undo Auto-Draft'
-                                                : 'Undo Auto-Archive',
+                                                : 'Undo Auto-Dismiss',
                                             style: const TextStyle(
                                                 color: Colors.white70,
                                                 fontSize: 11,
@@ -1748,7 +1769,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     final dbService = DatabaseService.instance;
     final parser = TransactionParser();
 
-    if (actionType == 'auto_archived') {
+    if (actionType == 'auto_archived' || actionType == 'auto_dismissed') {
       if (logId != null) {
         await dbService.updateNotificationLogStatus(logId, 'unclassified');
       }
@@ -2787,4 +2808,285 @@ class _SatLightPainter extends CustomPainter {
       old.hue != hue ||
       old.saturation != saturation ||
       old.lightness != lightness;
+}
+
+class _SimulateNotificationSheet extends StatefulWidget {
+  const _SimulateNotificationSheet();
+
+  @override
+  State<_SimulateNotificationSheet> createState() => _SimulateNotificationSheetState();
+}
+
+class _SimulateNotificationSheetState extends State<_SimulateNotificationSheet> {
+  final _packageNameController = TextEditingController(text: 'com.android.messaging');
+  final _titleController = TextEditingController(text: 'HDFC Bank');
+  final _bodyController = TextEditingController(
+      text: 'Alert: Rs 2,500.00 spent on Debit Card XX4321 at STARBUCKS. Bal: Rs 15,432.00.');
+
+  final List<Map<String, String>> _templates = [
+    {
+      'name': 'HDFC Debit',
+      'package': 'com.android.messaging',
+      'title': 'HDFC Bank',
+      'body': 'Alert: Rs 2,500.00 spent on Debit Card XX4321 at STARBUCKS. Bal: Rs 15,432.00.'
+    },
+    {
+      'name': 'ICICI Credit',
+      'package': 'com.android.messaging',
+      'title': 'ICICI Bank',
+      'body': 'Your ICICI Bank Credit Card XX9999 has been charged Rs 8,450.00 at AMAZON INDIA. Available Limit: Rs 92,300.00.'
+    },
+    {
+      'name': 'SBI UPI SMS',
+      'package': 'com.android.messaging',
+      'title': 'SBI UPI',
+      'body': 'Dear SBI User, Rs 1,500.00 debited from A/c XX8888 on 22-07-2026 for UPI Ref: 629381029472.'
+    },
+    {
+      'name': 'Google Pay',
+      'package': 'com.google.android.apps.nbu.paisa',
+      'title': 'Google Pay',
+      'body': 'You paid Rs 250 to Reliance Retail via UPI.'
+    },
+    {
+      'name': 'WhatsApp (Ignore)',
+      'package': 'com.whatsapp',
+      'title': 'John Doe',
+      'body': 'Hey, can you transfer Rs 500 to my account?'
+    },
+    {
+      'name': 'Promo (Ignore)',
+      'package': 'com.zomato.android',
+      'title': 'Zomato',
+      'body': 'Hungry? Grab 50% discount up to Rs 120 on your next order! Use code CRRAVE50.'
+    },
+  ];
+
+  @override
+  void dispose() {
+    _packageNameController.dispose();
+    _titleController.dispose();
+    _bodyController.dispose();
+    super.dispose();
+  }
+
+  void _applyTemplate(Map<String, String> template) {
+    setState(() {
+      _packageNameController.text = template['package'] ?? '';
+      _titleController.text = template['title'] ?? '';
+      _bodyController.text = template['body'] ?? '';
+    });
+  }
+
+  Future<void> _simulate() async {
+    final pkg = _packageNameController.text.trim();
+    final title = _titleController.text.trim();
+    final body = _bodyController.text.trim();
+
+    if (pkg.isEmpty || body.isEmpty) {
+      AppSnackBar.show(context, 'Package name and notification body are required.', type: SnackBarType.warning);
+      return;
+    }
+
+    final mockEvent = NotificationEvent(
+      packageName: pkg,
+      title: title,
+      text: body,
+      timestamp: DateTime.now().millisecondsSinceEpoch,
+    );
+
+    Navigator.pop(context);
+
+    try {
+      await NotificationHandler.handleNotificationEvent(mockEvent);
+      if (mounted) {
+        AppSnackBar.show(context, 'Simulated notification processed successfully! Check Transaction Inbox.', type: SnackBarType.success);
+      }
+    } catch (e) {
+      if (mounted) {
+        AppSnackBar.show(context, 'Simulation failed: $e', type: SnackBarType.error);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFF0F172A),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border(top: BorderSide(color: Color(0xFF334155), width: 1)),
+      ),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+        left: 20,
+        right: 20,
+        top: 12,
+      ),
+      child: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Row(
+                children: [
+                  Icon(Icons.playlist_add_rounded, color: Color(0xFF10B981), size: 24),
+                  SizedBox(width: 10),
+                  Text(
+                    'Simulate Notification',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Select a pre-seeded template or write custom notification data to test parsing, drafts, and active ignore learning.',
+                style: TextStyle(color: Colors.white54, fontSize: 12, height: 1.4),
+              ),
+              const SizedBox(height: 16),
+              // Horizontal Templates List
+              const Text(
+                'Quick Templates',
+                style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 38,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _templates.length,
+                  itemBuilder: (context, index) {
+                    final t = _templates[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ActionChip(
+                        label: Text(t['name'] ?? ''),
+                        labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white),
+                        backgroundColor: const Color(0xFF1E293B),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          side: BorderSide(color: Colors.white.withOpacity(0.08)),
+                        ),
+                        onPressed: () => _applyTemplate(t),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 20),
+              // Package Name Input
+              const Text(
+                'App Package Name',
+                style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 6),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.04),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white.withOpacity(0.08)),
+                ),
+                child: TextField(
+                  controller: _packageNameController,
+                  style: const TextStyle(color: Colors.white, fontSize: 13),
+                  decoration: const InputDecoration(
+                    hintText: 'e.g. com.android.messaging',
+                    hintStyle: TextStyle(color: Colors.white30, fontSize: 13),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Title Input
+              const Text(
+                'Notification Title',
+                style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 6),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.04),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white.withOpacity(0.08)),
+                ),
+                child: TextField(
+                  controller: _titleController,
+                  style: const TextStyle(color: Colors.white, fontSize: 13),
+                  decoration: const InputDecoration(
+                    hintText: 'e.g. HDFC Bank',
+                    hintStyle: TextStyle(color: Colors.white30, fontSize: 13),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Body Input
+              const Text(
+                'Notification Body (Message Text)',
+                style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 6),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.04),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white.withOpacity(0.08)),
+                ),
+                child: TextField(
+                  controller: _bodyController,
+                  maxLines: 3,
+                  style: const TextStyle(color: Colors.white, fontSize: 13),
+                  decoration: const InputDecoration(
+                    hintText: 'Write transaction message alert text here...',
+                    hintStyle: TextStyle(color: Colors.white30, fontSize: 13),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Simulate Button
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 2,
+                  ),
+                  onPressed: _simulate,
+                  child: const Text(
+                    'Simulate & Process',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

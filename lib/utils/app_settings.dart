@@ -5,11 +5,11 @@ class AppSettings {
   static bool autoHideEnabled = false;
   static int autoHideSeconds = 5; // Default 5s
   static String currencySymbol = '₹'; // Default rupee
-  static List<String> mutedApps = [];
   static bool autoDeleteArchive = false;
   static int autoDeleteValue = 30;
   static String autoDeleteUnit = 'days'; // 'days', 'months', 'years'
   static bool smartTrackingEnabled = true;
+  static List<String> allowedNotificationApps = [];
 
   static Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
@@ -17,11 +17,11 @@ class AppSettings {
     autoHideEnabled = prefs.getBool('auto_hide_enabled') ?? false;
     autoHideSeconds = prefs.getInt('auto_hide_seconds') ?? 5;
     currencySymbol = prefs.getString('currency_symbol') ?? '₹';
-    mutedApps = prefs.getStringList('muted_apps') ?? [];
     autoDeleteArchive = prefs.getBool('auto_delete_archive') ?? false;
     autoDeleteValue = prefs.getInt('auto_delete_value') ?? 30;
     autoDeleteUnit = prefs.getString('auto_delete_unit') ?? 'days';
     smartTrackingEnabled = prefs.getBool('smart_tracking_enabled') ?? true;
+    allowedNotificationApps = prefs.getStringList('allowed_notification_apps') ?? [];
   }
 
   static Future<void> setSnackBarDuration(int ms) async {
@@ -72,19 +72,9 @@ class AppSettings {
     smartTrackingEnabled = enabled;
   }
 
-  static Future<void> muteApp(String packageName) async {
+  static Future<void> setAllowedNotificationApps(List<String> packages) async {
     final prefs = await SharedPreferences.getInstance();
-    if (!mutedApps.contains(packageName)) {
-      mutedApps.add(packageName);
-      await prefs.setStringList('muted_apps', mutedApps);
-    }
-  }
-
-  static Future<void> unmuteApp(String packageName) async {
-    final prefs = await SharedPreferences.getInstance();
-    if (mutedApps.contains(packageName)) {
-      mutedApps.remove(packageName);
-      await prefs.setStringList('muted_apps', mutedApps);
-    }
+    allowedNotificationApps = List.from(packages);
+    await prefs.setStringList('allowed_notification_apps', packages);
   }
 }

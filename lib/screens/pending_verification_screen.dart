@@ -1,6 +1,13 @@
+import 'package:finance_tracker/features/inbox/widgets/audit_log_bottom_sheet.dart';
+import 'package:finance_tracker/features/inbox/widgets/batch_progress_banner.dart';
+import 'package:finance_tracker/features/inbox/widgets/captured_app_group_tile.dart';
+import 'package:finance_tracker/features/inbox/widgets/draft_editor.dart';
+import 'package:finance_tracker/features/inbox/widgets/model_activity_banner.dart';
+import 'package:finance_tracker/features/inbox/widgets/pending_transaction_card.dart';
+import 'package:finance_tracker/features/inbox/widgets/draft_editor_bottom_sheet.dart';
+import 'package:finance_tracker/features/inbox/widgets/app_selection_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
 import '../models/transaction_model.dart';
 import '../models/account_model.dart';
 import '../models/category_model.dart';
@@ -10,11 +17,9 @@ import '../services/merchant_search_service.dart';
 import '../services/notification_handler.dart';
 import '../services/batch_processor_service.dart';
 import '../services/perceptron_storage_service.dart';
-import '../utils/bio_tagger.dart';
 import '../utils/transaction_parser.dart';
 import '../utils/app_settings.dart';
 import '../utils/app_snackbar.dart';
-import '../utils/icon_helper.dart';
 
 class PendingVerificationScreen extends StatefulWidget {
   final VoidCallback onConfirmedOrDiscarded;
@@ -35,6 +40,7 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
   List<CategoryModel> _categories = [];
   final TransactionParser _parser = TransactionParser();
   bool _isServiceEnabled = false;
+  bool _hasModelActivity = false;
 
   // Dual-tab controller
   late TabController _tabController;
@@ -160,13 +166,6 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
   // Confirm and train Naive Bayes models with user verified data
   Future<void> _confirmTransaction(
       TransactionModel tx, String categoryName) async {
-    // Show SnackBar synchronously first to avoid queuing delays
-    if (mounted) {
-      AppSnackBar.show(context,
-          'Confirmed transaction under "$categoryName"! Learned this pattern.',
-          type: SnackBarType.success);
-    }
-
     final dbService = DatabaseService.instance;
 
     // Update status to confirmed and save edits
@@ -176,13 +175,12 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
     // Look up the name of the selected account
     final account = _accounts.firstWhere((a) => a.id == tx.accountId,
         orElse: () => _accounts.first);
-    final accountName = account.name;
 
     // Self-Learning: Train type, category, account, and description classifiers on-device
     await _parser.trainConfirm(
       body: tx.body,
       categoryName: categoryName,
-      accountName: accountName,
+      accountName: account.name,
       accountKeywords: account.keywords,
       description: tx.description,
       amount: tx.amount,
@@ -190,7 +188,6 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
     );
 
     widget.onConfirmedOrDiscarded();
-    _refreshAll();
   }
 
   // Delete pending transaction and train model to ignore similar patterns
@@ -223,78 +220,17 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
       await Future.wait([
         _loadPendingData(),
         _loadCapturedAlerts(),
+        () async {
+          _hasModelActivity =
+              await DatabaseService.instance.hasTodayModelActivity();
+        }(),
       ]);
     } catch (e) {
       debugPrint('Refresh failed: $e');
     }
   }
 
-  // Mute notifications from app and archive raw log
-  Future<void> _muteAppForLog(
-      String packageName, int logId, String body) async {
-    await AppSettings.muteApp(packageName);
-    await DatabaseService.instance
-        .updateNotificationLogStatus(logId, 'archived');
 
-    // Train classifier to ignore
-    await _parser.trainType(body, 'ignore');
-
-    if (mounted) {
-      AppSnackBar.show(context, 'Muted notifications from $packageName.',
-          type: SnackBarType.neutral);
-    }
-
-    _refreshAll();
-  }
-
-  // Mute an entire app package and archive all its captured logs
-  Future<void> _muteEntireApp(String packageName, String appName,
-      List<Map<String, dynamic>> alertsList) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1E293B),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Mute $appName?',
-            style: const TextStyle(
-                color: Colors.white, fontWeight: FontWeight.bold)),
-        content: Text(
-          'All future notifications from $appName will be automatically ignored. Also archives ${alertsList.length} captured ${alertsList.length == 1 ? "alert" : "alerts"} from this app.',
-          style:
-              const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child:
-                const Text('Cancel', style: TextStyle(color: Colors.white38)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Mute App',
-                style: TextStyle(
-                    color: Color(0xFFEF4444), fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      await AppSettings.muteApp(packageName);
-      for (var alert in alertsList) {
-        final logId = alert['id'] as int;
-        final body = alert['body'] as String? ?? '';
-        await DatabaseService.instance
-            .updateNotificationLogStatus(logId, 'archived');
-        await _parser.trainType(body, 'ignore');
-      }
-      if (mounted) {
-        AppSnackBar.show(context, 'Muted $appName and archived all alerts.',
-            type: SnackBarType.neutral);
-      }
-      _refreshAll();
-    }
-  }
 
   // --- BATCH CLEARING & SELECTIVE APP CATEGORY MANAGEMENT ---
 
@@ -447,68 +383,7 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
     _refreshAll();
   }
 
-  Future<void> _muteAndArchiveSelectedAppCategories() async {
-    if (_selectedAppPackages.isEmpty) return;
 
-    final selectedPkgs = _selectedAppPackages.toList();
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1E293B),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Mute ${selectedPkgs.length} Apps?',
-            style: const TextStyle(
-                color: Colors.white, fontWeight: FontWeight.bold)),
-        content: Text(
-          'Future notifications from these ${selectedPkgs.length} selected apps will be automatically ignored.',
-          style:
-              const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child:
-                const Text('Cancel', style: TextStyle(color: Colors.white38)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Mute & Archive',
-                style: TextStyle(
-                    color: Color(0xFFEF4444), fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      int totalAlertsCount = 0;
-      for (var pkg in selectedPkgs) {
-        await AppSettings.muteApp(pkg);
-        final alertsForPkg =
-            _capturedAlerts.where((a) => a['package_name'] == pkg).toList();
-        totalAlertsCount += alertsForPkg.length;
-        for (var alert in alertsForPkg) {
-          final logId = alert['id'] as int;
-          final body = alert['body'] as String? ?? '';
-          await DatabaseService.instance
-              .updateNotificationLogStatus(logId, 'archived');
-          await _parser.trainType(body, 'ignore');
-        }
-      }
-
-      if (mounted) {
-        AppSnackBar.show(context,
-            'Muted ${selectedPkgs.length} apps and archived $totalAlertsCount alerts.',
-            type: SnackBarType.neutral);
-        setState(() {
-          _isAppCategorySelectionMode = false;
-          _selectedAppPackages.clear();
-        });
-      }
-
-      _refreshAll();
-    }
-  }
 
   Future<void> _handleFeedback(int logId, String appName, String title,
       String body, bool isFinancial, bool isRelevant) async {
@@ -643,12 +518,6 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
           actions: _isAppCategorySelectionMode
               ? [
                   IconButton(
-                    icon: const Icon(Icons.volume_off_rounded,
-                        color: Color(0xFFEF4444)),
-                    tooltip: 'Mute & Clear Selected',
-                    onPressed: _muteAndArchiveSelectedAppCategories,
-                  ),
-                  IconButton(
                     icon: const Icon(Icons.delete_sweep_outlined,
                         color: Color(0xFFEF4444)),
                     tooltip: 'Clear Selected Apps',
@@ -664,24 +533,31 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
                       tooltip: 'Discard All Drafts',
                       onPressed: _discardAllDrafts,
                     ),
-                  if (_tabController.index == 1 &&
-                      _capturedAlerts.isNotEmpty) ...[
+                  if (_tabController.index == 1) ...[
                     IconButton(
-                      icon: const Icon(Icons.checklist_rounded,
-                          color: Colors.white70),
-                      tooltip: 'Select Apps to Clear',
-                      onPressed: () {
-                        setState(() {
-                          _isAppCategorySelectionMode = true;
-                          _selectedAppPackages.clear();
-                        });
-                      },
+                      icon: const Icon(Icons.app_settings_alt_rounded,
+                          color: Color(0xFF818CF8)),
+                      tooltip: 'Track App Notifications',
+                      onPressed: _showAppSelectionBottomSheet,
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline, color: Colors.red),
-                      tooltip: 'Clear All Alerts',
-                      onPressed: _archiveAllCapturedAlerts,
-                    ),
+                    if (_capturedAlerts.isNotEmpty) ...[
+                      IconButton(
+                        icon: const Icon(Icons.checklist_rounded,
+                            color: Colors.white70),
+                        tooltip: 'Select Apps to Clear',
+                        onPressed: () {
+                          setState(() {
+                            _isAppCategorySelectionMode = true;
+                            _selectedAppPackages.clear();
+                          });
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline, color: Colors.red),
+                        tooltip: 'Clear All Alerts',
+                        onPressed: _archiveAllCapturedAlerts,
+                      ),
+                    ],
                   ],
                 ],
         ),
@@ -756,8 +632,14 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
                   ),
                 ),
               ),
-              _buildBatchProgressBarWidget(),
-              _buildModelActivityBannerWidget(),
+              const BatchProgressBanner(),
+              if (_hasModelActivity)
+                ModelActivityBanner(
+                  onViewLogPressed: () => showAuditLogBottomSheet(
+                    context: context,
+                    onUndo: _undoAuditAction,
+                  ),
+                ),
               // --- TAB CONTENT ---
               Expanded(
                 child: TabBarView(
@@ -837,430 +719,6 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
     );
   }
 
-  Widget _buildBatchProgressBarWidget() {
-    return ValueListenableBuilder<BatchProgressState>(
-      valueListenable: BatchProcessorService.instance.progressNotifier,
-      builder: (context, state, child) {
-        if (!state.isProcessing) return const SizedBox.shrink();
-
-        return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1E293B),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-                color: const Color(0xFF6366F1).withValues(alpha: 0.3)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      const SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Color(0xFF818CF8)),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        '⚡ Processing ${state.totalCount} incoming alerts...',
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600),
-                      ),
-                    ],
-                  ),
-                  Text(
-                    '${state.processedCount}/${state.totalCount}',
-                    style: const TextStyle(
-                        color: Colors.white54,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(
-                  value: state.progress,
-                  minHeight: 4,
-                  backgroundColor: Colors.white10,
-                  valueColor:
-                      const AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildModelActivityBannerWidget() {
-    return FutureBuilder<Map<String, int>>(
-      future: DatabaseService.instance.getDailyAuditCounts(),
-      builder: (context, snapshot) {
-        final counts = snapshot.data ?? {};
-        final drafted = counts['auto_drafted'] ?? 0;
-        final archived = counts['auto_archived'] ?? 0;
-        final hasActivity = drafted > 0 || archived > 0;
-
-        return Container(
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1E293B),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-                color: const Color(0xFF6366F1).withValues(alpha: 0.2)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              const Text('✨', style: TextStyle(fontSize: 16)),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  hasActivity
-                      ? 'Model Activity Today: Auto-drafted $drafted, Auto-archived $archived'
-                      : 'Model Activity: AI Active & Learning',
-                  style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500),
-                ),
-              ),
-              GestureDetector(
-                onTap: () => _showModelAuditLogSheet(context),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF6366F1).withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                        color: const Color(0xFF6366F1).withValues(alpha: 0.4)),
-                  ),
-                  child: const Text(
-                    'View Log',
-                    style: TextStyle(
-                        color: Color(0xFF818CF8),
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void _showModelAuditLogSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return Container(
-          height: MediaQuery.of(context).size.height * 0.78,
-          decoration: const BoxDecoration(
-            color: Color(0xFF0F172A),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-            border: Border(top: BorderSide(color: Color(0xFF334155), width: 1)),
-          ),
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-          child: SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.white24,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Header
-                Row(
-                  children: [
-                    const Icon(Icons.auto_awesome,
-                        color: Color(0xFF818CF8), size: 22),
-                    const SizedBox(width: 10),
-                    const Expanded(
-                      child: Text(
-                        'On-Device Learning Algorithm Decisions',
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete_sweep_rounded,
-                          color: Color(0xFFEF4444), size: 24),
-                      tooltip: 'Clear All',
-                      onPressed: () async {
-                        final confirmed = await showDialog<bool>(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            backgroundColor: const Color(0xFF1E293B),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20)),
-                            title: const Text('Clear Audit Log?',
-                                style: TextStyle(color: Colors.white)),
-                            content: const Text(
-                              'This will clear the history of automatic decisions made by your learning algorithm.\n\n'
-                              'Your learning progress and confirmed transactions will not be affected.',
-                              style: TextStyle(color: Colors.white70),
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, false),
-                                child: const Text('Cancel',
-                                    style: TextStyle(color: Colors.white54)),
-                              ),
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, true),
-                                child: const Text('Clear All',
-                                    style: TextStyle(
-                                        color: Color(0xFFEF4444),
-                                        fontWeight: FontWeight.bold)),
-                              ),
-                            ],
-                          ),
-                        );
-
-                        if (confirmed == true) {
-                          await DatabaseService.instance
-                              .deleteAllModelAuditLogs();
-                          if (context.mounted) {
-                            Navigator.pop(context);
-                            AppSnackBar.show(
-                                context, 'Automatic decision log cleared.',
-                                type: SnackBarType.neutral);
-                          }
-                        }
-                      },
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 6),
-                const Text(
-                  'Full transparency into automatic actions performed by your on-device learning algorithm.',
-                  style: TextStyle(color: Colors.white54, fontSize: 12),
-                ),
-                const SizedBox(height: 16),
-
-                Expanded(
-                  child: FutureBuilder<List<Map<String, dynamic>>>(
-                    future: DatabaseService.instance.getModelAuditLogs(),
-                    builder: (context, snapshot) {
-                      if (!snapshot.hasData) {
-                        return const Center(
-                            child: CircularProgressIndicator(
-                                valueColor:
-                                    AlwaysStoppedAnimation(Color(0xFF6366F1))));
-                      }
-                      final logs = snapshot.data!;
-                      if (logs.isEmpty) {
-                        return const Center(
-                          child: Text(
-                              'No automated decisions logged yet today.',
-                              style: TextStyle(
-                                  color: Colors.white38, fontSize: 13)),
-                        );
-                      }
-                      return ListView.builder(
-                        itemCount: logs.length,
-                        itemBuilder: (context, index) {
-                          final log = logs[index];
-                          final action = log['action_type'] as String;
-                          final appName = log['app_name'] as String? ?? 'App';
-                          final title = log['title'] as String? ?? '';
-                          final body = log['body'] as String? ?? '';
-                          final confidence =
-                              (log['confidence'] as num? ?? 0.85).toDouble();
-                          final isDrafted = action == 'auto_drafted';
-
-                          // Safely handle String, int (millis), or null values for date
-                          final rawDate = log['date'] ??
-                              log['created_at'] ??
-                              log['timestamp'];
-                          DateTime? date;
-
-                          if (rawDate is int) {
-                            date = DateTime.fromMillisecondsSinceEpoch(rawDate);
-                          } else if (rawDate is String) {
-                            date = DateTime.tryParse(rawDate) ??
-                                (int.tryParse(rawDate) != null
-                                    ? DateTime.fromMillisecondsSinceEpoch(
-                                        int.parse(rawDate))
-                                    : null);
-                          }
-
-                          final formattedTime = date != null
-                              ? DateFormat('dd MMM, hh:mm a').format(date)
-                              : '';
-
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF1E293B),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(
-                                color: isDrafted
-                                    ? const Color(0xFF10B981)
-                                        .withValues(alpha: 0.3)
-                                    : const Color(0xFF6366F1)
-                                        .withValues(alpha: 0.3),
-                              ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 8, vertical: 3),
-                                      decoration: BoxDecoration(
-                                        color: isDrafted
-                                            ? const Color(0xFF10B981)
-                                                .withValues(alpha: 0.15)
-                                            : const Color(0xFF6366F1)
-                                                .withValues(alpha: 0.15),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: Text(
-                                        isDrafted
-                                            ? 'AUTO-DRAFTED'
-                                            : 'AUTO-ARCHIVED',
-                                        style: TextStyle(
-                                          color: isDrafted
-                                              ? const Color(0xFF34D399)
-                                              : const Color(0xFF818CF8),
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(appName,
-                                        style: const TextStyle(
-                                            color: Colors.white70,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600)),
-                                    const Spacer(),
-                                    Text(
-                                      formattedTime.isNotEmpty
-                                          ? formattedTime
-                                          : 'Recent',
-                                      style: const TextStyle(
-                                          color: Colors.white38, fontSize: 11),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  title.isNotEmpty ? '$title: $body' : body,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                      color: Colors.white, fontSize: 13),
-                                ),
-                                const SizedBox(height: 10),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      '${(confidence * 100).toInt()}% Conf.',
-                                      style: const TextStyle(
-                                        color: Colors.white38,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    InkWell(
-                                      onTap: () {
-                                        Navigator.pop(context);
-                                        _undoAuditAction(log);
-                                      },
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 10, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white
-                                              .withValues(alpha: 0.06),
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                          border:
-                                              Border.all(color: Colors.white12),
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            const Icon(Icons.undo_rounded,
-                                                size: 14,
-                                                color: Color(0xFF818CF8)),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              isDrafted
-                                                  ? 'Undo Auto-Draft'
-                                                  : 'Undo Auto-Archive',
-                                              style: const TextStyle(
-                                                  color: Colors.white70,
-                                                  fontSize: 11,
-                                                  fontWeight: FontWeight.w600),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   Future<void> _undoAuditAction(Map<String, dynamic> auditLog) async {
     final auditId = auditLog['id'] as int;
     final logId = auditLog['log_id'] as int?;
@@ -1268,7 +726,7 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
     final body = auditLog['body'] as String? ?? '';
     final dbService = DatabaseService.instance;
 
-    if (actionType == 'auto_archived') {
+    if (actionType == 'auto_archived' || actionType == 'auto_dismissed') {
       if (logId != null) {
         await dbService.updateNotificationLogStatus(logId, 'unclassified');
       }
@@ -1431,6 +889,10 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
                       onOnlineLookup: _triggerOnlineCategoryLookup,
                       isLookupLoading: _lookupLoading[tx.id] ?? false,
                       suggestions: _categorySuggestions[tx.id] ?? [],
+                      onTap: () {
+                        debugPrint("CARD TAPPED");
+                        _showDraftEditor(tx);
+                      },
                     ),
                   );
                 },
@@ -1514,7 +976,7 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
             .getCachedAppName(pkg, defaultFallback: fallbackAppName);
         final isSelected = _selectedAppPackages.contains(pkg);
 
-        return _CapturedAppGroupTile(
+        return CapturedAppGroupTile(
           key: ValueKey(
               'captured_group_${pkg}_${_isAppCategorySelectionMode}_$isSelected'),
           pkg: pkg,
@@ -1526,1314 +988,56 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
           onTapHeader: () => _toggleAppPackageSelection(pkg),
           onLongPressHeader: () => _enterAppCategorySelectionMode(pkg),
           onFeedback: _handleFeedback,
-          onMute: _muteAppForLog,
-          onMuteEntireApp: _muteEntireApp,
         );
       },
     );
   }
 
-  // --- CARD WIDGET BUILDER ---
-}
+  Future<void> _showDraftEditor(TransactionModel tx) async {
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) {
+        return DraftEditorBottomSheet(
+          child: DraftEditor(
+            tx: tx,
+            accounts: _accounts,
+            categories: _categories,
+            onConfirm: (updatedTx, categoryName) async {
+              await _confirmTransaction(updatedTx, categoryName);
+              await _refreshAll();
 
-class PendingTransactionCard extends StatefulWidget {
-  final TransactionModel tx;
-  final List<AccountModel> accounts;
-  final List<CategoryModel> categories;
-  final Function(TransactionModel, String) onConfirm;
-  final Function(int) onDiscard;
-  final Function(int, String) onOnlineLookup;
-  final bool isLookupLoading;
-  final List<String> suggestions;
+              if (!mounted) return true;
 
-  const PendingTransactionCard({
-    super.key,
-    required this.tx,
-    required this.accounts,
-    required this.categories,
-    required this.onConfirm,
-    required this.onDiscard,
-    required this.onOnlineLookup,
-    required this.isLookupLoading,
-    required this.suggestions,
-  });
+              AppSnackBar.show(
+                context,
+                'Confirmed transaction under "$categoryName"! Learned this pattern.',
+                type: SnackBarType.success,
+              );
 
-  @override
-  State<PendingTransactionCard> createState() => _PendingTransactionCardState();
-}
-
-class _PendingTransactionCardState extends State<PendingTransactionCard> {
-  late TextEditingController _amountController;
-  late TextEditingController _descController;
-  late String _type;
-  late int _accountId;
-  int? _toAccountId;
-  late int _categoryId;
-  late DateTime _selectedDate;
-  bool _isExpanded = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _amountController =
-        TextEditingController(text: widget.tx.amount.toString());
-    _descController = TextEditingController(text: widget.tx.description);
-    _type = widget.tx.type;
-    _accountId = widget.tx.accountId;
-    _toAccountId = widget.tx.toAccountId;
-    _categoryId = widget.tx.categoryId;
-    _selectedDate = widget.tx.date;
+              return true;
+            },
+            onDiscard: _discardTransaction,
+            onOnlineLookup: _triggerOnlineCategoryLookup,
+            isLookupLoading: _lookupLoading[tx.id] ?? false,
+            suggestions: _categorySuggestions[tx.id] ?? [],
+          ),
+        );
+      },
+    );
   }
 
-  @override
-  void dispose() {
-    _amountController.dispose();
-    _descController.dispose();
-    super.dispose();
-  }
-
-  void _showAccountPicker(
-      String pickerTitle, int currentSelected, Function(int) onSelected) {
-    FocusManager.instance.primaryFocus?.unfocus();
-    final double maxFraction = 0.85;
-    final double initialFraction = widget.accounts.length <= 3 ? 0.55 : 0.75;
-    final double minFraction = 0.40;
-
+  void _showAppSelectionBottomSheet() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: initialFraction,
-          minChildSize: minFraction,
-          maxChildSize: maxFraction,
-          expand: false,
-          builder: (context, scrollController) {
-            return Container(
-              decoration: const BoxDecoration(
-                color: Color(0xFF0F172A),
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-              ),
-              padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-              child: Column(
-                children: [
-                  Container(
-                    width: 36,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.white24,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  Text(
-                    pickerTitle,
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  Expanded(
-                    child: ListView.builder(
-                      controller: scrollController,
-                      itemCount: widget.accounts.length,
-                      itemBuilder: (context, index) {
-                        final acc = widget.accounts[index];
-                        final isSelected = acc.id == currentSelected;
-                        IconData getIcon(String t) {
-                          switch (t) {
-                            case 'bank':
-                              return Icons.account_balance;
-                            case 'credit_card':
-                              return Icons.credit_card;
-                            case 'wallet':
-                              return Icons.account_balance_wallet;
-                            default:
-                              return Icons.money;
-                          }
-                        }
-
-                        return InkWell(
-                          onTap: () {
-                            onSelected(acc.id!);
-                            Navigator.pop(context);
-                          },
-                          borderRadius: BorderRadius.circular(16),
-                          child: Container(
-                            margin: const EdgeInsets.symmetric(vertical: 6),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 12),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? const Color(0xFF6366F1).withOpacity(0.15)
-                                  : const Color(0xFF1E293B),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: isSelected
-                                    ? const Color(0xFF6366F1).withOpacity(0.4)
-                                    : Colors.white.withOpacity(0.05),
-                                width: isSelected ? 1.5 : 1.0,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF6366F1)
-                                        .withOpacity(0.15),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    getIcon(acc.type),
-                                    color: const Color(0xFF6366F1),
-                                    size: 18,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        acc.name,
-                                        style: TextStyle(
-                                          fontWeight: isSelected
-                                              ? FontWeight.bold
-                                              : FontWeight.normal,
-                                          fontSize: 14,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        'Balance: ${AppSettings.currencySymbol}${acc.balance.toStringAsFixed(2)}',
-                                        style: const TextStyle(
-                                          fontSize: 11,
-                                          color: Colors.white54,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                if (isSelected)
-                                  const Icon(Icons.check_circle_rounded,
-                                      color: Color(0xFF10B981), size: 20),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
+        return const AppSelectionBottomSheet();
       },
-    );
-  }
-
-  void _showCategoryPicker(int currentSelected, Function(int) onSelected) {
-    FocusManager.instance.primaryFocus?.unfocus();
-    final double maxFraction = 0.85;
-    final double initialFraction = widget.categories.length <= 4 ? 0.55 : 0.75;
-    final double minFraction = 0.40;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: initialFraction,
-          minChildSize: minFraction,
-          maxChildSize: maxFraction,
-          expand: false,
-          builder: (context, scrollController) {
-            return Container(
-              decoration: const BoxDecoration(
-                color: Color(0xFF0F172A),
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-              ),
-              padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-              child: Column(
-                children: [
-                  Container(
-                    width: 36,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.white24,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const Text(
-                    'Select Category',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  Expanded(
-                    child: ListView.builder(
-                      controller: scrollController,
-                      itemCount: widget.categories.length,
-                      itemBuilder: (context, index) {
-                        final cat = widget.categories[index];
-                        final isSelected = cat.id == currentSelected;
-                        return InkWell(
-                          onTap: () {
-                            onSelected(cat.id!);
-                            Navigator.pop(context);
-                          },
-                          borderRadius: BorderRadius.circular(16),
-                          child: Container(
-                            margin: const EdgeInsets.symmetric(vertical: 6),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 12),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? const Color(0xFF6366F1).withOpacity(0.15)
-                                  : const Color(0xFF1E293B),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: isSelected
-                                    ? const Color(0xFF6366F1).withOpacity(0.4)
-                                    : Colors.white.withOpacity(0.05),
-                                width: isSelected ? 1.5 : 1.0,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Color(cat.color).withOpacity(0.15),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    IconHelper.getIcon(cat.icon),
-                                    color: Color(cat.color),
-                                    size: 18,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    cat.name,
-                                    style: TextStyle(
-                                      fontWeight: isSelected
-                                          ? FontWeight.bold
-                                          : FontWeight.normal,
-                                      fontSize: 14,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                                if (isSelected)
-                                  const Icon(Icons.check_circle_rounded,
-                                      color: Color(0xFF10B981), size: 20),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildMiniTypePill({
-    required String label,
-    required bool isActive,
-    required VoidCallback onTap,
-  }) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
-          decoration: BoxDecoration(
-            color: isActive ? const Color(0xFF6366F1) : const Color(0xFF0F172A),
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(
-                color: isActive ? const Color(0xFF6366F1) : Colors.white10),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            label,
-            style: TextStyle(
-              color: isActive ? Colors.white : Colors.white60,
-              fontSize: 11,
-              fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final selectedCategory = widget.categories.firstWhere(
-        (c) => c.id == _categoryId,
-        orElse: () => widget.categories.last);
-    final selectedAcc = widget.accounts.firstWhere((a) => a.id == _accountId,
-        orElse: () => widget.accounts.first);
-    final selectedToAcc = _type == 'transfer' && _toAccountId != null
-        ? widget.accounts.firstWhere((a) => a.id == _toAccountId,
-            orElse: () => widget.accounts.first)
-        : null;
-
-    IconData getAccountIcon(String t) {
-      switch (t) {
-        case 'bank':
-          return Icons.account_balance;
-        case 'credit_card':
-          return Icons.credit_card;
-        case 'wallet':
-          return Icons.account_balance_wallet;
-        default:
-          return Icons.money;
-      }
-    }
-
-    if (!_isExpanded) {
-      return Card(
-        margin: const EdgeInsets.symmetric(vertical: 8.0),
-        color: const Color(0xFF1E293B),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: Colors.white.withOpacity(0.04)),
-        ),
-        child: InkWell(
-          onTap: () => setState(() => _isExpanded = true),
-          borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF6366F1).withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              widget.tx.appName ?? 'INTERCEPTED',
-                              style: const TextStyle(
-                                  fontSize: 10,
-                                  color: Color(0xFF6366F1),
-                                  fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              widget.tx.title.isNotEmpty
-                                  ? widget.tx.title
-                                  : 'SMS notification',
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                              style: const TextStyle(
-                                  fontSize: 12, color: Colors.white38),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.expand_more,
-                              color: Colors.white70),
-                          onPressed: () => setState(() => _isExpanded = true),
-                          constraints: const BoxConstraints(),
-                          padding: EdgeInsets.zero,
-                        ),
-                        const SizedBox(width: 12),
-                        IconButton(
-                          icon: const Icon(Icons.close,
-                              color: Colors.white38, size: 20),
-                          onPressed: () => widget.onDiscard(widget.tx.id!),
-                          constraints: const BoxConstraints(),
-                          padding: EdgeInsets.zero,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  widget.tx.body,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 12, color: Colors.white70),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Text(
-                      '${AppSettings.currencySymbol}${_amountController.text}',
-                      style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white),
-                    ),
-                    const SizedBox(width: 10),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: _type == 'debit'
-                            ? const Color(0xFFEF4444).withOpacity(0.15)
-                            : const Color(0xFF10B981).withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        _type.toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 9,
-                          color: _type == 'debit'
-                              ? const Color(0xFFEF4444)
-                              : const Color(0xFF10B981),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '•  ${widget.accounts.firstWhere((a) => a.id == _accountId, orElse: () => widget.accounts.first).name}',
-                      style:
-                          const TextStyle(fontSize: 11, color: Colors.white38),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '•  ${selectedCategory.name}',
-                      style:
-                          const TextStyle(fontSize: 11, color: Colors.white38),
-                    ),
-                    const Spacer(),
-                    Text(
-                      DateFormat('dd MMM, hh:mm a').format(widget.tx.date),
-                      style:
-                          const TextStyle(fontSize: 11, color: Colors.white38),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8.0),
-      color: const Color(0xFF1E293B),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: Colors.white.withOpacity(0.04)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            InkWell(
-              onTap: () => setState(() => _isExpanded = false),
-              borderRadius: BorderRadius.circular(8),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF6366F1).withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              widget.tx.appName ?? 'INTERCEPTED',
-                              style: const TextStyle(
-                                  fontSize: 10,
-                                  color: Color(0xFF6366F1),
-                                  fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              widget.tx.title.isNotEmpty
-                                  ? widget.tx.title
-                                  : 'SMS notification',
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                              style: const TextStyle(
-                                  fontSize: 12, color: Colors.white38),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.expand_less,
-                              color: Colors.white70),
-                          onPressed: () => setState(() => _isExpanded = false),
-                          constraints: const BoxConstraints(),
-                          padding: EdgeInsets.zero,
-                        ),
-                        const SizedBox(width: 12),
-                        IconButton(
-                          icon: const Icon(Icons.close,
-                              color: Colors.white38, size: 20),
-                          onPressed: () => widget.onDiscard(widget.tx.id!),
-                          constraints: const BoxConstraints(),
-                          padding: EdgeInsets.zero,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                widget.tx.body,
-                style: const TextStyle(fontSize: 12, color: Colors.white70),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  flex: 4,
-                  child: TextField(
-                    controller: _amountController,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    style: const TextStyle(color: Colors.white, fontSize: 14),
-                    decoration: InputDecoration(
-                      labelText: 'Amount (${AppSettings.currencySymbol})',
-                      labelStyle:
-                          const TextStyle(color: Colors.white54, fontSize: 11),
-                      filled: true,
-                      fillColor: const Color(0xFF0F172A),
-                      prefixText: '${AppSettings.currencySymbol} ',
-                      prefixStyle: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                          color: Colors.white),
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 12),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Colors.white24),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                            color: Color(0xFF6366F1), width: 1.5),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  flex: 6,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    height: 48,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.white24),
-                      borderRadius: BorderRadius.circular(12),
-                      color: const Color(0xFF0F172A),
-                    ),
-                    child: Row(
-                      children: [
-                        _buildMiniTypePill(
-                          label: 'Dr',
-                          isActive: _type == 'debit',
-                          onTap: () => setState(() {
-                            _type = 'debit';
-                            _toAccountId = null;
-                          }),
-                        ),
-                        _buildMiniTypePill(
-                          label: 'Cr',
-                          isActive: _type == 'credit',
-                          onTap: () => setState(() {
-                            _type = 'credit';
-                            _toAccountId = null;
-                          }),
-                        ),
-                        _buildMiniTypePill(
-                          label: 'Tr',
-                          isActive: _type == 'transfer',
-                          onTap: () => setState(() {
-                            _type = 'transfer';
-                            if (_toAccountId == null &&
-                                widget.accounts.length > 1) {
-                              _toAccountId = widget.accounts
-                                  .firstWhere((a) => a.id != _accountId)
-                                  .id;
-                            }
-                          }),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            CustomSelectField(
-              label: _type == 'transfer' ? 'From Account' : 'Account',
-              value: selectedAcc.name,
-              icon: getAccountIcon(selectedAcc.type),
-              onTap: () {
-                _showAccountPicker(
-                  _type == 'transfer'
-                      ? 'Select Source Account'
-                      : 'Select Account',
-                  _accountId,
-                  (selectedId) => setState(() {
-                    _accountId = selectedId;
-                    if (_type == 'transfer' && _toAccountId == _accountId) {
-                      _toAccountId = widget.accounts
-                          .firstWhere((a) => a.id != _accountId)
-                          .id;
-                    }
-                  }),
-                );
-              },
-            ),
-            if (_type == 'transfer' && selectedToAcc != null) ...[
-              CustomSelectField(
-                label: 'To Account',
-                value: selectedToAcc.name,
-                icon: getAccountIcon(selectedToAcc.type),
-                onTap: () {
-                  _showAccountPicker(
-                    'Select Destination Account',
-                    _toAccountId ?? _accountId,
-                    (selectedId) => setState(() => _toAccountId = selectedId),
-                  );
-                },
-              ),
-            ],
-            const SizedBox(height: 12),
-            CustomSelectField(
-              label: 'Category',
-              value: selectedCategory.name,
-              icon: IconHelper.getIcon(selectedCategory.icon),
-              iconColor: Color(selectedCategory.color),
-              onTap: () {
-                _showCategoryPicker(
-                  _categoryId,
-                  (selectedId) => setState(() => _categoryId = selectedId),
-                );
-              },
-            ),
-            if (widget.suggestions.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 6,
-                children: widget.suggestions.map((suggestName) {
-                  final isNew = !widget.categories.any(
-                      (c) => c.name.toLowerCase() == suggestName.toLowerCase());
-                  final label = isNew
-                      ? '✨ Suggest New Category: $suggestName'
-                      : '✨ $suggestName';
-
-                  return InkWell(
-                    onTap: () async {
-                      if (isNew) {
-                        final dbService = DatabaseService.instance;
-                        final colorList = [
-                          0xFFFF8A80,
-                          0xFFFFD180,
-                          0xFF80D8FF,
-                          0xFFEA80FC,
-                          0xFFB9F6CA,
-                          0xFFCFD8DC
-                        ];
-                        final randCol =
-                            colorList[widget.tx.id! % colorList.length];
-                        final newCatId = await dbService.insertCategory(
-                          CategoryModel(
-                              name: suggestName,
-                              color: randCol,
-                              icon: 'more_horiz'),
-                        );
-
-                        if (mounted) {
-                          AppSnackBar.show(context,
-                              'Created & assigned category "$suggestName"!',
-                              type: SnackBarType.success);
-                        }
-                        setState(() {
-                          _categoryId = newCatId;
-                        });
-                      } else {
-                        final match = widget.categories.firstWhere((c) =>
-                            c.name.toLowerCase() == suggestName.toLowerCase());
-                        setState(() {
-                          _categoryId = match.id!;
-                        });
-                      }
-                    },
-                    borderRadius: BorderRadius.circular(16),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: isNew
-                            ? const Color(0xFF10B981).withValues(alpha: 0.15)
-                            : const Color(0xFF6366F1).withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: isNew
-                              ? const Color(0xFF34D399).withValues(alpha: 0.4)
-                              : const Color(0xFF818CF8).withValues(alpha: 0.4),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            isNew
-                                ? Icons.add_circle_outline_rounded
-                                : Icons.auto_awesome_rounded,
-                            size: 13,
-                            color: isNew
-                                ? const Color(0xFF34D399)
-                                : const Color(0xFF818CF8),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            label,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: isNew
-                                  ? const Color(0xFF34D399)
-                                  : const Color(0xFF818CF8),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ],
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  flex: 6,
-                  child: TextField(
-                    controller: _descController,
-                    style: const TextStyle(color: Colors.white, fontSize: 13),
-                    decoration: InputDecoration(
-                      labelText: 'Description',
-                      labelStyle:
-                          const TextStyle(color: Colors.white54, fontSize: 11),
-                      filled: true,
-                      fillColor: const Color(0xFF0F172A),
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 12),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Colors.white24),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                            color: Color(0xFF6366F1), width: 1.5),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  flex: 4,
-                  child: InkWell(
-                    onTap: () async {
-                      FocusManager.instance.primaryFocus?.unfocus();
-                      final date = await showDatePicker(
-                        context: context,
-                        initialDate: _selectedDate,
-                        firstDate: DateTime(2020),
-                        lastDate: DateTime(2030),
-                      );
-                      if (date != null) {
-                        final time = await showTimePicker(
-                          context: context,
-                          initialTime: TimeOfDay.fromDateTime(_selectedDate),
-                        );
-                        if (time != null) {
-                          setState(() {
-                            _selectedDate = DateTime(
-                              date.year,
-                              date.month,
-                              date.day,
-                              time.hour,
-                              time.minute,
-                            );
-                          });
-                        }
-                      }
-                    },
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      height: 48,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.white24),
-                        borderRadius: BorderRadius.circular(12),
-                        color: const Color(0xFF0F172A),
-                      ),
-                      alignment: Alignment.center,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.calendar_today,
-                              color: Color(0xFF6366F1), size: 14),
-                          const SizedBox(width: 6),
-                          Text(
-                            DateFormat('dd MMM, hh:mm').format(_selectedDate),
-                            style: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF10B981),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-              ),
-              onPressed: () {
-                final amt = double.tryParse(_amountController.text) ?? 0.0;
-                if (amt <= 0) {
-                  AppSnackBar.show(context, 'Please enter a valid amount',
-                      type: SnackBarType.warning);
-                  return;
-                }
-
-                final desc = _descController.text.trim();
-                final finalDesc = desc.isEmpty ? widget.tx.description : desc;
-
-                final updatedTx = widget.tx.copyWith(
-                  amount: amt,
-                  type: _type,
-                  accountId: _accountId,
-                  toAccountId: _toAccountId,
-                  categoryId: _categoryId,
-                  description: finalDesc,
-                  date: _selectedDate,
-                );
-
-                widget.onConfirm(updatedTx, selectedCategory.name);
-              },
-              child: const Text('Verify & Confirm',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// Custom selection field widget to replace native dropdowns and prevent keyboard/viewport conflicts
-class CustomSelectField extends StatelessWidget {
-  final String label;
-  final String value;
-  final IconData icon;
-  final VoidCallback onTap;
-  final Color? iconColor;
-
-  const CustomSelectField({
-    super.key,
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.onTap,
-    this.iconColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      child: InkWell(
-        onTap: () {
-          FocusManager.instance.primaryFocus?.unfocus();
-          onTap();
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.white24),
-            borderRadius: BorderRadius.circular(12),
-            color: const Color(0xFF0F172A), // Dark contrast background
-          ),
-          child: Row(
-            children: [
-              Icon(icon, color: iconColor ?? const Color(0xFF6366F1), size: 20),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      style:
-                          const TextStyle(fontSize: 10, color: Colors.white54),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      value,
-                      style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white),
-                    ),
-                  ],
-                ),
-              ),
-              const Icon(Icons.arrow_drop_down, color: Colors.white54),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CapturedAppGroupTile extends StatefulWidget {
-  final String pkg;
-  final String fallbackAppName;
-  final List<Map<String, dynamic>> alertsList;
-  final Widget leadingWidget;
-  final bool isSelectionMode;
-  final bool isSelected;
-  final VoidCallback? onTapHeader;
-  final VoidCallback? onLongPressHeader;
-  final Function(int, String, String, String, bool, bool) onFeedback;
-  final Function(String, int, String) onMute;
-  final Function(String, String, List<Map<String, dynamic>>) onMuteEntireApp;
-
-  const _CapturedAppGroupTile({
-    super.key,
-    required this.pkg,
-    required this.fallbackAppName,
-    required this.alertsList,
-    required this.leadingWidget,
-    this.isSelectionMode = false,
-    this.isSelected = false,
-    this.onTapHeader,
-    this.onLongPressHeader,
-    required this.onFeedback,
-    required this.onMute,
-    required this.onMuteEntireApp,
-  });
-
-  @override
-  State<_CapturedAppGroupTile> createState() => _CapturedAppGroupTileState();
-}
-
-class _CapturedAppGroupTileState extends State<_CapturedAppGroupTile> {
-  bool _isExpanded = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: widget.isSelected
-            ? const Color(0xFF6366F1).withValues(alpha: 0.12)
-            : const Color(0xFF1E293B),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: widget.isSelected
-              ? const Color(0xFF6366F1)
-              : const Color(0xFF334155),
-          width: widget.isSelected ? 1.5 : 1.0,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: GestureDetector(
-        onLongPress: widget.onLongPressHeader,
-        child: ExpansionTile(
-          shape: const Border(),
-          collapsedShape: const Border(),
-          initiallyExpanded: false,
-          onExpansionChanged: (expanded) {
-            if (widget.isSelectionMode) {
-              if (widget.onTapHeader != null) widget.onTapHeader!();
-            } else {
-              setState(() {
-                _isExpanded = expanded;
-              });
-            }
-          },
-          leading: widget.isSelectionMode
-              ? AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  padding: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    color: widget.isSelected
-                        ? const Color(0xFF6366F1)
-                        : Colors.transparent,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: widget.isSelected
-                          ? const Color(0xFF6366F1)
-                          : Colors.white30,
-                      width: 1.5,
-                    ),
-                  ),
-                  child: Icon(
-                    Icons.check_rounded,
-                    size: 14,
-                    color:
-                        widget.isSelected ? Colors.white : Colors.transparent,
-                  ),
-                )
-              : widget.leadingWidget,
-          title: Text(
-            widget.fallbackAppName,
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: widget.isSelected ? FontWeight.w800 : FontWeight.bold,
-              fontSize: 14,
-            ),
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF59E0B).withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                      color: const Color(0xFFF59E0B).withValues(alpha: 0.3)),
-                ),
-                child: Text(
-                  '${widget.alertsList.length} ${widget.alertsList.length == 1 ? "Alert" : "Alerts"}',
-                  style: const TextStyle(
-                      color: Color(0xFFFBBF24),
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold),
-                ),
-              ),
-              if (!widget.isSelectionMode) ...[
-                const SizedBox(width: 2),
-                IconButton(
-                  icon: const Icon(Icons.volume_off_rounded,
-                      color: Colors.white38, size: 18),
-                  tooltip: 'Mute ${widget.fallbackAppName}',
-                  onPressed: () => widget.onMuteEntireApp(
-                      widget.pkg, widget.fallbackAppName, widget.alertsList),
-                ),
-                AnimatedRotation(
-                  turns: _isExpanded ? 0.5 : 0.0,
-                  duration: const Duration(milliseconds: 200),
-                  child: const Icon(Icons.keyboard_arrow_down_rounded,
-                      size: 20, color: Colors.white30),
-                ),
-              ],
-            ],
-          ),
-          childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-          children: widget.alertsList.map((alert) {
-            return CapturedAlertCard(
-              key: ValueKey(alert['id']),
-              alert: alert,
-              onFeedback: widget.onFeedback,
-              onMute: widget.onMute,
-            );
-          }).toList(),
-        ),
-      ),
-    );
-  }
-}
-
-class CapturedAlertCard extends StatelessWidget {
-  final Map<String, dynamic> alert;
-  final Function(int, String, String, String, bool, bool) onFeedback;
-  final Function(String, int, String) onMute;
-
-  const CapturedAlertCard({
-    super.key,
-    required this.alert,
-    required this.onFeedback,
-    required this.onMute,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final logId = alert['id'] as int;
-    final appName = alert['app_name'] as String? ?? 'Unknown';
-    final title = alert['title'] as String? ?? '';
-    final body = alert['body'] as String? ?? '';
-    final dateStr = alert['date'] as String? ?? '';
-    final date = DateTime.tryParse(dateStr);
-    final formattedDate =
-        date != null ? DateFormat('dd MMM, hh:mm a').format(date) : '';
-
-    return Container(
-      margin: const EdgeInsets.only(top: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0F172A).withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Timestamp & Badge Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  formattedDate,
-                  style: const TextStyle(
-                      fontSize: 10,
-                      color: Colors.white38,
-                      fontWeight: FontWeight.w500),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-
-          // Title & Body
-          if (title.isNotEmpty) ...[
-            Text(
-              title,
-              style: const TextStyle(
-                  fontSize: 13,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 4),
-          ],
-          Text(
-            body,
-            style: const TextStyle(
-                fontSize: 12, color: Colors.white70, height: 1.4),
-          ),
-          const SizedBox(height: 14),
-
-          // 1-Tap Quick Action Buttons
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.add_chart_rounded, size: 15),
-                  label: const Text('Track Transaction',
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF10B981),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    elevation: 0,
-                  ),
-                  onPressed: () {
-                    onFeedback(logId, appName, title, body, true, true);
-                  },
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: OutlinedButton.icon(
-                  icon: const Icon(Icons.block_rounded, size: 15),
-                  label: const Text('Ignore',
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.white60,
-                    side: const BorderSide(color: Colors.white24),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                  ),
-                  onPressed: () {
-                    onFeedback(logId, appName, title, body, false, false);
-                  },
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
+    ).then((_) {
+      _refreshAll();
+    });
   }
 }
