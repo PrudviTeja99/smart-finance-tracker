@@ -2837,6 +2837,12 @@ class _SimulateNotificationSheetState extends State<_SimulateNotificationSheet> 
       'body': 'Your ICICI Bank Credit Card XX9999 has been charged Rs 8,450.00 at AMAZON INDIA. Available Limit: Rs 92,300.00.'
     },
     {
+      'name': 'SBI UPI SMS',
+      'package': 'com.android.messaging',
+      'title': 'SBI UPI',
+      'body': 'Dear SBI User, Rs 1,500.00 debited from A/c XX8888 on 22-07-2026 for UPI Ref: 629381029472.'
+    },
+    {
       'name': 'Google Pay',
       'package': 'com.google.android.apps.nbu.paisa',
       'title': 'Google Pay',

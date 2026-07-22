@@ -9,8 +9,6 @@ class CapturedAlertsBottomSheet extends StatefulWidget {
   final List<Map<String, dynamic>> alerts;
 
   final Future<void> Function(int, String, String, String, bool, bool) onFeedback;
-  final Function(String, int, String) onMute;
-  final Function(String, String, List<Map<String, dynamic>>) onMuteEntireApp;
 
   const CapturedAlertsBottomSheet({
     super.key,
@@ -19,8 +17,6 @@ class CapturedAlertsBottomSheet extends StatefulWidget {
     required this.leadingWidget,
     required this.alerts,
     required this.onFeedback,
-    required this.onMute,
-    required this.onMuteEntireApp,
   });
 
   @override
@@ -43,21 +39,22 @@ class _CapturedAlertsBottomSheetState extends State<CapturedAlertsBottomSheet> {
         heightFactor: 0.90,
         child: Container(
           decoration: const BoxDecoration(
-            color: Color(0xFF111827),
+            color: Color(0xFF0F172A),
             borderRadius: BorderRadius.vertical(
               top: Radius.circular(24),
             ),
+            border: Border(top: BorderSide(color: Color(0xFF334155), width: 1)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               const SizedBox(height: 12),
               Container(
-                width: 42,
+                width: 40,
                 height: 4,
                 decoration: BoxDecoration(
                   color: Colors.white24,
-                  borderRadius: BorderRadius.circular(100),
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
               const SizedBox(height: 20),
@@ -105,22 +102,6 @@ class _CapturedAlertsBottomSheetState extends State<CapturedAlertsBottomSheet> {
                           ),
                         ],
                       ),
-                    ),
-                    IconButton(
-                      tooltip: 'Mute Notifications',
-                      icon: const Icon(
-                        Icons.volume_off_rounded,
-                        color: Colors.white70,
-                      ),
-                      onPressed: () {
-                        Navigator.pop(context);
-
-                        widget.onMuteEntireApp(
-                          widget.packageName,
-                          widget.appName,
-                          _localAlerts,
-                        );
-                      },
                     ),
                   ],
                 ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:installed_apps/installed_apps.dart';
 import 'package:installed_apps/app_info.dart';
+import '../../../services/app_icon_cache_service.dart';
 import '../../../utils/app_settings.dart';
 import '../../../utils/app_snackbar.dart';
 
@@ -36,11 +37,16 @@ class _AppSelectionBottomSheetState extends State<AppSelectionBottomSheet> {
     try {
       final apps = await InstalledApps.getInstalledApps(
         excludeSystemApps: true,
-        withIcon: true,
+        withIcon: false,
       );
 
       // Sort alphabetically by app name
       apps.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+
+      // Pre-populate App Names in the global cache so the list uses launcher names
+      for (var app in apps) {
+        AppIconCacheService.instance.cacheAppName(app.packageName, app.name);
+      }
 
       if (mounted) {
         setState(() {
@@ -249,21 +255,13 @@ class _AppSelectionBottomSheetState extends State<AppSelectionBottomSheet> {
                                     child: Column(
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
-                                        // App Icon
-                                        ClipRRect(
-                                          borderRadius: BorderRadius.circular(12),
-                                          child: app.icon != null
-                                              ? Image.memory(
-                                                  app.icon!,
-                                                  width: 44,
-                                                  height: 44,
-                                                  fit: BoxFit.cover,
-                                                )
-                                              : const Icon(
-                                                  Icons.apps_rounded,
-                                                  size: 44,
-                                                  color: Colors.white30,
-                                                ),
+                                        AppIconCacheService.instance.buildAppIconWidget(
+                                          app.packageName,
+                                          app.name,
+                                          size: 44,
+                                          onLoaded: () {
+                                            if (mounted) setState(() {});
+                                          },
                                         ),
                                         const SizedBox(height: 10),
                                         // App Name

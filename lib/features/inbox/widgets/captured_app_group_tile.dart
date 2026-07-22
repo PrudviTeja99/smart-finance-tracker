@@ -13,8 +13,6 @@ class CapturedAppGroupTile extends StatefulWidget {
   final VoidCallback? onTapHeader;
   final VoidCallback? onLongPressHeader;
   final Future<void> Function(int, String, String, String, bool, bool) onFeedback;
-  final Function(String, int, String) onMute;
-  final Function(String, String, List<Map<String, dynamic>>) onMuteEntireApp;
 
   const CapturedAppGroupTile({
     super.key,
@@ -27,8 +25,6 @@ class CapturedAppGroupTile extends StatefulWidget {
     this.onTapHeader,
     this.onLongPressHeader,
     required this.onFeedback,
-    required this.onMute,
-    required this.onMuteEntireApp,
   });
 
   @override
@@ -77,8 +73,6 @@ class _CapturedAppGroupTileState extends State<CapturedAppGroupTile> {
                 leadingWidget: widget.leadingWidget,
                 alerts: widget.alertsList,
                 onFeedback: widget.onFeedback,
-                onMute: widget.onMute,
-                onMuteEntireApp: widget.onMuteEntireApp,
               ),
             );
           },

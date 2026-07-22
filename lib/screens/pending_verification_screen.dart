@@ -230,72 +230,7 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
     }
   }
 
-  // Mute notifications from app and archive raw log
-  Future<void> _muteAppForLog(
-      String packageName, int logId, String body) async {
-    await AppSettings.muteApp(packageName);
-    await DatabaseService.instance
-        .updateNotificationLogStatus(logId, 'archived');
 
-    // Train classifier to ignore
-    await _parser.trainType(body, 'ignore');
-
-    if (mounted) {
-      AppSnackBar.show(context, 'Muted notifications from $packageName.',
-          type: SnackBarType.neutral);
-    }
-
-    _refreshAll();
-  }
-
-  // Mute an entire app package and archive all its captured logs
-  Future<void> _muteEntireApp(String packageName, String appName,
-      List<Map<String, dynamic>> alertsList) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1E293B),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Mute $appName?',
-            style: const TextStyle(
-                color: Colors.white, fontWeight: FontWeight.bold)),
-        content: Text(
-          'All future notifications from $appName will be automatically ignored. Also archives ${alertsList.length} captured ${alertsList.length == 1 ? "alert" : "alerts"} from this app.',
-          style:
-              const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child:
-                const Text('Cancel', style: TextStyle(color: Colors.white38)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Mute App',
-                style: TextStyle(
-                    color: Color(0xFFEF4444), fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      await AppSettings.muteApp(packageName);
-      for (var alert in alertsList) {
-        final logId = alert['id'] as int;
-        final body = alert['body'] as String? ?? '';
-        await DatabaseService.instance
-            .updateNotificationLogStatus(logId, 'archived');
-        await _parser.trainType(body, 'ignore');
-      }
-      if (mounted) {
-        AppSnackBar.show(context, 'Muted $appName and archived all alerts.',
-            type: SnackBarType.neutral);
-      }
-      _refreshAll();
-    }
-  }
 
   // --- BATCH CLEARING & SELECTIVE APP CATEGORY MANAGEMENT ---
 
@@ -448,68 +383,7 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
     _refreshAll();
   }
 
-  Future<void> _muteAndArchiveSelectedAppCategories() async {
-    if (_selectedAppPackages.isEmpty) return;
 
-    final selectedPkgs = _selectedAppPackages.toList();
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1E293B),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Mute ${selectedPkgs.length} Apps?',
-            style: const TextStyle(
-                color: Colors.white, fontWeight: FontWeight.bold)),
-        content: Text(
-          'Future notifications from these ${selectedPkgs.length} selected apps will be automatically ignored.',
-          style:
-              const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child:
-                const Text('Cancel', style: TextStyle(color: Colors.white38)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Mute & Archive',
-                style: TextStyle(
-                    color: Color(0xFFEF4444), fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      int totalAlertsCount = 0;
-      for (var pkg in selectedPkgs) {
-        await AppSettings.muteApp(pkg);
-        final alertsForPkg =
-            _capturedAlerts.where((a) => a['package_name'] == pkg).toList();
-        totalAlertsCount += alertsForPkg.length;
-        for (var alert in alertsForPkg) {
-          final logId = alert['id'] as int;
-          final body = alert['body'] as String? ?? '';
-          await DatabaseService.instance
-              .updateNotificationLogStatus(logId, 'archived');
-          await _parser.trainType(body, 'ignore');
-        }
-      }
-
-      if (mounted) {
-        AppSnackBar.show(context,
-            'Muted ${selectedPkgs.length} apps and archived $totalAlertsCount alerts.',
-            type: SnackBarType.neutral);
-        setState(() {
-          _isAppCategorySelectionMode = false;
-          _selectedAppPackages.clear();
-        });
-      }
-
-      _refreshAll();
-    }
-  }
 
   Future<void> _handleFeedback(int logId, String appName, String title,
       String body, bool isFinancial, bool isRelevant) async {
@@ -643,12 +517,6 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
           ),
           actions: _isAppCategorySelectionMode
               ? [
-                  IconButton(
-                    icon: const Icon(Icons.volume_off_rounded,
-                        color: Color(0xFFEF4444)),
-                    tooltip: 'Mute & Clear Selected',
-                    onPressed: _muteAndArchiveSelectedAppCategories,
-                  ),
                   IconButton(
                     icon: const Icon(Icons.delete_sweep_outlined,
                         color: Color(0xFFEF4444)),
@@ -1120,8 +988,6 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
           onTapHeader: () => _toggleAppPackageSelection(pkg),
           onLongPressHeader: () => _enterAppCategorySelectionMode(pkg),
           onFeedback: _handleFeedback,
-          onMute: _muteAppForLog,
-          onMuteEntireApp: _muteEntireApp,
         );
       },
     );

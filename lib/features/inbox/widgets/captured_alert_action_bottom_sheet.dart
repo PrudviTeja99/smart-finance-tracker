@@ -26,10 +26,11 @@ class CapturedAlertActionBottomSheet extends StatelessWidget {
     return SafeArea(
       child: Container(
         decoration: const BoxDecoration(
-          color: Color(0xFF111827),
+          color: Color(0xFF0F172A),
           borderRadius: BorderRadius.vertical(
             top: Radius.circular(24),
           ),
+          border: Border(top: BorderSide(color: Color(0xFF334155), width: 1)),
         ),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
@@ -39,11 +40,11 @@ class CapturedAlertActionBottomSheet extends StatelessWidget {
             children: [
               Center(
                 child: Container(
-                  width: 42,
+                  width: 40,
                   height: 4,
                   decoration: BoxDecoration(
                     color: Colors.white24,
-                    borderRadius: BorderRadius.circular(100),
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
               ),
@@ -97,7 +98,7 @@ class CapturedAlertActionBottomSheet extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0F172A),
+                  color: const Color(0xFF1E293B),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
                     color: Colors.white.withValues(alpha: 0.08),

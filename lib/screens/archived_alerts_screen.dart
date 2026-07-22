@@ -238,33 +238,7 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
     _loadArchivedLogs();
   }
 
-  Future<void> _toggleMuteSelectedAppCategories() async {
-    if (_selectedAppPackages.isEmpty) return;
 
-    final selectedPkgs = _selectedAppPackages.toList();
-    bool allAreMuted = selectedPkgs.every((pkg) => AppSettings.mutedApps.contains(pkg));
-
-    for (var pkg in selectedPkgs) {
-      if (allAreMuted) {
-        await AppSettings.unmuteApp(pkg);
-      } else {
-        await AppSettings.muteApp(pkg);
-      }
-    }
-
-    if (mounted) {
-      final action = allAreMuted ? 'Unmuted' : 'Muted';
-      AppSnackBar.show(
-        context,
-        '$action ${selectedPkgs.length} selected app categories.',
-        type: SnackBarType.neutral,
-      );
-      setState(() {
-        _isAppCategorySelectionMode = false;
-        _selectedAppPackages.clear();
-      });
-    }
-  }
 
   Future<void> _deleteSelectedAppCategoriesPermanently() async {
     if (_selectedAppPackages.isEmpty) return;
@@ -559,11 +533,6 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
                         onPressed: _restoreSelectedAppCategories,
                       ),
                       IconButton(
-                        icon: const Icon(Icons.volume_off_rounded, color: Color(0xFFF59E0B)),
-                        tooltip: 'Mute / Unmute Selected Apps',
-                        onPressed: _toggleMuteSelectedAppCategories,
-                      ),
-                      IconButton(
                         icon: const Icon(Icons.delete_forever_rounded, color: Color(0xFFEF4444)),
                         tooltip: 'Delete Selected Apps Permanently',
                         onPressed: _deleteSelectedAppCategoriesPermanently,
@@ -681,25 +650,22 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
                             final fallbackAppName = list.first['app_name'] as String? ?? 'Unknown';
                             final resolvedAppName = AppIconCacheService.instance.getCachedAppName(pkg, defaultFallback: fallbackAppName);
 
-                            final isMuted = AppSettings.mutedApps.contains(pkg);
                             final isSelected = _selectedAppPackages.contains(pkg);
 
                             return _ArchivedAppGroupTile(
-                              key: ValueKey('archive_group_${pkg}_${_isAppCategorySelectionMode}_${isSelected}_$isMuted'),
+                              key: ValueKey('archive_group_${pkg}_${_isAppCategorySelectionMode}_$isSelected'),
                               pkg: pkg,
                               resolvedAppName: resolvedAppName,
                               list: list,
                               leadingWidget: _buildAppIconWidget(pkg, resolvedAppName, size: 24),
-                              isMuted: isMuted,
                               isSelectionMode: _isAppCategorySelectionMode,
                               isSelected: isSelected,
                               onTapHeader: () => _toggleAppPackageSelection(pkg),
                               onLongPressHeader: () => _enterAppCategorySelectionMode(pkg),
-                              onToggleMute: _toggleMuteApp,
                               buildLogItem: (log) => _buildArchivedLogItem(log, resolvedAppName),
                             );
                           },
-                          ),
+                        ),
             ),
           ],
         ),
@@ -922,21 +888,6 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
         ),
       );
   }
-
-  Future<void> _toggleMuteApp(String packageName, String appName, bool isCurrentlyMuted) async {
-    if (isCurrentlyMuted) {
-      await AppSettings.unmuteApp(packageName);
-      if (mounted) {
-        AppSnackBar.show(context, 'Unmuted $appName. Future alerts will appear in Captured Alerts.', type: SnackBarType.success);
-      }
-    } else {
-      await AppSettings.muteApp(packageName);
-      if (mounted) {
-        AppSnackBar.show(context, 'Muted $appName. Future alerts will be automatically ignored.', type: SnackBarType.neutral);
-      }
-    }
-    setState(() {});
-  }
 }
 
 class _ArchivedAppGroupTile extends StatefulWidget {
@@ -944,12 +895,10 @@ class _ArchivedAppGroupTile extends StatefulWidget {
   final String resolvedAppName;
   final List<Map<String, dynamic>> list;
   final Widget leadingWidget;
-  final bool isMuted;
   final bool isSelectionMode;
   final bool isSelected;
   final VoidCallback? onTapHeader;
   final VoidCallback? onLongPressHeader;
-  final Function(String, String, bool) onToggleMute;
   final Widget Function(Map<String, dynamic> log) buildLogItem;
 
   const _ArchivedAppGroupTile({
@@ -958,12 +907,10 @@ class _ArchivedAppGroupTile extends StatefulWidget {
     required this.resolvedAppName,
     required this.list,
     required this.leadingWidget,
-    required this.isMuted,
     this.isSelectionMode = false,
     this.isSelected = false,
     this.onTapHeader,
     this.onLongPressHeader,
-    required this.onToggleMute,
     required this.buildLogItem,
   });
 
@@ -1028,33 +975,13 @@ class _ArchivedAppGroupTileState extends State<_ArchivedAppGroupTile> {
                   ),
                 )
               : widget.leadingWidget,
-          title: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  widget.resolvedAppName,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: widget.isSelected ? FontWeight.w800 : FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-              if (widget.isMuted && !widget.isSelectionMode)
-                Container(
-                  margin: const EdgeInsets.only(left: 6),
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEF4444).withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.3)),
-                  ),
-                  child: const Text(
-                    'MUTED',
-                    style: TextStyle(color: Color(0xFFF87171), fontSize: 9, fontWeight: FontWeight.bold),
-                  ),
-                ),
-            ],
+          title: Text(
+            widget.resolvedAppName,
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: widget.isSelected ? FontWeight.w800 : FontWeight.bold,
+              fontSize: 14,
+            ),
           ),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
@@ -1071,16 +998,7 @@ class _ArchivedAppGroupTileState extends State<_ArchivedAppGroupTile> {
                 ),
               ),
               if (!widget.isSelectionMode) ...[
-                const SizedBox(width: 2),
-                IconButton(
-                  icon: Icon(
-                    widget.isMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
-                    color: widget.isMuted ? const Color(0xFFF87171) : Colors.white38,
-                    size: 18,
-                  ),
-                  tooltip: widget.isMuted ? 'Unmute ${widget.resolvedAppName}' : 'Mute ${widget.resolvedAppName}',
-                  onPressed: () => widget.onToggleMute(widget.pkg, widget.resolvedAppName, widget.isMuted),
-                ),
+                const SizedBox(width: 8),
                 AnimatedRotation(
                   turns: _isExpanded ? 0.5 : 0.0,
                   duration: const Duration(milliseconds: 200),

@@ -5,7 +5,6 @@ class AppSettings {
   static bool autoHideEnabled = false;
   static int autoHideSeconds = 5; // Default 5s
   static String currencySymbol = '₹'; // Default rupee
-  static List<String> mutedApps = [];
   static bool autoDeleteArchive = false;
   static int autoDeleteValue = 30;
   static String autoDeleteUnit = 'days'; // 'days', 'months', 'years'
@@ -18,7 +17,6 @@ class AppSettings {
     autoHideEnabled = prefs.getBool('auto_hide_enabled') ?? false;
     autoHideSeconds = prefs.getInt('auto_hide_seconds') ?? 5;
     currencySymbol = prefs.getString('currency_symbol') ?? '₹';
-    mutedApps = prefs.getStringList('muted_apps') ?? [];
     autoDeleteArchive = prefs.getBool('auto_delete_archive') ?? false;
     autoDeleteValue = prefs.getInt('auto_delete_value') ?? 30;
     autoDeleteUnit = prefs.getString('auto_delete_unit') ?? 'days';
@@ -72,22 +70,6 @@ class AppSettings {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('smart_tracking_enabled', enabled);
     smartTrackingEnabled = enabled;
-  }
-
-  static Future<void> muteApp(String packageName) async {
-    final prefs = await SharedPreferences.getInstance();
-    if (!mutedApps.contains(packageName)) {
-      mutedApps.add(packageName);
-      await prefs.setStringList('muted_apps', mutedApps);
-    }
-  }
-
-  static Future<void> unmuteApp(String packageName) async {
-    final prefs = await SharedPreferences.getInstance();
-    if (mutedApps.contains(packageName)) {
-      mutedApps.remove(packageName);
-      await prefs.setStringList('muted_apps', mutedApps);
-    }
   }
 
   static Future<void> setAllowedNotificationApps(List<String> packages) async {
