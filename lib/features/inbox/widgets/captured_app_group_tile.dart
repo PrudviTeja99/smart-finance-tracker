@@ -12,7 +12,7 @@ class CapturedAppGroupTile extends StatefulWidget {
   final bool isSelected;
   final VoidCallback? onTapHeader;
   final VoidCallback? onLongPressHeader;
-  final Function(int, String, String, String, bool, bool) onFeedback;
+  final Future<void> Function(int, String, String, String, bool, bool) onFeedback;
   final Function(String, int, String) onMute;
   final Function(String, String, List<Map<String, dynamic>>) onMuteEntireApp;
 
