@@ -13,15 +13,21 @@ import '../utils/icon_helper.dart';
 import '../utils/app_snackbar.dart';
 
 class DashboardScreen extends StatefulWidget {
+  final bool isActive;
   final VoidCallback onRefreshPendingCount;
 
-  const DashboardScreen({super.key, required this.onRefreshPendingCount});
+  const DashboardScreen({
+    super.key,
+    required this.isActive,
+    required this.onRefreshPendingCount,
+  });
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingObserver, AutomaticKeepAliveClientMixin {
+class _DashboardScreenState extends State<DashboardScreen>
+    with WidgetsBindingObserver, AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
 
@@ -40,6 +46,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
   double _netBalance = 0.0;
 
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
   final ScrollController _scrollController = ScrollController();
   int? _selectedAccountFilterId;
   int? _touchedChartIndex;
@@ -72,9 +79,18 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
     WidgetsBinding.instance.removeObserver(this);
     _countdownTimer?.cancel();
     _searchController.dispose();
+    _searchFocusNode.dispose();
     _scrollController.removeListener(_scrollListener);
     _scrollController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(DashboardScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!widget.isActive && oldWidget.isActive) {
+      _searchFocusNode.unfocus();
+    }
   }
 
   @override
@@ -86,6 +102,38 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
         _wasPaused = false;
         _startAutoHideTimerIfNeeded();
       }
+    }
+  }
+
+  String _getTimeframeDisplay() {
+    final now = DateTime.now();
+
+    switch (_timeframe) {
+      case 'Today':
+        return 'Today (${DateFormat('d MMM').format(now)})';
+
+      case 'Yesterday':
+        return 'Yesterday (${DateFormat('d MMM').format(
+          now.subtract(const Duration(days: 1)),
+        )})';
+
+      case 'This Week':
+        final start = now.subtract(Duration(days: now.weekday - 1));
+        final end = start.add(const Duration(days: 6));
+
+        return 'This Week (${DateFormat('d').format(start)}–${DateFormat('d MMM').format(end)})';
+
+      case 'This Month':
+        return 'This Month (${DateFormat('MMMM').format(now)})';
+
+      case 'This Year':
+        return 'This Year (${now.year})';
+
+      case 'Custom':
+        return _customFilterLabel;
+
+      default:
+        return _timeframe;
     }
   }
 
@@ -128,7 +176,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
   void _scrollListener() {
     if (!_scrollController.hasClients) return;
     final currentOffset = _scrollController.offset;
-    
+
     // Hide FAB when scrolling down past a small threshold, show it when scrolling up
     if (currentOffset > _lastScrollOffset && currentOffset > 50) {
       if (_showFab) {
@@ -158,9 +206,9 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
   }
 
   // Load persistent timeframe filter from SharedPreferences
-  Future<void> _loadSavedTimeframe() async {
-    final prefs = await SharedPreferences.getInstance();
-    final savedTimeframe = prefs.getString('saved_timeframe') ?? 'This Month';
+  void _loadSavedTimeframe() {
+    // Always default to 'This Month' on dashboard startup as requested
+    const savedTimeframe = 'This Month';
     if (mounted) {
       setState(() {
         _timeframe = savedTimeframe;
@@ -179,7 +227,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
   Future<void> _refreshData() async {
     final dbService = DatabaseService.instance;
     final allTx = await dbService.getConfirmedTransactions();
-    
+
     // Compute current balances for all accounts
     final rawAccounts = await dbService.getAllAccounts();
     final updatedAccounts = <AccountModel>[];
@@ -226,19 +274,33 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
     } else if (_timeframe == 'This Year') {
       start = DateTime(now.year, 1, 1);
       end = DateTime(now.year, 12, 31, 23, 59, 59);
-    } else if (_timeframe == 'Custom' && _startDate != null && _endDate != null) {
+    } else if (_timeframe == 'Custom' &&
+        _startDate != null &&
+        _endDate != null) {
       start = _startDate!;
       end = _endDate!;
       final df = DateFormat('dd MMM');
-      _customFilterLabel = '${df.format(start)} - ${df.format(end)}';
+      if (start.year == end.year &&
+          start.month == end.month &&
+          start.day == end.day) {
+        _customFilterLabel = df.format(start);
+      } else if (start.day == 1 &&
+          end.day == DateTime(end.year, end.month + 1, 0).day &&
+          start.month == end.month &&
+          start.year == end.year) {
+        _customFilterLabel = DateFormat('MMM yyyy').format(start);
+      } else {
+        _customFilterLabel = '${df.format(start)} - ${df.format(end)}';
+      }
     }
 
     final matchedTx = _allTransactions.where((tx) {
-      final isWithinDates = tx.date.isAfter(start.subtract(const Duration(seconds: 1))) &&
-                            tx.date.isBefore(end.add(const Duration(seconds: 1)));
-      final matchesAccount = _selectedAccountFilterId == null || 
-                            tx.accountId == _selectedAccountFilterId ||
-                            tx.toAccountId == _selectedAccountFilterId;
+      final isWithinDates =
+          tx.date.isAfter(start.subtract(const Duration(seconds: 1))) &&
+              tx.date.isBefore(end.add(const Duration(seconds: 1)));
+      final matchesAccount = _selectedAccountFilterId == null ||
+          tx.accountId == _selectedAccountFilterId ||
+          tx.toAccountId == _selectedAccountFilterId;
       return isWithinDates && matchesAccount;
     }).toList();
 
@@ -273,7 +335,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
           final now = DateTime.now();
           DateTime start = DateTime(now.year, now.month, 1);
           DateTime end = DateTime(now.year, now.month + 1, 0, 23, 59, 59);
-          
+
           if (_timeframe == 'Today') {
             start = DateTime(now.year, now.month, now.day);
             end = DateTime(now.year, now.month, now.day, 23, 59, 59);
@@ -291,16 +353,19 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
           } else if (_timeframe == 'This Year') {
             start = DateTime(now.year, 1, 1);
             end = DateTime(now.year, 12, 31, 23, 59, 59);
-          } else if (_timeframe == 'Custom' && _startDate != null && _endDate != null) {
+          } else if (_timeframe == 'Custom' &&
+              _startDate != null &&
+              _endDate != null) {
             start = _startDate!;
             end = _endDate!;
           }
 
-          final isWithinDates = tx.date.isAfter(start.subtract(const Duration(seconds: 1))) &&
-                                tx.date.isBefore(end.add(const Duration(seconds: 1)));
-          final matchesAccount = _selectedAccountFilterId == null || 
-                                tx.accountId == _selectedAccountFilterId ||
-                                tx.toAccountId == _selectedAccountFilterId;
+          final isWithinDates =
+              tx.date.isAfter(start.subtract(const Duration(seconds: 1))) &&
+                  tx.date.isBefore(end.add(const Duration(seconds: 1)));
+          final matchesAccount = _selectedAccountFilterId == null ||
+              tx.accountId == _selectedAccountFilterId ||
+              tx.toAccountId == _selectedAccountFilterId;
           return isWithinDates && matchesAccount;
         }).toList();
       });
@@ -310,84 +375,468 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
     setState(() {
       _filteredTransactions = _filteredTransactions.where((tx) {
         return tx.description.toLowerCase().contains(query) ||
-               tx.body.toLowerCase().contains(query) ||
-               tx.amount.toString().contains(query);
+            tx.body.toLowerCase().contains(query) ||
+            tx.amount.toString().contains(query);
       }).toList();
     });
   }
 
-  // Triggered when selecting custom range, month, or year
-  void _openCustomCalendarPicker() async {
+  void _showTimeframeFilterSheet() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF1E293B),
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF0F172A),
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text('Select Filter Range', style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 20),
-              ListTile(
-                leading: const Icon(Icons.today, color: Color(0xFF6366F1)),
-                title: const Text('Specific Date'),
-                onTap: () async {
-                  Navigator.pop(context);
-                  final date = await showDatePicker(
-                    context: context,
-                    initialDate: DateTime.now(),
-                    firstDate: DateTime(2020),
-                    lastDate: DateTime(2030),
-                  );
-                  if (date != null) {
-                    setState(() {
-                      _timeframe = 'Custom';
-                      _startDate = DateTime(date.year, date.month, date.day);
-                      _endDate = DateTime(date.year, date.month, date.day, 23, 59, 59);
-                    });
-                    _saveTimeframe('Custom');
-                    _applyTimeframeFilter();
-                  }
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.calendar_month, color: Color(0xFF6366F1)),
-                title: const Text('Specific Month'),
-                onTap: () async {
-                  Navigator.pop(context);
-                  _openMonthYearPicker();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.date_range, color: Color(0xFF6366F1)),
-                title: const Text('Custom Date Range'),
-                onTap: () async {
-                  Navigator.pop(context);
-                  final range = await showDateRangePicker(
-                    context: context,
-                    firstDate: DateTime(2020),
-                    lastDate: DateTime(2030),
-                  );
-                  if (range != null) {
-                    setState(() {
-                      _timeframe = 'Custom';
-                      _startDate = DateTime(range.start.year, range.start.month, range.start.day);
-                      _endDate = DateTime(range.end.year, range.end.month, range.end.day, 23, 59, 59);
-                    });
-                    _saveTimeframe('Custom');
-                    _applyTimeframeFilter();
-                  }
-                },
-              ),
-            ],
-          ),
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            final isCustom = _timeframe == 'Custom';
+            bool isSpecificDate = false;
+            bool isSpecificMonth = false;
+            bool isDateRange = false;
+
+            if (isCustom && _startDate != null && _endDate != null) {
+              if (_startDate!.year == _endDate!.year &&
+                  _startDate!.month == _endDate!.month &&
+                  _startDate!.day == _endDate!.day) {
+                isSpecificDate = true;
+              } else if (_startDate!.day == 1 &&
+                  _endDate!.day ==
+                      DateTime(_endDate!.year, _endDate!.month + 1, 0).day &&
+                  _startDate!.month == _endDate!.month &&
+                  _startDate!.year == _endDate!.year) {
+                isSpecificMonth = true;
+              } else {
+                isDateRange = true;
+              }
+            }
+
+            final dateLabel = isSpecificDate
+                ? DateFormat('dd MMM yyyy').format(_startDate!)
+                : '';
+            final monthLabel = isSpecificMonth
+                ? DateFormat('MMMM yyyy').format(_startDate!)
+                : '';
+            final rangeLabel = isDateRange
+                ? '${DateFormat('dd MMM').format(_startDate!)} - ${DateFormat('dd MMM').format(_endDate!)}'
+                : '';
+
+            return SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.white24,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 24),
+                      child: Text(
+                        'Select Date Filter',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        _buildRadioOption(context, setSheetState, 'Today'),
+                        _buildRadioOption(context, setSheetState, 'Yesterday'),
+                        _buildRadioOption(context, setSheetState, 'This Week'),
+                        _buildRadioOption(context, setSheetState, 'This Month'),
+                        _buildRadioOption(context, setSheetState, 'This Year'),
+                        const Padding(
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                          child: Divider(color: Colors.white10),
+                        ),
+                        _buildCustomRadioOption(
+                          context,
+                          setSheetState,
+                          title: 'Specific Date...',
+                          isSelected: isSpecificDate,
+                          subLabel: dateLabel,
+                          onTap: () async {
+                            final date = await showDatePicker(
+                              context: context,
+                              initialDate: _startDate ?? DateTime.now(),
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime(2030),
+                              builder: (context, child) {
+                                return Theme(
+                                  data: Theme.of(context).copyWith(
+                                    colorScheme: const ColorScheme.dark(
+                                      primary: Color(0xFF6366F1),
+                                      onPrimary: Colors.white,
+                                      surface: Color(0xFF1E293B),
+                                      onSurface: Colors.white,
+                                    ),
+                                  ),
+                                  child: child!,
+                                );
+                              },
+                            );
+                            if (date != null) {
+                              setState(() {
+                                _timeframe = 'Custom';
+                                _startDate =
+                                    DateTime(date.year, date.month, date.day);
+                                _endDate = DateTime(date.year, date.month,
+                                    date.day, 23, 59, 59);
+                              });
+                              _saveTimeframe('Custom');
+                              _applyTimeframeFilter();
+                              if (context.mounted) Navigator.pop(context);
+                            }
+                          },
+                        ),
+                        _buildCustomRadioOption(
+                          context,
+                          setSheetState,
+                          title: 'Specific Month...',
+                          isSelected: isSpecificMonth,
+                          subLabel: monthLabel,
+                          onTap: () async {
+                            Navigator.pop(context);
+                            _openMonthYearPicker();
+                          },
+                        ),
+                        _buildCustomRadioOption(
+                          context,
+                          setSheetState,
+                          title: 'Custom Date Range...',
+                          isSelected: isDateRange,
+                          subLabel: rangeLabel,
+                          onTap: () async {
+                            final range = await showDateRangePicker(
+                              context: context,
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime(2030),
+                              initialDateRange: _startDate != null &&
+                                      _endDate != null &&
+                                      isDateRange
+                                  ? DateTimeRange(
+                                      start: _startDate!, end: _endDate!)
+                                  : null,
+                              builder: (context, child) {
+                                return Theme(
+                                  data: Theme.of(context).copyWith(
+                                    colorScheme: const ColorScheme.dark(
+                                      primary: Color(0xFF6366F1),
+                                      onPrimary: Colors.white,
+                                      surface: Color(0xFF1E293B),
+                                      onSurface: Colors.white,
+                                    ),
+                                  ),
+                                  child: child!,
+                                );
+                              },
+                            );
+                            if (range != null) {
+                              setState(() {
+                                _timeframe = 'Custom';
+                                _startDate = DateTime(range.start.year,
+                                    range.start.month, range.start.day);
+                                _endDate = DateTime(range.end.year,
+                                    range.end.month, range.end.day, 23, 59, 59);
+                              });
+                              _saveTimeframe('Custom');
+                              _applyTimeframeFilter();
+                              if (context.mounted) Navigator.pop(context);
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+          },
         );
       },
+    );
+  }
+
+  String _getAccountFilterDisplay() {
+    if (_selectedAccountFilterId == null) {
+      return 'All Accounts';
+    }
+    final matched = _accounts.firstWhere(
+      (acc) => acc.id == _selectedAccountFilterId,
+      orElse: () => AccountModel(
+        name: 'Account',
+        type: 'bank',
+        keywords: '',
+        balance: 0.0,
+      ),
+    );
+    return matched.name;
+  }
+
+  void _showAccountFilterSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF0F172A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.white24,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 24),
+                      child: Text(
+                        'Select Account Filter',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildAccountRadioOption(
+                      context,
+                      setSheetState,
+                      id: null,
+                      name: 'All Accounts',
+                      balance: null,
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                      child: Divider(color: Colors.white10),
+                    ),
+                    ..._accounts.map((acc) {
+                      return _buildAccountRadioOption(
+                        context,
+                        setSheetState,
+                        id: acc.id,
+                        name: acc.name,
+                        balance: acc.balance,
+                      );
+                    }),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildAccountRadioOption(
+    BuildContext context,
+    StateSetter setSheetState, {
+    required int? id,
+    required String name,
+    required double? balance,
+  }) {
+    final isSelected = _selectedAccountFilterId == id;
+    return InkWell(
+      onTap: () {
+        setState(() {
+          _selectedAccountFilterId = id;
+        });
+        _applyTimeframeFilter();
+        Navigator.pop(context);
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : Colors.white70,
+                    fontSize: 15,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+                if (balance != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    '₹${balance.toStringAsFixed(2)}',
+                    style: TextStyle(
+                      color: isSelected ? const Color(0xFF10B981) : Colors.white38,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            Radio<int?>(
+              value: id,
+              groupValue: _selectedAccountFilterId,
+              activeColor: const Color(0xFF10B981),
+              onChanged: (newValue) {
+                setState(() {
+                  _selectedAccountFilterId = newValue;
+                });
+                _applyTimeframeFilter();
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRadioOption(
+      BuildContext context, StateSetter setSheetState, String value) {
+    final isSelected = _timeframe == value;
+    final now = DateTime.now();
+    String displayLabel = value;
+
+    if (value == 'Today') {
+      displayLabel = 'Today (${DateFormat('d MMMM').format(now)})';
+    } else if (value == 'Yesterday') {
+      displayLabel = 'Yesterday (${DateFormat('d MMMM').format(now.subtract(const Duration(days: 1)))})';
+    } else if (value == 'This Week') {
+      final weekday = now.weekday;
+      final startOffset = weekday - 1;
+      final start = now.subtract(Duration(days: startOffset));
+      final end = start.add(const Duration(days: 6));
+      displayLabel = 'This Week (${DateFormat('d MMM').format(start)} - ${DateFormat('d MMM').format(end)})';
+    } else if (value == 'This Month') {
+      displayLabel = 'This Month (${DateFormat('MMMM').format(now)})';
+    } else if (value == 'This Year') {
+      displayLabel = 'This Year (${now.year})';
+    }
+
+    return InkWell(
+      onTap: () {
+        setState(() {
+          _timeframe = value;
+          _startDate = null;
+          _endDate = null;
+        });
+        _saveTimeframe(value);
+        _applyTimeframeFilter();
+        Navigator.pop(context);
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              displayLabel,
+              style: TextStyle(
+                color: isSelected ? Colors.white : Colors.white70,
+                fontSize: 15,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+            Radio<String>(
+              value: value,
+              groupValue: _timeframe,
+              activeColor: const Color(0xFF6366F1),
+              onChanged: (newValue) {
+                if (newValue != null) {
+                  setState(() {
+                    _timeframe = newValue;
+                    _startDate = null;
+                    _endDate = null;
+                  });
+                  _saveTimeframe(newValue);
+                  _applyTimeframeFilter();
+                  Navigator.pop(context);
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCustomRadioOption(
+    BuildContext context,
+    StateSetter setSheetState, {
+    required String title,
+    required bool isSelected,
+    required String subLabel,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : Colors.white70,
+                    fontSize: 15,
+                    fontWeight:
+                        isSelected ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+                if (isSelected && subLabel.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    subLabel,
+                    style: const TextStyle(
+                      color: Color(0xFF818CF8),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            Radio<bool>(
+              value: true,
+              groupValue: isSelected,
+              activeColor: const Color(0xFF6366F1),
+              onChanged: (_) => onTap(),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -395,8 +844,18 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
   void _openMonthYearPicker() {
     final now = DateTime.now();
     final months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
     ];
     int selectedMonth = now.month;
     int selectedYear = now.year;
@@ -452,7 +911,8 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
+                  child: const Text('Cancel',
+                      style: TextStyle(color: Colors.white70)),
                 ),
                 TextButton(
                   onPressed: () {
@@ -460,12 +920,14 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                     setState(() {
                       _timeframe = 'Custom';
                       _startDate = DateTime(selectedYear, selectedMonth, 1);
-                      _endDate = DateTime(selectedYear, selectedMonth + 1, 0, 23, 59, 59);
+                      _endDate = DateTime(
+                          selectedYear, selectedMonth + 1, 0, 23, 59, 59);
                     });
                     _saveTimeframe('Custom');
                     _applyTimeframeFilter();
                   },
-                  child: const Text('Select', style: TextStyle(color: Color(0xFF6366F1))),
+                  child: const Text('Select',
+                      style: TextStyle(color: Color(0xFF6366F1))),
                 ),
               ],
             );
@@ -481,8 +943,11 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
     _refreshData(); // Triggers lazy load
 
     return Scaffold(
-      body: Stack(
-        children: [
+      body: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Stack(
+          children: [
           // Background soft circles for premium dark UI
           Positioned(
             top: -100,
@@ -515,20 +980,23 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                 // Top Header with Title and Custom Picker
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Overview',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
                         Row(
                           children: [
+                            const Expanded(
+                              child: Text(
+                                'Overview',
+                                style: TextStyle(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                            ),
                             if (_isAutoHideTimerActive) ...[
                               Tooltip(
                                 message: 'Tap to reveal amounts',
@@ -536,25 +1004,23 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                                   onTap: _cancelAutoHideTimer,
                                   borderRadius: BorderRadius.circular(12),
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 8),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF6366F1).withOpacity(0.15),
+                                      color: const Color(0xFF6366F1)
+                                          .withOpacity(0.15),
                                       borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: const Color(0xFF6366F1).withOpacity(0.3)),
+                                      border: Border.all(
+                                        color: const Color(0xFF6366F1)
+                                            .withOpacity(0.3),
+                                      ),
                                     ),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        const Icon(Icons.lock_clock, size: 14, color: Color(0xFF6366F1)),
+                                        const Icon(Icons.lock_clock, size: 14),
                                         const SizedBox(width: 4),
-                                        Text(
-                                          '${_remainingSeconds}s',
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
-                                            color: Color(0xFF6366F1),
-                                          ),
-                                        ),
+                                        Text('${_remainingSeconds}s'),
                                       ],
                                     ),
                                   ),
@@ -567,49 +1033,115 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                                 setState(() {
                                   _obscureAmounts = !_obscureAmounts;
                                 });
-                                final prefs = await SharedPreferences.getInstance();
-                                await prefs.setBool('obscure_amounts', _obscureAmounts);
+
+                                final prefs =
+                                    await SharedPreferences.getInstance();
+                                await prefs.setBool(
+                                    'obscure_amounts', _obscureAmounts);
                               },
                               icon: Icon(
-                                _obscureAmounts ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                                color: Colors.white,
-                                size: 24,
-                              ),
-                              style: IconButton.styleFrom(
-                                backgroundColor: const Color(0xFF1E293B),
-                                padding: const EdgeInsets.all(12),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            IconButton(
-                              onPressed: _openCustomCalendarPicker,
-                              icon: const Icon(Icons.date_range_rounded, color: Colors.white, size: 26),
-                              style: IconButton.styleFrom(
-                                backgroundColor: const Color(0xFF1E293B),
-                                padding: const EdgeInsets.all(12),
+                                _obscureAmounts
+                                    ? Icons.visibility_off_rounded
+                                    : Icons.visibility_rounded,
                               ),
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                // Timeframe pill row
-                SliverToBoxAdapter(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.only(left: 20, right: 20, bottom: 16),
-                    child: Row(
-                      children: [
-                        _buildTimeframePill('Today'),
-                        _buildTimeframePill('Yesterday'),
-                        _buildTimeframePill('This Week'),
-                        _buildTimeframePill('This Month'),
-                        _buildTimeframePill('This Year'),
-                        if (_timeframe == 'Custom')
-                          _buildTimeframePill('Custom', label: _customFilterLabel),
+                        const SizedBox(height: 12),
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          physics: const BouncingScrollPhysics(),
+                          clipBehavior: Clip.none,
+                          child: Row(
+                            children: [
+                              GestureDetector(
+                                onTap: _showTimeframeFilterSheet,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF1E293B),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: _timeframe != 'This Month'
+                                          ? const Color(0xFF6366F1)
+                                          : const Color(0xFF334155),
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.calendar_today_rounded,
+                                        size: 16,
+                                        color: _timeframe != 'This Month'
+                                            ? const Color(0xFF6366F1)
+                                            : const Color(0xFF94A3B8),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        _getTimeframeDisplay(),
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: _timeframe != 'This Month'
+                                              ? Colors.white
+                                              : Colors.white70,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      const Icon(Icons.keyboard_arrow_down_rounded,
+                                          size: 16, color: Colors.white54),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              GestureDetector(
+                                onTap: _showAccountFilterSheet,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF1E293B),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: _selectedAccountFilterId != null
+                                          ? const Color(0xFF10B981)
+                                          : const Color(0xFF334155),
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.account_balance_wallet_rounded,
+                                        size: 16,
+                                        color: _selectedAccountFilterId != null
+                                            ? const Color(0xFF10B981)
+                                            : const Color(0xFF94A3B8),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        _getAccountFilterDisplay(),
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: _selectedAccountFilterId != null
+                                              ? Colors.white
+                                              : Colors.white70,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      const Icon(Icons.keyboard_arrow_down_rounded,
+                                          size: 16, color: Colors.white54),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -632,7 +1164,8 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                         padding: EdgeInsets.fromLTRB(20, 24, 20, 12),
                         child: Text(
                           'Accounts',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                       ),
                       SizedBox(
@@ -663,7 +1196,8 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                             children: [
                               const Text(
                                 'Breakdown Analysis',
-                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                style: TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.bold),
                               ),
                               Container(
                                 padding: const EdgeInsets.all(3),
@@ -680,17 +1214,23 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                                         });
                                       },
                                       child: Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 12, vertical: 6),
                                         decoration: BoxDecoration(
-                                          color: _analyticsTab == 'debit' ? const Color(0xFF6366F1) : Colors.transparent,
-                                          borderRadius: BorderRadius.circular(16),
+                                          color: _analyticsTab == 'debit'
+                                              ? const Color(0xFF6366F1)
+                                              : Colors.transparent,
+                                          borderRadius:
+                                              BorderRadius.circular(16),
                                         ),
                                         child: Text(
                                           'Expense',
                                           style: TextStyle(
                                             fontSize: 10,
                                             fontWeight: FontWeight.bold,
-                                            color: _analyticsTab == 'debit' ? Colors.white : Colors.white54,
+                                            color: _analyticsTab == 'debit'
+                                                ? Colors.white
+                                                : Colors.white54,
                                           ),
                                         ),
                                       ),
@@ -702,17 +1242,23 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                                         });
                                       },
                                       child: Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 12, vertical: 6),
                                         decoration: BoxDecoration(
-                                          color: _analyticsTab == 'credit' ? const Color(0xFF10B981) : Colors.transparent,
-                                          borderRadius: BorderRadius.circular(16),
+                                          color: _analyticsTab == 'credit'
+                                              ? const Color(0xFF10B981)
+                                              : Colors.transparent,
+                                          borderRadius:
+                                              BorderRadius.circular(16),
                                         ),
                                         child: Text(
                                           'Income',
                                           style: TextStyle(
                                             fontSize: 10,
                                             fontWeight: FontWeight.bold,
-                                            color: _analyticsTab == 'credit' ? Colors.white : Colors.white54,
+                                            color: _analyticsTab == 'credit'
+                                                ? Colors.white
+                                                : Colors.white54,
                                           ),
                                         ),
                                       ),
@@ -731,7 +1277,8 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                           children: [
                             const Text(
                               'Transactions',
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
                             ),
                             if (_selectedAccountFilterId != null)
                               TextButton(
@@ -741,7 +1288,8 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                                   });
                                   _applyTimeframeFilter();
                                 },
-                                child: const Text('Clear Account Filter', style: TextStyle(color: Color(0xFF6366F1))),
+                                child: const Text('Clear Account Filter',
+                                    style: TextStyle(color: Color(0xFF6366F1))),
                               ),
                           ],
                         ),
@@ -749,12 +1297,30 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                         // Search bar
                         TextField(
                           controller: _searchController,
+                          focusNode: _searchFocusNode,
                           decoration: InputDecoration(
                             hintText: 'Search merchant or amount...',
-                            prefixIcon: const Icon(Icons.search, color: Colors.white54),
+                            prefixIcon:
+                                const Icon(Icons.search, color: Colors.white54),
+                            suffixIcon: ValueListenableBuilder<TextEditingValue>(
+                              valueListenable: _searchController,
+                              builder: (context, value, child) {
+                                return value.text.isNotEmpty
+                                    ? IconButton(
+                                        icon: const Icon(Icons.clear_rounded,
+                                            color: Colors.white54, size: 18),
+                                        onPressed: () {
+                                          _searchController.clear();
+                                          FocusScope.of(context).unfocus();
+                                        },
+                                      )
+                                    : const SizedBox.shrink();
+                              },
+                            ),
                             filled: true,
                             fillColor: const Color(0xFF1E293B),
-                            contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                            contentPadding:
+                                const EdgeInsets.symmetric(vertical: 0),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16.0),
                               borderSide: BorderSide.none,
@@ -796,14 +1362,16 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
           ),
         ],
       ),
-      floatingActionButton: IgnorePointer(
+    ),
+    floatingActionButton: IgnorePointer(
         ignoring: !_showFab,
         child: AnimatedScale(
           scale: _showFab ? 1.0 : 0.0,
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeInOut,
           child: Padding(
-            padding: const EdgeInsets.only(bottom: 74), // Floating just above bottom navigation strap
+            padding: const EdgeInsets.only(
+                bottom: 74), // Floating just above bottom navigation strap
             child: FloatingActionButton(
               onPressed: _openManualAddBottomSheet,
               backgroundColor: const Color(0xFF6366F1),
@@ -817,43 +1385,6 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
   }
 
   // --- WIDGET BUILDERS ---
-
-  Widget _buildTimeframePill(String name, {String? label}) {
-    final isSelected = _timeframe == name;
-    final displayLabel = label ?? name;
-
-    return Padding(
-      padding: const EdgeInsets.only(right: 8.0),
-      child: ChoiceChip(
-        label: Text(displayLabel),
-        selected: isSelected,
-        onSelected: (selected) {
-          if (selected) {
-            setState(() {
-              _timeframe = name;
-              if (name != 'Custom') {
-                _startDate = null;
-                _endDate = null;
-              }
-            });
-            _saveTimeframe(name);
-            _applyTimeframeFilter();
-          }
-        },
-        selectedColor: const Color(0xFF6366F1),
-        backgroundColor: const Color(0xFF1E293B),
-        labelStyle: TextStyle(
-          color: isSelected ? Colors.white : Colors.white60,
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide.none,
-        ),
-        showCheckmark: false,
-      ),
-    );
-  }
 
   Widget _buildSummaryCard() {
     return Container(
@@ -887,7 +1418,9 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
           ),
           const SizedBox(height: 6),
           Text(
-            _shouldHideAmounts ? '${AppSettings.currencySymbol}••••' : '${AppSettings.currencySymbol}${_netBalance.toStringAsFixed(2)}',
+            _shouldHideAmounts
+                ? '${AppSettings.currencySymbol}••••'
+                : '${AppSettings.currencySymbol}${_netBalance.toStringAsFixed(2)}',
             style: const TextStyle(
               fontSize: 32,
               fontWeight: FontWeight.bold,
@@ -907,16 +1440,24 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                         color: Colors.white.withOpacity(0.15),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.arrow_downward, color: Color(0xFFB9F6CA), size: 18),
+                      child: const Icon(Icons.arrow_downward,
+                          color: Color(0xFFB9F6CA), size: 18),
                     ),
                     const SizedBox(width: 10),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Income', style: TextStyle(fontSize: 12, color: Colors.white70)),
+                        const Text('Income',
+                            style:
+                                TextStyle(fontSize: 12, color: Colors.white70)),
                         Text(
-                          _shouldHideAmounts ? '${AppSettings.currencySymbol}••••' : '${AppSettings.currencySymbol}${_totalIncome.toStringAsFixed(2)}',
-                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                          _shouldHideAmounts
+                              ? '${AppSettings.currencySymbol}••••'
+                              : '${AppSettings.currencySymbol}${_totalIncome.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white),
                         ),
                       ],
                     ),
@@ -934,16 +1475,24 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                         color: Colors.white.withOpacity(0.15),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.arrow_upward, color: Color(0xFFFF8A80), size: 18),
+                      child: const Icon(Icons.arrow_upward,
+                          color: Color(0xFFFF8A80), size: 18),
                     ),
                     const SizedBox(width: 10),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Expense', style: TextStyle(fontSize: 12, color: Colors.white70)),
+                        const Text('Expense',
+                            style:
+                                TextStyle(fontSize: 12, color: Colors.white70)),
                         Text(
-                          _shouldHideAmounts ? '${AppSettings.currencySymbol}••••' : '${AppSettings.currencySymbol}${_totalExpense.toStringAsFixed(2)}',
-                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                          _shouldHideAmounts
+                              ? '${AppSettings.currencySymbol}••••'
+                              : '${AppSettings.currencySymbol}${_totalExpense.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white),
                         ),
                       ],
                     ),
@@ -959,13 +1508,17 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
 
   Widget _buildAccountCard(AccountModel account) {
     final isSelected = _selectedAccountFilterId == account.id;
-    
+
     IconData getIcon(String type) {
       switch (type) {
-        case 'bank': return Icons.account_balance;
-        case 'credit_card': return Icons.credit_card;
-        case 'wallet': return Icons.account_balance_wallet;
-        default: return Icons.money;
+        case 'bank':
+          return Icons.account_balance;
+        case 'credit_card':
+          return Icons.credit_card;
+        case 'wallet':
+          return Icons.account_balance_wallet;
+        default:
+          return Icons.money;
       }
     }
 
@@ -982,10 +1535,14 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
           width: 145,
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFF6366F1).withOpacity(0.15) : const Color(0xFF1E293B),
+            color: isSelected
+                ? const Color(0xFF6366F1).withOpacity(0.15)
+                : const Color(0xFF1E293B),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isSelected ? const Color(0xFF6366F1) : Colors.white.withOpacity(0.05),
+              color: isSelected
+                  ? const Color(0xFF6366F1)
+                  : Colors.white.withOpacity(0.05),
               width: 1.5,
             ),
           ),
@@ -996,10 +1553,14 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Icon(getIcon(account.type), color: const Color(0xFF6366F1), size: 20),
+                  Icon(getIcon(account.type),
+                      color: const Color(0xFF6366F1), size: 20),
                   Text(
                     account.type.replaceAll('_', ' ').toUpperCase(),
-                    style: const TextStyle(fontSize: 8, color: Colors.white38, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                        fontSize: 8,
+                        color: Colors.white38,
+                        fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
@@ -1009,17 +1570,24 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                 children: [
                   Text(
                     account.name,
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white70),
+                    style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white70),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    _shouldHideAmounts ? '${AppSettings.currencySymbol}••••' : '${AppSettings.currencySymbol}${account.balance.toStringAsFixed(2)}',
+                    _shouldHideAmounts
+                        ? '${AppSettings.currencySymbol}••••'
+                        : '${AppSettings.currencySymbol}${account.balance.toStringAsFixed(2)}',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
-                      color: account.balance >= 0 ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                      color: account.balance >= 0
+                          ? const Color(0xFF10B981)
+                          : const Color(0xFFEF4444),
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -1037,7 +1605,8 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
     final categoryTotals = <int, double>{};
     for (var tx in _filteredTransactions) {
       if (tx.type == _analyticsTab) {
-        categoryTotals[tx.categoryId] = (categoryTotals[tx.categoryId] ?? 0.0) + tx.amount;
+        categoryTotals[tx.categoryId] =
+            (categoryTotals[tx.categoryId] ?? 0.0) + tx.amount;
       }
     }
 
@@ -1054,7 +1623,9 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              _analyticsTab == 'debit' ? Icons.receipt_long_outlined : Icons.monetization_on_outlined,
+              _analyticsTab == 'debit'
+                  ? Icons.receipt_long_outlined
+                  : Icons.monetization_on_outlined,
               color: Colors.white24,
               size: 36,
             ),
@@ -1077,7 +1648,8 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
     final totalDeductions = categoryTotals.values.fold(0.0, (a, b) => a + b);
 
     final sections = categoryTotals.entries.map((entry) {
-      final category = _categories.firstWhere((c) => c.id == entry.key, orElse: () => _categories.last);
+      final category = _categories.firstWhere((c) => c.id == entry.key,
+          orElse: () => _categories.last);
       final value = entry.value;
 
       return PieChartSectionData(
@@ -1132,7 +1704,9 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      _shouldHideAmounts ? '${AppSettings.currencySymbol}••••' : '${AppSettings.currencySymbol}${totalDeductions.toStringAsFixed(0)}',
+                      _shouldHideAmounts
+                          ? '${AppSettings.currencySymbol}••••'
+                          : '${AppSettings.currencySymbol}${totalDeductions.toStringAsFixed(0)}',
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -1151,12 +1725,15 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
             runSpacing: 8,
             alignment: WrapAlignment.center,
             children: categoryTotals.entries.map((entry) {
-              final category = _categories.firstWhere((c) => c.id == entry.key, orElse: () => _categories.last);
+              final category = _categories.firstWhere((c) => c.id == entry.key,
+                  orElse: () => _categories.last);
               final value = entry.value;
-              final percentage = totalDeductions > 0 ? (value / totalDeductions) * 100 : 0.0;
+              final percentage =
+                  totalDeductions > 0 ? (value / totalDeductions) * 100 : 0.0;
 
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: Colors.black.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(10),
@@ -1176,12 +1753,18 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                     const SizedBox(width: 6),
                     Text(
                       '${category.name} (${percentage.toStringAsFixed(0)}%)',
-                      style: const TextStyle(fontSize: 10, color: Colors.white70),
+                      style:
+                          const TextStyle(fontSize: 10, color: Colors.white70),
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      _shouldHideAmounts ? '${AppSettings.currencySymbol}••••' : '${AppSettings.currencySymbol}${entry.value.toStringAsFixed(0)}',
-                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
+                      _shouldHideAmounts
+                          ? '${AppSettings.currencySymbol}••••'
+                          : '${AppSettings.currencySymbol}${entry.value.toStringAsFixed(0)}',
+                      style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white),
                     ),
                   ],
                 ),
@@ -1194,16 +1777,23 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
   }
 
   Widget _buildLedgerItem(TransactionModel tx) {
-    final category = _categories.firstWhere((c) => c.id == tx.categoryId, orElse: () => _categories.last);
-    final account = _accounts.firstWhere((a) => a.id == tx.accountId, orElse: () => _accounts.first);
-    
+    final category = _categories.firstWhere((c) => c.id == tx.categoryId,
+        orElse: () => _categories.last);
+    final account = _accounts.firstWhere((a) => a.id == tx.accountId,
+        orElse: () => _accounts.first);
+
     String getAccountTypeDisplay(String type) {
       switch (type) {
-        case 'bank': return 'Bank';
-        case 'credit_card': return 'Card';
-        case 'wallet': return 'Wallet';
-        case 'cash': return 'Cash';
-        default: return type.replaceAll('_', ' ').toUpperCase();
+        case 'bank':
+          return 'Bank';
+        case 'credit_card':
+          return 'Card';
+        case 'wallet':
+          return 'Wallet';
+        case 'cash':
+          return 'Cash';
+        default:
+          return type.replaceAll('_', ' ').toUpperCase();
       }
     }
 
@@ -1237,7 +1827,8 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                   color: Color(category.color).withOpacity(0.15),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(IconHelper.getIcon(category.icon), color: Color(category.color), size: 22),
+                child: Icon(IconHelper.getIcon(category.icon),
+                    color: Color(category.color), size: 22),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -1246,7 +1837,8 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                   children: [
                     Text(
                       tx.description,
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                          fontSize: 15, fontWeight: FontWeight.bold),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -1255,31 +1847,37 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                       children: [
                         Text(
                           tx.type == 'transfer'
-                            ? '${account.name} ➔ ${_accounts.firstWhere((a) => a.id == tx.toAccountId, orElse: () => _accounts.first).name}'
-                            : account.name,
-                          style: const TextStyle(fontSize: 11, color: Colors.white38),
+                              ? '${account.name} ➔ ${_accounts.firstWhere((a) => a.id == tx.toAccountId, orElse: () => _accounts.first).name}'
+                              : account.name,
+                          style: const TextStyle(
+                              fontSize: 11, color: Colors.white38),
                         ),
                         const SizedBox(width: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 4, vertical: 1),
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.05),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
                             getAccountTypeDisplay(account.type),
-                            style: const TextStyle(fontSize: 8, color: Colors.white38),
+                            style: const TextStyle(
+                                fontSize: 8, color: Colors.white38),
                           ),
                         ),
                         if (tx.appName != null) ...[
                           const SizedBox(width: 6),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 4, vertical: 1),
                             decoration: BoxDecoration(
                               color: Colors.white.withOpacity(0.05),
                               borderRadius: BorderRadius.circular(4),
                             ),
-                            child: Text(tx.appName!, style: const TextStyle(fontSize: 8, color: Colors.white38)),
+                            child: Text(tx.appName!,
+                                style: const TextStyle(
+                                    fontSize: 8, color: Colors.white38)),
                           ),
                         ],
                       ],
@@ -1291,8 +1889,13 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    _shouldHideAmounts ? '${AppSettings.currencySymbol}••••' : '$sign${AppSettings.currencySymbol}${tx.amount.toStringAsFixed(2)}',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: textCol),
+                    _shouldHideAmounts
+                        ? '${AppSettings.currencySymbol}••••'
+                        : '$sign${AppSettings.currencySymbol}${tx.amount.toStringAsFixed(2)}',
+                    style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: textCol),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -1322,14 +1925,20 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
 
   void _openTransactionFormBottomSheet(TransactionModel? editTx) {
     final isEdit = editTx != null;
-    
+
     // Form fields
-    final amountController = TextEditingController(text: isEdit ? editTx.amount.toString() : '');
-    final descController = TextEditingController(text: isEdit ? editTx.description : '');
+    final amountController =
+        TextEditingController(text: isEdit ? editTx.amount.toString() : '');
+    final descController =
+        TextEditingController(text: isEdit ? editTx.description : '');
     String type = isEdit ? editTx.type : 'debit';
-    int accountId = isEdit ? editTx.accountId : (_accounts.isNotEmpty ? _accounts.first.id! : 1);
+    int accountId = isEdit
+        ? editTx.accountId
+        : (_accounts.isNotEmpty ? _accounts.first.id! : 1);
     int? toAccountId = isEdit ? editTx.toAccountId : null;
-    int categoryId = isEdit ? editTx.categoryId : (_categories.isNotEmpty ? _categories.first.id! : 1);
+    int categoryId = isEdit
+        ? editTx.categoryId
+        : (_categories.isNotEmpty ? _categories.first.id! : 1);
     DateTime selectedDate = isEdit ? editTx.date : DateTime.now();
     bool isKeyboardOpen = false;
 
@@ -1352,22 +1961,31 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
             }
             isKeyboardOpen = isKeyboardNowOpen;
 
-            final selectedAcc = _accounts.firstWhere((a) => a.id == accountId, orElse: () => _accounts.first);
+            final selectedAcc = _accounts.firstWhere((a) => a.id == accountId,
+                orElse: () => _accounts.first);
             final selectedToAcc = type == 'transfer' && toAccountId != null
-                ? _accounts.firstWhere((a) => a.id == toAccountId, orElse: () => _accounts.first)
+                ? _accounts.firstWhere((a) => a.id == toAccountId,
+                    orElse: () => _accounts.first)
                 : null;
-            final selectedCat = _categories.firstWhere((c) => c.id == categoryId, orElse: () => _categories.first);
+            final selectedCat = _categories.firstWhere(
+                (c) => c.id == categoryId,
+                orElse: () => _categories.first);
 
             IconData getAccountIcon(String t) {
               switch (t) {
-                case 'bank': return Icons.account_balance;
-                case 'credit_card': return Icons.credit_card;
-                case 'wallet': return Icons.account_balance_wallet;
-                default: return Icons.money;
+                case 'bank':
+                  return Icons.account_balance;
+                case 'credit_card':
+                  return Icons.credit_card;
+                case 'wallet':
+                  return Icons.account_balance_wallet;
+                default:
+                  return Icons.money;
               }
             }
 
-            void showAccountPicker(String pickerTitle, int currentSelected, Function(int) onSelected) {
+            void showAccountPicker(String pickerTitle, int currentSelected,
+                Function(int) onSelected) {
               FocusManager.instance.primaryFocus?.unfocus();
               final double maxFraction;
               final double initialFraction;
@@ -1400,7 +2018,8 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                       return Container(
                         decoration: const BoxDecoration(
                           color: Color(0xFF0F172A),
-                          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                          borderRadius:
+                              BorderRadius.vertical(top: Radius.circular(24)),
                         ),
                         padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
                         child: Column(
@@ -1416,7 +2035,8 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                             ),
                             Text(
                               pickerTitle,
-                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 16),
@@ -1434,16 +2054,20 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                                     },
                                     borderRadius: BorderRadius.circular(16),
                                     child: Container(
-                                      margin: const EdgeInsets.symmetric(vertical: 6),
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                      margin: const EdgeInsets.symmetric(
+                                          vertical: 6),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 16, vertical: 12),
                                       decoration: BoxDecoration(
-                                        color: isSelected 
-                                            ? const Color(0xFF6366F1).withOpacity(0.15)
+                                        color: isSelected
+                                            ? const Color(0xFF6366F1)
+                                                .withOpacity(0.15)
                                             : const Color(0xFF1E293B),
                                         borderRadius: BorderRadius.circular(16),
                                         border: Border.all(
-                                          color: isSelected 
-                                              ? const Color(0xFF6366F1).withOpacity(0.4)
+                                          color: isSelected
+                                              ? const Color(0xFF6366F1)
+                                                  .withOpacity(0.4)
                                               : Colors.white.withOpacity(0.05),
                                           width: isSelected ? 1.5 : 1.0,
                                         ),
@@ -1453,7 +2077,8 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                                           Container(
                                             padding: const EdgeInsets.all(8),
                                             decoration: BoxDecoration(
-                                              color: const Color(0xFF6366F1).withOpacity(0.15),
+                                              color: const Color(0xFF6366F1)
+                                                  .withOpacity(0.15),
                                               shape: BoxShape.circle,
                                             ),
                                             child: Icon(
@@ -1465,12 +2090,15 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                                           const SizedBox(width: 12),
                                           Expanded(
                                             child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               children: [
                                                 Text(
                                                   acc.name,
                                                   style: TextStyle(
-                                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                                    fontWeight: isSelected
+                                                        ? FontWeight.bold
+                                                        : FontWeight.normal,
                                                     fontSize: 14,
                                                     color: Colors.white,
                                                   ),
@@ -1487,7 +2115,10 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                                             ),
                                           ),
                                           if (isSelected)
-                                            const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 20),
+                                            const Icon(
+                                                Icons.check_circle_rounded,
+                                                color: Color(0xFF10B981),
+                                                size: 20),
                                         ],
                                       ),
                                     ),
@@ -1504,7 +2135,8 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
               );
             }
 
-            void showCategoryPicker(int currentSelected, Function(int) onSelected) {
+            void showCategoryPicker(
+                int currentSelected, Function(int) onSelected) {
               FocusManager.instance.primaryFocus?.unfocus();
               final double maxFraction;
               final double initialFraction;
@@ -1537,7 +2169,8 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                       return Container(
                         decoration: const BoxDecoration(
                           color: Color(0xFF0F172A),
-                          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                          borderRadius:
+                              BorderRadius.vertical(top: Radius.circular(24)),
                         ),
                         padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
                         child: Column(
@@ -1553,7 +2186,8 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                             ),
                             const Text(
                               'Select Category',
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 16),
@@ -1571,16 +2205,20 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                                     },
                                     borderRadius: BorderRadius.circular(16),
                                     child: Container(
-                                      margin: const EdgeInsets.symmetric(vertical: 6),
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                      margin: const EdgeInsets.symmetric(
+                                          vertical: 6),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 16, vertical: 12),
                                       decoration: BoxDecoration(
-                                        color: isSelected 
-                                            ? const Color(0xFF6366F1).withOpacity(0.15)
+                                        color: isSelected
+                                            ? const Color(0xFF6366F1)
+                                                .withOpacity(0.15)
                                             : const Color(0xFF1E293B),
                                         borderRadius: BorderRadius.circular(16),
                                         border: Border.all(
-                                          color: isSelected 
-                                              ? const Color(0xFF6366F1).withOpacity(0.4)
+                                          color: isSelected
+                                              ? const Color(0xFF6366F1)
+                                                  .withOpacity(0.4)
                                               : Colors.white.withOpacity(0.05),
                                           width: isSelected ? 1.5 : 1.0,
                                         ),
@@ -1590,7 +2228,8 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                                           Container(
                                             padding: const EdgeInsets.all(8),
                                             decoration: BoxDecoration(
-                                              color: Color(cat.color).withOpacity(0.15),
+                                              color: Color(cat.color)
+                                                  .withOpacity(0.15),
                                               shape: BoxShape.circle,
                                             ),
                                             child: Icon(
@@ -1604,14 +2243,19 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                                             child: Text(
                                               cat.name,
                                               style: TextStyle(
-                                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                                fontWeight: isSelected
+                                                    ? FontWeight.bold
+                                                    : FontWeight.normal,
                                                 fontSize: 14,
                                                 color: Colors.white,
                                               ),
                                             ),
                                           ),
                                           if (isSelected)
-                                            const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 20),
+                                            const Icon(
+                                                Icons.check_circle_rounded,
+                                                color: Color(0xFF10B981),
+                                                size: 20),
                                         ],
                                       ),
                                     ),
@@ -1639,295 +2283,347 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                   top: 20,
                 ),
                 child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          isEdit ? 'Edit Transaction' : 'Add Transaction',
-                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                        ),
-                        if (isEdit)
-                          IconButton(
-                            icon: const Icon(Icons.delete, color: Color(0xFFEF4444)),
-                            onPressed: () async {
-                              final confirm = await showDialog<bool>(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  backgroundColor: const Color(0xFF1E293B),
-                                  title: const Text('Delete Transaction?'),
-                                  content: const Text('This will permanently delete this transaction.'),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Navigator.pop(context, false),
-                                      child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
-                                    ),
-                                    TextButton(
-                                      onPressed: () => Navigator.pop(context, true),
-                                      child: const Text('Delete', style: TextStyle(color: Color(0xFFEF4444))),
-                                    ),
-                                  ],
-                                ),
-                              );
-                              if (confirm == true) {
-                                await DatabaseService.instance.deleteTransaction(editTx.id!);
-                                Navigator.pop(context); // Close bottom sheet
-                                _refreshData();
-                                widget.onRefreshPendingCount();
-                              }
-                            },
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            isEdit ? 'Edit Transaction' : 'Add Transaction',
+                            style: const TextStyle(
+                                fontSize: 20, fontWeight: FontWeight.bold),
                           ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    // Type selector pills
-                    Row(
-                      children: [
-                        _buildFormTypePill(
-                          label: 'Expense',
-                          isActive: type == 'debit',
-                          onTap: () => setFormState(() {
-                            type = 'debit';
-                            toAccountId = null;
-                          }),
-                        ),
-                        const SizedBox(width: 8),
-                        _buildFormTypePill(
-                          label: 'Income',
-                          isActive: type == 'credit',
-                          onTap: () => setFormState(() {
-                            type = 'credit';
-                            toAccountId = null;
-                          }),
-                        ),
-                        const SizedBox(width: 8),
-                        _buildFormTypePill(
-                          label: 'Transfer',
-                          isActive: type == 'transfer',
-                          onTap: () => setFormState(() {
-                            type = 'transfer';
-                            if (toAccountId == null && _accounts.length > 1) {
-                              toAccountId = _accounts.firstWhere((a) => a.id != accountId).id;
-                            }
-                          }),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    // Amount field
-                    TextField(
-                      controller: amountController,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      style: const TextStyle(color: Colors.white, fontSize: 16),
-                      decoration: InputDecoration(
-                        labelText: 'Amount (${AppSettings.currencySymbol})',
-                        labelStyle: const TextStyle(color: Colors.white54, fontSize: 13),
-                        filled: true,
-                        fillColor: const Color(0xFF0F172A),
-                        prefixText: '${AppSettings.currencySymbol} ',
-                        prefixStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Colors.white24),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFF6366F1), width: 1.5),
+                          if (isEdit)
+                            IconButton(
+                              icon: const Icon(Icons.delete,
+                                  color: Color(0xFFEF4444)),
+                              onPressed: () async {
+                                final confirm = await showDialog<bool>(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    backgroundColor: const Color(0xFF1E293B),
+                                    title: const Text('Delete Transaction?'),
+                                    content: const Text(
+                                        'This will permanently delete this transaction.'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, false),
+                                        child: const Text('Cancel',
+                                            style: TextStyle(
+                                                color: Colors.white70)),
+                                      ),
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, true),
+                                        child: const Text('Delete',
+                                            style: TextStyle(
+                                                color: Color(0xFFEF4444))),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                if (confirm == true) {
+                                  await DatabaseService.instance
+                                      .deleteTransaction(editTx.id!);
+                                  Navigator.pop(context); // Close bottom sheet
+                                  _refreshData();
+                                  widget.onRefreshPendingCount();
+                                }
+                              },
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      // Type selector pills
+                      Row(
+                        children: [
+                          _buildFormTypePill(
+                            label: 'Expense',
+                            isActive: type == 'debit',
+                            onTap: () => setFormState(() {
+                              type = 'debit';
+                              toAccountId = null;
+                            }),
+                          ),
+                          const SizedBox(width: 8),
+                          _buildFormTypePill(
+                            label: 'Income',
+                            isActive: type == 'credit',
+                            onTap: () => setFormState(() {
+                              type = 'credit';
+                              toAccountId = null;
+                            }),
+                          ),
+                          const SizedBox(width: 8),
+                          _buildFormTypePill(
+                            label: 'Transfer',
+                            isActive: type == 'transfer',
+                            onTap: () => setFormState(() {
+                              type = 'transfer';
+                              if (toAccountId == null && _accounts.length > 1) {
+                                toAccountId = _accounts
+                                    .firstWhere((a) => a.id != accountId)
+                                    .id;
+                              }
+                            }),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      // Amount field
+                      TextField(
+                        controller: amountController,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 16),
+                        decoration: InputDecoration(
+                          labelText: 'Amount (${AppSettings.currencySymbol})',
+                          labelStyle: const TextStyle(
+                              color: Colors.white54, fontSize: 13),
+                          filled: true,
+                          fillColor: const Color(0xFF0F172A),
+                          prefixText: '${AppSettings.currencySymbol} ',
+                          prefixStyle: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Colors.white),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 16),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Colors.white24),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                                color: Color(0xFF6366F1), width: 1.5),
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    // Account select field
-                    CustomSelectField(
-                      label: type == 'transfer' ? 'From Account' : 'Account',
-                      value: selectedAcc.name,
-                      icon: getAccountIcon(selectedAcc.type),
-                      onTap: () {
-                        showAccountPicker(
-                          type == 'transfer' ? 'Select Source Account' : 'Select Account',
-                          accountId,
-                          (selectedId) => setFormState(() {
-                            accountId = selectedId;
-                            if (type == 'transfer' && toAccountId == accountId) {
-                              toAccountId = _accounts.firstWhere((a) => a.id != accountId).id;
-                            }
-                          }),
-                        );
-                      },
-                    ),
-                    if (type == 'transfer' && selectedToAcc != null) ...[
-                      // To Account select field
+                      const SizedBox(height: 8),
+                      // Account select field
                       CustomSelectField(
-                        label: 'To Account',
-                        value: selectedToAcc.name,
-                        icon: getAccountIcon(selectedToAcc.type),
+                        label: type == 'transfer' ? 'From Account' : 'Account',
+                        value: selectedAcc.name,
+                        icon: getAccountIcon(selectedAcc.type),
                         onTap: () {
                           showAccountPicker(
-                            'Select Destination Account',
-                            toAccountId ?? accountId,
-                            (selectedId) => setFormState(() => toAccountId = selectedId),
+                            type == 'transfer'
+                                ? 'Select Source Account'
+                                : 'Select Account',
+                            accountId,
+                            (selectedId) => setFormState(() {
+                              accountId = selectedId;
+                              if (type == 'transfer' &&
+                                  toAccountId == accountId) {
+                                toAccountId = _accounts
+                                    .firstWhere((a) => a.id != accountId)
+                                    .id;
+                              }
+                            }),
                           );
                         },
                       ),
-                    ],
-                    // Category select field
-                    CustomSelectField(
-                      label: 'Category',
-                      value: selectedCat.name,
-                      icon: IconHelper.getIcon(selectedCat.icon),
-                      iconColor: Color(selectedCat.color),
-                      onTap: () {
-                        showCategoryPicker(
-                          categoryId,
-                          (selectedId) => setFormState(() => categoryId = selectedId),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    // Description
-                    TextField(
-                      controller: descController,
-                      style: const TextStyle(color: Colors.white, fontSize: 14),
-                      decoration: InputDecoration(
-                        labelText: 'Description / Remarks',
-                        labelStyle: const TextStyle(color: Colors.white54, fontSize: 13),
-                        filled: true,
-                        fillColor: const Color(0xFF0F172A),
-                        prefixIcon: const Icon(Icons.description, color: Color(0xFF6366F1), size: 20),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Colors.white24),
+                      if (type == 'transfer' && selectedToAcc != null) ...[
+                        // To Account select field
+                        CustomSelectField(
+                          label: 'To Account',
+                          value: selectedToAcc.name,
+                          icon: getAccountIcon(selectedToAcc.type),
+                          onTap: () {
+                            showAccountPicker(
+                              'Select Destination Account',
+                              toAccountId ?? accountId,
+                              (selectedId) =>
+                                  setFormState(() => toAccountId = selectedId),
+                            );
+                          },
                         ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFF6366F1), width: 1.5),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    // Date picker field
-                    InkWell(
-                      onTap: () async {
-                        FocusManager.instance.primaryFocus?.unfocus();
-                        final date = await showDatePicker(
-                          context: context,
-                          initialDate: selectedDate,
-                          firstDate: DateTime(2020),
-                          lastDate: DateTime(2030),
-                        );
-                        if (date != null) {
-                          final time = await showTimePicker(
-                            context: context,
-                            initialTime: TimeOfDay.fromDateTime(selectedDate),
+                      ],
+                      // Category select field
+                      CustomSelectField(
+                        label: 'Category',
+                        value: selectedCat.name,
+                        icon: IconHelper.getIcon(selectedCat.icon),
+                        iconColor: Color(selectedCat.color),
+                        onTap: () {
+                          showCategoryPicker(
+                            categoryId,
+                            (selectedId) =>
+                                setFormState(() => categoryId = selectedId),
                           );
-                          if (time != null) {
-                            setFormState(() {
-                              selectedDate = DateTime(
-                                date.year,
-                                date.month,
-                                date.day,
-                                time.hour,
-                                time.minute,
-                              );
-                            });
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      // Description
+                      TextField(
+                        controller: descController,
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 14),
+                        decoration: InputDecoration(
+                          labelText: 'Description / Remarks',
+                          labelStyle: const TextStyle(
+                              color: Colors.white54, fontSize: 13),
+                          filled: true,
+                          fillColor: const Color(0xFF0F172A),
+                          prefixIcon: const Icon(Icons.description,
+                              color: Color(0xFF6366F1), size: 20),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 16),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Colors.white24),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                                color: Color(0xFF6366F1), width: 1.5),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      // Date picker field
+                      InkWell(
+                        onTap: () async {
+                          FocusManager.instance.primaryFocus?.unfocus();
+                          final date = await showDatePicker(
+                            context: context,
+                            initialDate: selectedDate,
+                            firstDate: DateTime(2020),
+                            lastDate: DateTime(2030),
+                          );
+                          if (date != null) {
+                            final time = await showTimePicker(
+                              context: context,
+                              initialTime: TimeOfDay.fromDateTime(selectedDate),
+                            );
+                            if (time != null) {
+                              setFormState(() {
+                                selectedDate = DateTime(
+                                  date.year,
+                                  date.month,
+                                  date.day,
+                                  time.hour,
+                                  time.minute,
+                                );
+                              });
+                            }
                           }
-                        }
-                      },
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(vertical: 6),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.white24),
-                          borderRadius: BorderRadius.circular(12),
-                          color: const Color(0xFF0F172A),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.calendar_today, color: Color(0xFF6366F1), size: 20),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Date & Time',
-                                    style: TextStyle(fontSize: 10, color: Colors.white54),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    DateFormat('yyyy-MM-dd hh:mm a').format(selectedDate),
-                                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
-                                  ),
-                                ],
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.white24),
+                            borderRadius: BorderRadius.circular(12),
+                            color: const Color(0xFF0F172A),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.calendar_today,
+                                  color: Color(0xFF6366F1), size: 20),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Date & Time',
+                                      style: TextStyle(
+                                          fontSize: 10, color: Colors.white54),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      DateFormat('yyyy-MM-dd hh:mm a')
+                                          .format(selectedDate),
+                                      style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                            const Icon(Icons.arrow_drop_down, color: Colors.white54),
-                          ],
+                              const Icon(Icons.arrow_drop_down,
+                                  color: Colors.white54),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 20),
-                    // Save Button
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6366F1),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      const SizedBox(height: 20),
+                      // Save Button
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF6366F1),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                        onPressed: () async {
+                          final amt =
+                              double.tryParse(amountController.text) ?? 0.0;
+                          if (amt <= 0) {
+                            AppSnackBar.show(
+                                context, 'Please enter a valid amount',
+                                type: SnackBarType.warning);
+                            return;
+                          }
+
+                          final desc = descController.text.trim();
+                          final finalDesc = desc.isEmpty
+                              ? (isEdit ? editTx.description : 'Manual Entry')
+                              : desc;
+
+                          final tx = TransactionModel(
+                            id: isEdit ? editTx.id : null,
+                            appName: isEdit ? editTx.appName : 'Manual',
+                            title: isEdit ? editTx.title : 'Manual',
+                            body: isEdit
+                                ? editTx.body
+                                : 'Manual transaction entry',
+                            amount: amt,
+                            type: type,
+                            accountId: accountId,
+                            toAccountId: toAccountId,
+                            categoryId: categoryId,
+                            description: finalDesc,
+                            date: selectedDate,
+                            status:
+                                'confirmed', // Manual or edited transactions are confirmed immediately
+                          );
+
+                          if (isEdit) {
+                            await DatabaseService.instance
+                                .updateTransaction(tx);
+                          } else {
+                            await DatabaseService.instance
+                                .insertTransaction(tx);
+                          }
+
+                          Navigator.pop(context); // Close bottom sheet
+                          _refreshData();
+                          widget.onRefreshPendingCount();
+                        },
+                        child: Text(
+                          isEdit ? 'Save Changes' : 'Confirm Transaction',
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
                       ),
-                      onPressed: () async {
-                        final amt = double.tryParse(amountController.text) ?? 0.0;
-                        if (amt <= 0) {
-                          AppSnackBar.show(context, 'Please enter a valid amount', type: SnackBarType.warning);
-                          return;
-                        }
-
-                        final desc = descController.text.trim();
-                        final finalDesc = desc.isEmpty ? (isEdit ? editTx.description : 'Manual Entry') : desc;
-
-                        final tx = TransactionModel(
-                          id: isEdit ? editTx.id : null,
-                          appName: isEdit ? editTx.appName : 'Manual',
-                          title: isEdit ? editTx.title : 'Manual',
-                          body: isEdit ? editTx.body : 'Manual transaction entry',
-                          amount: amt,
-                          type: type,
-                          accountId: accountId,
-                          toAccountId: toAccountId,
-                          categoryId: categoryId,
-                          description: finalDesc,
-                          date: selectedDate,
-                          status: 'confirmed', // Manual or edited transactions are confirmed immediately
-                        );
-
-                        if (isEdit) {
-                          await DatabaseService.instance.updateTransaction(tx);
-                        } else {
-                          await DatabaseService.instance.insertTransaction(tx);
-                        }
-
-                        Navigator.pop(context); // Close bottom sheet
-                        _refreshData();
-                        widget.onRefreshPendingCount();
-                      },
-                      child: Text(
-                        isEdit ? 'Save Changes' : 'Confirm Transaction',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                  ],
+                      const SizedBox(height: 24),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          );
-        },
+            );
+          },
         );
       },
     );
@@ -1949,7 +2645,8 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
           decoration: BoxDecoration(
             color: isActive ? const Color(0xFF6366F1) : const Color(0xFF0F172A),
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: isActive ? const Color(0xFF6366F1) : Colors.white10),
+            border: Border.all(
+                color: isActive ? const Color(0xFF6366F1) : Colors.white10),
           ),
           alignment: Alignment.center,
           child: Text(
@@ -2009,12 +2706,16 @@ class CustomSelectField extends StatelessWidget {
                   children: [
                     Text(
                       label,
-                      style: const TextStyle(fontSize: 10, color: Colors.white54),
+                      style:
+                          const TextStyle(fontSize: 10, color: Colors.white54),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       value,
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                      style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white),
                     ),
                   ],
                 ),

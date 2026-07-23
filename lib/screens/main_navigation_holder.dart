@@ -87,6 +87,7 @@ class _MainNavigationHolderState extends State<MainNavigationHolder> {
   }
 
   void _onTabSelected(int index) {
+    FocusScope.of(context).unfocus();
     setState(() {
       _selectedIndex = index;
     });
@@ -115,7 +116,10 @@ class _MainNavigationHolderState extends State<MainNavigationHolder> {
               }
             },
             children: [
-              DashboardScreen(onRefreshPendingCount: _updatePendingCount),
+              DashboardScreen(
+                isActive: _selectedIndex == 0,
+                onRefreshPendingCount: _updatePendingCount,
+              ),
               PendingVerificationScreen(
                 onConfirmedOrDiscarded: _updatePendingCount,
                 refreshSignal: _foregroundRefreshSignal,
