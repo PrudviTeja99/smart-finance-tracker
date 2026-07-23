@@ -10,7 +10,8 @@ class CapturedAlertsBottomSheet extends StatefulWidget {
   final Widget leadingWidget;
   final List<Map<String, dynamic>> alerts;
 
-  final Future<void> Function(int, String, String, String, bool, bool) onFeedback;
+  final Future<void> Function(int, String, String, String, bool, bool)
+      onFeedback;
 
   const CapturedAlertsBottomSheet({
     super.key,
@@ -22,7 +23,8 @@ class CapturedAlertsBottomSheet extends StatefulWidget {
   });
 
   @override
-  State<CapturedAlertsBottomSheet> createState() => _CapturedAlertsBottomSheetState();
+  State<CapturedAlertsBottomSheet> createState() =>
+      _CapturedAlertsBottomSheetState();
 }
 
 class _CapturedAlertsBottomSheetState extends State<CapturedAlertsBottomSheet> {
@@ -49,12 +51,14 @@ class _CapturedAlertsBottomSheetState extends State<CapturedAlertsBottomSheet> {
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         content: Text(
           'Are you sure you want to clear $count selected alerts? They will be moved to your Archived Alerts feed.',
-          style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+          style:
+              const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white38)),
+            child:
+                const Text('Cancel', style: TextStyle(color: Colors.white38)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
@@ -80,14 +84,15 @@ class _CapturedAlertsBottomSheetState extends State<CapturedAlertsBottomSheet> {
 
       if (mounted) {
         setState(() {
-          _localAlerts.removeWhere((item) => alertsToArchive.contains(item['id']));
+          _localAlerts
+              .removeWhere((item) => alertsToArchive.contains(item['id']));
           _isSelectionMode = false;
           _selectedAlertIds.clear();
         });
 
         if (alertsToArchive.isNotEmpty) {
-          final lastAlert = _localAlerts.isEmpty 
-              ? {'title': '', 'body': ''} 
+          final lastAlert = _localAlerts.isEmpty
+              ? {'title': '', 'body': ''}
               : _localAlerts.first;
           await widget.onFeedback(
             alertsToArchive.last,
@@ -119,12 +124,14 @@ class _CapturedAlertsBottomSheetState extends State<CapturedAlertsBottomSheet> {
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         content: Text(
           'Are you sure you want to clear all $count alerts for "${widget.appName}"? They will be moved to your Archived Alerts feed.',
-          style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+          style:
+              const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white38)),
+            child:
+                const Text('Cancel', style: TextStyle(color: Colors.white38)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
@@ -139,7 +146,8 @@ class _CapturedAlertsBottomSheetState extends State<CapturedAlertsBottomSheet> {
     if (confirmed == true) {
       final dbService = DatabaseService.instance;
       final parser = TransactionParser();
-      final alertsToArchive = _localAlerts.map((item) => item['id'] as int).toList();
+      final alertsToArchive =
+          _localAlerts.map((item) => item['id'] as int).toList();
 
       for (var id in alertsToArchive) {
         final alert = _localAlerts.firstWhere((item) => item['id'] == id);
@@ -195,7 +203,8 @@ class _CapturedAlertsBottomSheetState extends State<CapturedAlertsBottomSheet> {
               borderRadius: BorderRadius.vertical(
                 top: Radius.circular(24),
               ),
-              border: Border(top: BorderSide(color: Color(0xFF334155), width: 1)),
+              border:
+                  Border(top: BorderSide(color: Color(0xFF334155), width: 1)),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -218,7 +227,8 @@ class _CapturedAlertsBottomSheetState extends State<CapturedAlertsBottomSheet> {
                       ? Row(
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.close_rounded, color: Colors.white),
+                              icon: const Icon(Icons.close_rounded,
+                                  color: Colors.white),
                               onPressed: () {
                                 setState(() {
                                   _isSelectionMode = false;
@@ -237,7 +247,8 @@ class _CapturedAlertsBottomSheetState extends State<CapturedAlertsBottomSheet> {
                             ),
                             const Spacer(),
                             IconButton(
-                              icon: const Icon(Icons.delete_outline, color: Colors.red),
+                              icon: const Icon(Icons.delete_outline,
+                                  color: Colors.red),
                               tooltip: 'Clear Selected Alerts',
                               onPressed: _archiveSelectedAlerts,
                             ),
@@ -268,10 +279,12 @@ class _CapturedAlertsBottomSheetState extends State<CapturedAlertsBottomSheet> {
                                       vertical: 3,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFFF59E0B).withValues(alpha: 0.12),
+                                      color: const Color(0xFFF59E0B)
+                                          .withValues(alpha: 0.12),
                                       borderRadius: BorderRadius.circular(10),
                                       border: Border.all(
-                                        color: const Color(0xFFF59E0B).withValues(alpha: 0.3),
+                                        color: const Color(0xFFF59E0B)
+                                            .withValues(alpha: 0.3),
                                       ),
                                     ),
                                     child: Text(
@@ -287,7 +300,8 @@ class _CapturedAlertsBottomSheetState extends State<CapturedAlertsBottomSheet> {
                               ),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.checklist_rounded, color: Colors.white70),
+                              icon: const Icon(Icons.checklist_rounded,
+                                  color: Colors.white70),
                               tooltip: 'Select Alerts to Clear',
                               onPressed: () {
                                 setState(() {
@@ -297,7 +311,8 @@ class _CapturedAlertsBottomSheetState extends State<CapturedAlertsBottomSheet> {
                               },
                             ),
                             IconButton(
-                              icon: const Icon(Icons.delete_outline, color: Colors.red),
+                              icon: const Icon(Icons.delete_outline,
+                                  color: Colors.red),
                               tooltip: 'Clear All Alerts',
                               onPressed: _archiveAllAlerts,
                             ),
@@ -315,7 +330,7 @@ class _CapturedAlertsBottomSheetState extends State<CapturedAlertsBottomSheet> {
                       final alert = _localAlerts[index];
                       final alertId = alert['id'] as int;
                       final isSelected = _selectedAlertIds.contains(alertId);
-  
+
                       return CapturedAlertCard(
                         key: ValueKey(alertId),
                         alert: alert,
@@ -337,7 +352,8 @@ class _CapturedAlertsBottomSheetState extends State<CapturedAlertsBottomSheet> {
                               backgroundColor: Colors.transparent,
                               builder: (_) => CapturedAlertActionBottomSheet(
                                 alert: alert,
-                                onFeedback: (logId, appName, title, body, isFinancial, isRelevant) async {
+                                onFeedback: (logId, appName, title, body,
+                                    isFinancial, isRelevant) async {
                                   await widget.onFeedback(
                                     logId,
                                     appName,
@@ -348,7 +364,8 @@ class _CapturedAlertsBottomSheetState extends State<CapturedAlertsBottomSheet> {
                                   );
                                   if (mounted) {
                                     setState(() {
-                                      _localAlerts.removeWhere((item) => item['id'] == logId);
+                                      _localAlerts.removeWhere(
+                                          (item) => item['id'] == logId);
                                     });
                                     if (_localAlerts.isEmpty) {
                                       Navigator.pop(context);
