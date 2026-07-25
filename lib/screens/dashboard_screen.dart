@@ -102,15 +102,18 @@ class _DashboardScreenState extends State<DashboardScreen>
     super.dispose();
   }
 
+  void _unfocusSearch() {
+    _searchFocusNode.unfocus(disposition: UnfocusDisposition.scope);
+    FocusManager.instance.primaryFocus?.unfocus(disposition: UnfocusDisposition.scope);
+  }
+
   @override
   void didUpdateWidget(DashboardScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!widget.isActive && oldWidget.isActive) {
-    
-      _searchFocusNode.unfocus();
+      _unfocusSearch();
     }
     if (widget.isActive && !oldWidget.isActive) {
-    
       _refreshData();
     }
     if (oldWidget.refreshSignal != widget.refreshSignal) {
@@ -426,6 +429,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   void _showTimeframeFilterSheet() {
+    _unfocusSearch();
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -630,6 +634,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   void _showAccountFilterSheet() {
+    _unfocusSearch();
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -891,6 +896,7 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   // Opens month and year lists
   void _openMonthYearPicker() {
+    _unfocusSearch();
     final now = DateTime.now();
     final months = [
       'January',
@@ -993,7 +999,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     return Scaffold(
       body: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: () => FocusScope.of(context).unfocus(),
+        onTap: _unfocusSearch,
         child: Stack(
           children: [
             // Background soft circles for premium dark UI
@@ -1369,7 +1375,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                                               color: Colors.white54, size: 18),
                                           onPressed: () {
                                             _searchController.clear();
-                                            FocusScope.of(context).unfocus();
+                                            _unfocusSearch();
                                           },
                                         )
                                       : const SizedBox.shrink();
@@ -1982,6 +1988,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   void _openTransactionFormBottomSheet(TransactionModel? editTx) {
+    _unfocusSearch();
     final isEdit = editTx != null;
 
     // Form fields

@@ -85,7 +85,7 @@ class _MainNavigationHolderState extends State<MainNavigationHolder> {
   }
 
   void _onTabSelected(int index) {
-    FocusScope.of(context).unfocus();
+    FocusManager.instance.primaryFocus?.unfocus(disposition: UnfocusDisposition.scope);
 
     setState(() {
       _selectedIndex = index;
