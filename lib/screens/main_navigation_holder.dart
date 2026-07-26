@@ -64,7 +64,6 @@ class _MainNavigationHolderState extends State<MainNavigationHolder> {
       await NotificationHandler.stopService();
     }
 
-
     // Process any notifications that were queued while the app wasn't running.
     await BatchProcessorService.instance.processQueue(
       onCompleted: () {
@@ -78,7 +77,6 @@ class _MainNavigationHolderState extends State<MainNavigationHolder> {
 
   @override
   void dispose() {
-    
     IsolateNameServer.removePortNameMapping(NotificationHandler.portName);
 
     _pageController.dispose();
@@ -87,6 +85,8 @@ class _MainNavigationHolderState extends State<MainNavigationHolder> {
   }
 
   void _onTabSelected(int index) {
+    FocusManager.instance.primaryFocus?.unfocus(disposition: UnfocusDisposition.scope);
+
     setState(() {
       _selectedIndex = index;
     });
@@ -115,7 +115,11 @@ class _MainNavigationHolderState extends State<MainNavigationHolder> {
               }
             },
             children: [
-              DashboardScreen(onRefreshPendingCount: _updatePendingCount),
+              DashboardScreen(
+                isActive: _selectedIndex == 0,
+                onRefreshPendingCount: _updatePendingCount,
+                refreshSignal: _foregroundRefreshSignal,
+              ),
               PendingVerificationScreen(
                 onConfirmedOrDiscarded: _updatePendingCount,
                 refreshSignal: _foregroundRefreshSignal,
@@ -137,7 +141,7 @@ class _MainNavigationHolderState extends State<MainNavigationHolder> {
   // Floating frosted-glass navigation bar ("Strap" UI)
   Widget _buildBottomNavigationStrap() {
     final theme = Theme.of(context);
-    
+
     return Theme(
       data: theme.copyWith(canvasColor: Colors.transparent),
       child: SafeArea(
@@ -147,47 +151,47 @@ class _MainNavigationHolderState extends State<MainNavigationHolder> {
             borderRadius: BorderRadius.circular(24.0),
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-            child: Container(
-              height: 64,
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.4),
-                borderRadius: BorderRadius.circular(24.0),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.1),
-                  width: 1.0,
+              child: Container(
+                height: 64,
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.4),
+                  borderRadius: BorderRadius.circular(24.0),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.1),
+                    width: 1.0,
+                  ),
                 ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildStrapItem(
-                    index: 0,
-                    icon: Icons.dashboard_outlined,
-                    activeIcon: Icons.dashboard,
-                    label: 'Dashboard',
-                  ),
-                  _buildStrapItem(
-                    index: 1,
-                    icon: Icons.mark_email_unread_outlined,
-                    activeIcon: Icons.mark_email_unread,
-                    label: 'Inbox',
-                    badgeCount: _pendingCount,
-                  ),
-                  _buildStrapItem(
-                    index: 2,
-                    icon: Icons.settings_outlined,
-                    activeIcon: Icons.settings,
-                    label: 'Settings',
-                  ),
-                ],
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildStrapItem(
+                      index: 0,
+                      icon: Icons.dashboard_outlined,
+                      activeIcon: Icons.dashboard,
+                      label: 'Dashboard',
+                    ),
+                    _buildStrapItem(
+                      index: 1,
+                      icon: Icons.mark_email_unread_outlined,
+                      activeIcon: Icons.mark_email_unread,
+                      label: 'Inbox',
+                      badgeCount: _pendingCount,
+                    ),
+                    _buildStrapItem(
+                      index: 2,
+                      icon: Icons.settings_outlined,
+                      activeIcon: Icons.settings,
+                      label: 'Settings',
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildStrapItem({
     required int index,
@@ -222,7 +226,8 @@ class _MainNavigationHolderState extends State<MainNavigationHolder> {
                   label,
                   style: TextStyle(
                     fontSize: 9,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    fontWeight:
+                        isSelected ? FontWeight.bold : FontWeight.normal,
                     color: isSelected ? activeColor : inactiveColor,
                   ),
                 ),
@@ -258,5 +263,4 @@ class _MainNavigationHolderState extends State<MainNavigationHolder> {
       ),
     );
   }
-
 }

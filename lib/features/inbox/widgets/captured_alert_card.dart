@@ -4,11 +4,17 @@ import 'package:intl/intl.dart';
 class CapturedAlertCard extends StatelessWidget {
   final Map<String, dynamic> alert;
   final VoidCallback onTap;
+  final bool isSelectionMode;
+  final bool isSelected;
+  final VoidCallback? onLongPress;
 
   const CapturedAlertCard({
     super.key,
     required this.alert,
     required this.onTap,
+    this.isSelectionMode = false,
+    this.isSelected = false,
+    this.onLongPress,
   });
 
   @override
@@ -25,14 +31,19 @@ class CapturedAlertCard extends StatelessWidget {
       splashColor: Colors.white10,
       highlightColor: Colors.white.withValues(alpha: 0.04),
       onTap: onTap,
+      onLongPress: onLongPress,
       child: Container(
         margin: const EdgeInsets.only(top: 10),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: const Color(0xFF1E293B),
+          color: isSelected
+              ? const Color(0xFF6366F1).withValues(alpha: 0.12)
+              : const Color(0xFF1E293B),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.08),
+            color: isSelected
+                ? const Color(0xFF6366F1)
+                : Colors.white.withValues(alpha: 0.08),
           ),
         ),
         child: Column(
@@ -60,11 +71,21 @@ class CapturedAlertCard extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                const Icon(
-                  Icons.chevron_right_rounded,
-                  size: 18,
-                  color: Colors.white38,
-                ),
+                isSelectionMode
+                    ? Icon(
+                        isSelected
+                            ? Icons.check_circle_rounded
+                            : Icons.radio_button_unchecked_rounded,
+                        size: 20,
+                        color: isSelected
+                            ? const Color(0xFF6366F1)
+                            : Colors.white38,
+                      )
+                    : const Icon(
+                        Icons.chevron_right_rounded,
+                        size: 18,
+                        color: Colors.white38,
+                      ),
               ],
             ),
 
