@@ -217,14 +217,16 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
     if (!mounted) return;
 
     try {
+      final activity = await DatabaseService.instance.hasTodayModelActivity();
       await Future.wait([
         _loadPendingData(),
         _loadCapturedAlerts(),
-        () async {
-          _hasModelActivity =
-              await DatabaseService.instance.hasTodayModelActivity();
-        }(),
       ]);
+      if (mounted) {
+        setState(() {
+          _hasModelActivity = activity;
+        });
+      }
     } catch (e) {
       debugPrint('Refresh failed: $e');
     }
@@ -635,10 +637,21 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
               const BatchProgressBanner(),
               if (_hasModelActivity)
                 ModelActivityBanner(
-                  onViewLogPressed: () => showAuditLogBottomSheet(
-                    context: context,
-                    onUndo: _undoAuditAction,
-                  ),
+                  onViewLogPressed: () async {
+                    await showAuditLogBottomSheet(
+                      context: context,
+                      onUndo: _undoAuditAction,
+                      onCleared: () {
+                        if (mounted) {
+                          setState(() {
+                            _hasModelActivity = false;
+                          });
+                          _refreshAll();
+                        }
+                      },
+                    );
+                    if (mounted) _refreshAll();
+                  },
                 ),
               // --- TAB CONTENT ---
               Expanded(
