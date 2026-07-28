@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 Future<void> showAuditLogBottomSheet({
   required BuildContext context,
   required Future<void> Function(Map<String, dynamic>) onUndo,
+  VoidCallback? onCleared,
 }) {
   return showModalBottomSheet(
     context: context,
@@ -89,6 +90,7 @@ Future<void> showAuditLogBottomSheet({
                       if (confirmed == true) {
                         await DatabaseService.instance
                             .deleteAllModelAuditLogs();
+                        onCleared?.call();
                         if (context.mounted) {
                           Navigator.pop(context);
                           AppSnackBar.show(
