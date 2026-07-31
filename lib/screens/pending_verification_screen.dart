@@ -586,12 +586,16 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
     }
     _isKeyboardOpen = isKeyboardNowOpen;
 
+    final bool isSelecting = _isDraftSelectionMode || _isAppCategorySelectionMode;
+
     return PopScope(
-      canPop: !_isAppCategorySelectionMode,
+      canPop: !isSelecting,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
-        if (_isAppCategorySelectionMode) {
+        if (isSelecting) {
           setState(() {
+            _isDraftSelectionMode = false;
+            _selectedDraftIds.clear();
             _isAppCategorySelectionMode = false;
             _selectedAppPackages.clear();
           });
