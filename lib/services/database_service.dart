@@ -414,7 +414,18 @@ class DatabaseService {
   Future<List<AccountModel>> getAllAccounts() async {
     final db = await database;
     final result = await db.query('accounts', orderBy: 'id ASC');
-    return result.map((json) => AccountModel.fromMap(json)).toList();
+    final rawAccounts = result.map((json) => AccountModel.fromMap(json)).toList();
+
+    final accountsWithBalances = <AccountModel>[];
+    for (var acc in rawAccounts) {
+      if (acc.id != null) {
+        final calculatedBalance = await getAccountBalance(acc.id!);
+        accountsWithBalances.add(acc.copyWith(balance: calculatedBalance));
+      } else {
+        accountsWithBalances.add(acc);
+      }
+    }
+    return accountsWithBalances;
   }
 
   Future<int> updateAccount(AccountModel account) async {
