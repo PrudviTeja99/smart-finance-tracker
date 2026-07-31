@@ -54,8 +54,11 @@ class DonutChart extends StatelessWidget {
       );
     }
 
-    // Determine center text based on touched slice index
-    String centerTitle = typeFilter == 'credit' ? 'TOTAL INCOME' : 'TOTAL SPENT';
+    String centerTitle = typeFilter == 'credit'
+        ? 'TOTAL INCOME'
+        : (typeFilter == 'debit'
+            ? 'TOTAL SPENT'
+            : (typeFilter == 'transfer' ? 'TRANSFERS' : 'TOTAL VOLUME'));
     String centerAmountText = shouldHideAmounts
         ? '${AppSettings.currencySymbol}••••'
         : '${AppSettings.currencySymbol}${totalSum.toStringAsFixed(0)}';
