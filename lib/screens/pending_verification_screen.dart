@@ -552,8 +552,8 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
                   if (_tabController.index == 0 &&
                       _pendingTransactions.isNotEmpty)
                     IconButton(
-                      icon: const Icon(Icons.delete_sweep_outlined,
-                          color: Colors.white70),
+                      icon: const Icon(Icons.delete_outline,
+                          color: Colors.red),
                       tooltip: 'Discard All Drafts',
                       onPressed: _discardAllDrafts,
                     ),
