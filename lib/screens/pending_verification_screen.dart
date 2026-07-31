@@ -94,10 +94,13 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
   }
 
   void _onTabChanged() {
-    // Only rebuild once the tab has actually settled on a new index,
-    // not on every intermediate frame of the swipe animation.
-    if (!_tabController.indexIsChanging && mounted) {
-      setState(() {});
+    if (mounted) {
+      setState(() {
+        _isDraftSelectionMode = false;
+        _selectedDraftIds.clear();
+        _isAppCategorySelectionMode = false;
+        _selectedAppPackages.clear();
+      });
     }
   }
 
