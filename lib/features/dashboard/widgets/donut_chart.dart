@@ -67,8 +67,13 @@ class DonutChart extends StatelessWidget {
 
     if (touchedIndex >= 0 && touchedIndex < entries.length) {
       final selectedEntry = entries[touchedIndex];
-      final cat = categories.firstWhere((c) => c.id == selectedEntry.key,
-          orElse: () => categories.last);
+      final cat = categories.firstWhere(
+        (c) => c.id == selectedEntry.key,
+        orElse: () => categories.firstWhere(
+          (c) => c.name.toLowerCase() == 'others',
+          orElse: () => categories.first,
+        ),
+      );
       final catAmount = selectedEntry.value;
       final percentage = (catAmount / totalSum) * 100;
 
@@ -83,8 +88,13 @@ class DonutChart extends StatelessWidget {
     final sections = List.generate(entries.length, (i) {
       final entry = entries[i];
       final isTouched = i == touchedIndex;
-      final category = categories.firstWhere((c) => c.id == entry.key,
-          orElse: () => categories.last);
+      final category = categories.firstWhere(
+        (c) => c.id == entry.key,
+        orElse: () => categories.firstWhere(
+          (c) => c.name.toLowerCase() == 'others',
+          orElse: () => categories.first,
+        ),
+      );
       final value = entry.value;
 
       final radius = isTouched ? 42.0 : 32.0;

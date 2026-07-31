@@ -8,6 +8,7 @@ import '../../utils/app_settings.dart';
 import '../../utils/app_snackbar.dart';
 import '../../utils/icon_helper.dart';
 import '../../features/dashboard/utils/custom_select_field.dart';
+import 'manage_categories_sheet.dart';
 
 Future<void> showTransactionFormSheet({
   required BuildContext context,
@@ -314,13 +315,42 @@ class __TransactionFormContentState extends State<_TransactionFormContent> {
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  const Text(
-                    'Select Category',
-                    style: TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold),
-                    textAlign: TextAlign.center,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Select Category',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      TextButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          showManageCategoriesSheet(
+                            context: context,
+                            onCategoriesChanged: () async {
+                              final fresh = await DatabaseService.instance
+                                  .getAllCategories();
+                              setState(() {
+                                widget.categories.clear();
+                                widget.categories.addAll(fresh);
+                              });
+                            },
+                          );
+                        },
+                        icon: const Icon(Icons.tune_rounded,
+                            size: 18, color: Color(0xFF6366F1)),
+                        label: const Text(
+                          'Manage',
+                          style: TextStyle(
+                              color: Color(0xFF6366F1),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   Expanded(
                     child: ListView.builder(
                       controller: scrollController,
@@ -449,8 +479,12 @@ class __TransactionFormContentState extends State<_TransactionFormContent> {
             orElse: () => widget.accounts.first)
         : null;
     final selectedCat = widget.categories.firstWhere(
-        (c) => c.id == _categoryId,
-        orElse: () => widget.categories.first);
+      (c) => c.id == _categoryId,
+      orElse: () => widget.categories.firstWhere(
+        (c) => c.name.toLowerCase() == 'others',
+        orElse: () => widget.categories.first,
+      ),
+    );
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,

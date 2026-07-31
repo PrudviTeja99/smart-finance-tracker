@@ -67,8 +67,12 @@ class _DraftEditorState extends State<DraftEditor> {
   @override
   Widget build(BuildContext context) {
     final selectedCategory = widget.categories.firstWhere(
-        (c) => c.id == _categoryId,
-        orElse: () => widget.categories.last);
+      (c) => c.id == _categoryId,
+      orElse: () => widget.categories.firstWhere(
+        (c) => c.name.toLowerCase() == 'others',
+        orElse: () => widget.categories.first,
+      ),
+    );
     final selectedAcc = widget.accounts.firstWhere((a) => a.id == _accountId,
         orElse: () => widget.accounts.first);
     final selectedToAcc = _type == 'transfer' && _toAccountId != null

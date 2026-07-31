@@ -2,6 +2,7 @@ import 'package:finance_tracker/features/inbox/widgets/captured_alert_action_bot
 import 'package:finance_tracker/features/inbox/widgets/captured_alert_card.dart';
 import 'package:finance_tracker/services/database_service.dart';
 import 'package:finance_tracker/utils/transaction_parser.dart';
+import 'package:finance_tracker/utils/app_snackbar.dart';
 import 'package:flutter/material.dart';
 
 class CapturedAlertsBottomSheet extends StatefulWidget {
@@ -107,6 +108,82 @@ class _CapturedAlertsBottomSheetState extends State<CapturedAlertsBottomSheet> {
         if (_localAlerts.isEmpty) {
           Navigator.pop(context);
         }
+      }
+    }
+  }
+
+  Future<void> _reviewSelectedAlertsAsTransactions() async {
+    if (_selectedAlertIds.isEmpty) return;
+
+    final count = _selectedAlertIds.length;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1E293B),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Review Selected Alerts?',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: Text(
+          'Are you sure you want to promote $count selected alerts into draft transactions?',
+          style:
+              const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child:
+                const Text('Cancel', style: TextStyle(color: Colors.white38)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Review',
+                style: TextStyle(
+                    color: Color(0xFF818CF8), fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final alertsToReview = List<int>.from(_selectedAlertIds);
+    int createdCount = 0;
+
+    for (var id in alertsToReview) {
+      final matching = _localAlerts.where((item) => item['id'] == id).toList();
+      if (matching.isNotEmpty) {
+        final alert = matching.first;
+        final body = alert['body'] as String? ?? '';
+        final title = alert['title'] as String? ?? '';
+
+        await widget.onFeedback(
+          id,
+          widget.appName,
+          title,
+          body,
+          true, // isFinancial
+          true, // isRelevant
+        );
+        createdCount++;
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        _localAlerts
+            .removeWhere((item) => alertsToReview.contains(item['id']));
+        _isSelectionMode = false;
+        _selectedAlertIds.clear();
+      });
+
+      AppSnackBar.show(
+        context,
+        'Promoted $createdCount alerts to draft transactions!',
+        type: SnackBarType.success,
+      );
+
+      if (_localAlerts.isEmpty) {
+        Navigator.pop(context);
       }
     }
   }
@@ -246,6 +323,12 @@ class _CapturedAlertsBottomSheetState extends State<CapturedAlertsBottomSheet> {
                               ),
                             ),
                             const Spacer(),
+                            IconButton(
+                              icon: const Icon(Icons.edit_note_rounded,
+                                  color: Color(0xFF818CF8)),
+                              tooltip: 'Promote Selected to Drafts',
+                              onPressed: _reviewSelectedAlertsAsTransactions,
+                            ),
                             IconButton(
                               icon: const Icon(Icons.delete_sweep_outlined,
                                   color: Color(0xFFEF4444)),

@@ -32,8 +32,13 @@ class CategoryLegend extends StatelessWidget {
       children: List.generate(entries.length, (index) {
         final entry = entries[index];
         final isSelected = index == touchedIndex;
-        final category = categories.firstWhere((c) => c.id == entry.key,
-            orElse: () => categories.last);
+        final category = categories.firstWhere(
+          (c) => c.id == entry.key,
+          orElse: () => categories.firstWhere(
+            (c) => c.name.toLowerCase() == 'others',
+            orElse: () => categories.first,
+          ),
+        );
         final value = entry.value;
         final percentage = totalSum > 0 ? (value / totalSum) * 100 : 0.0;
         final catColor = Color(category.color);

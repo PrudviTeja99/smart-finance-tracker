@@ -15,6 +15,7 @@ import '../utils/app_snackbar.dart';
 import '../services/perceptron_storage_service.dart';
 import 'archived_alerts_screen.dart';
 import 'model_training_screen.dart';
+import '../shared/sheets/manage_categories_sheet.dart';
 import 'package:flutter/cupertino.dart';
 import 'developer/log_inspector_screen.dart';
 
@@ -935,151 +936,9 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   void _showManageCategoriesSheet() {
-    showModalBottomSheet(
+    showManageCategoriesSheet(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: const Color(0xFF0F172A),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            return Container(
-              height: MediaQuery.of(context).size.height * 0.85,
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Manage Categories',
-                        style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white),
-                      ),
-                      Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.add_circle,
-                                color: Color(0xFF10B981), size: 28),
-                            onPressed: () async {
-                              await _openCategoryFormDialog(null);
-                              final dbService = DatabaseService.instance;
-                              final categoriesList =
-                                  await dbService.getAllCategories();
-                              setState(() {
-                                _categories = categoriesList;
-                              });
-                              setSheetState(() {});
-                            },
-                          ),
-                          IconButton(
-                            icon:
-                                const Icon(Icons.close, color: Colors.white70),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Expanded(
-                    child: _categories.isEmpty
-                        ? const Center(
-                            child: Text(
-                              'No categories yet. Tap + to add one.',
-                              style: TextStyle(color: Colors.white38),
-                            ),
-                          )
-                        : ListView.builder(
-                            itemCount: _categories.length,
-                            itemBuilder: (context, index) {
-                              final cat = _categories[index];
-                              return Container(
-                                margin: const EdgeInsets.symmetric(vertical: 6),
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF1E293B),
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                      color: Colors.white.withOpacity(0.03)),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(10),
-                                      decoration: BoxDecoration(
-                                        color:
-                                            Color(cat.color).withOpacity(0.15),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Icon(IconHelper.getIcon(cat.icon),
-                                          color: Color(cat.color), size: 20),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Text(
-                                        cat.name,
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 14),
-                                      ),
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.edit,
-                                          size: 18, color: Colors.white60),
-                                      onPressed: () async {
-                                        await _openCategoryFormDialog(cat);
-                                        final dbService =
-                                            DatabaseService.instance;
-                                        final categoriesList =
-                                            await dbService.getAllCategories();
-                                        setState(() {
-                                          _categories = categoriesList;
-                                        });
-                                        setSheetState(() {});
-                                      },
-                                    ),
-                                    if (cat.name != 'Others')
-                                      IconButton(
-                                        icon: const Icon(Icons.delete,
-                                            size: 18, color: Color(0xFFEF4444)),
-                                        onPressed: () async {
-                                          final confirm =
-                                              await _showConfirmDeleteDialog(
-                                                  cat.name);
-                                          if (confirm == true) {
-                                            await DatabaseService.instance
-                                                .deleteCategory(cat.id!);
-                                            final dbService =
-                                                DatabaseService.instance;
-                                            final categoriesList =
-                                                await dbService
-                                                    .getAllCategories();
-                                            setState(() {
-                                              _categories = categoriesList;
-                                            });
-                                            setSheetState(() {});
-                                            _loadSettingsData();
-                                          }
-                                        },
-                                      ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
+      onCategoriesChanged: _loadSettingsData,
     );
   }
 

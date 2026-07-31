@@ -39,8 +39,13 @@ class LedgerItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final category = categories.firstWhere((c) => c.id == tx.categoryId,
-        orElse: () => categories.last);
+    final category = categories.firstWhere(
+      (c) => c.id == tx.categoryId,
+      orElse: () => categories.firstWhere(
+        (c) => c.name.toLowerCase() == 'others',
+        orElse: () => categories.first,
+      ),
+    );
     final account = accounts.firstWhere((a) => a.id == tx.accountId,
         orElse: () => accounts.first);
 

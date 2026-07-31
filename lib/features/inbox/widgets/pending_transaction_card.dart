@@ -44,8 +44,12 @@ class _PendingTransactionCardState extends State<PendingTransactionCard> {
   @override
   Widget build(BuildContext context) {
     final selectedCategory = widget.categories.firstWhere(
-        (c) => c.id == widget.tx.categoryId,
-        orElse: () => widget.categories.last);
+      (c) => c.id == widget.tx.categoryId,
+      orElse: () => widget.categories.firstWhere(
+        (c) => c.name.toLowerCase() == 'others',
+        orElse: () => widget.categories.first,
+      ),
+    );
 
     final selectedAccount = widget.accounts.firstWhere(
         (a) => a.id == widget.tx.accountId,
