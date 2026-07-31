@@ -16,6 +16,7 @@ class TypeFilterChips extends StatelessWidget {
       {'key': 'debit', 'label': 'Expenses', 'activeColor': const Color(0xFFEF4444)},
       {'key': 'credit', 'label': 'Income', 'activeColor': const Color(0xFF10B981)},
       {'key': 'transfer', 'label': 'Transfers', 'activeColor': const Color(0xFF38BDF8)},
+      {'key': 'all', 'label': 'All', 'activeColor': const Color(0xFF6366F1)},
     ];
 
     return SingleChildScrollView(

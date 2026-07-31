@@ -98,10 +98,10 @@ class HeroCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
+                        color: const Color(0xFF34D399).withValues(alpha: 0.2),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.arrow_downward,
+                      child: const Icon(Icons.add_circle_outline_rounded,
                           color: Color(0xFF34D399), size: 16),
                     ),
                     const SizedBox(width: 10),
@@ -131,10 +131,10 @@ class HeroCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
+                        color: const Color(0xFFF87171).withValues(alpha: 0.2),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.arrow_upward,
+                      child: const Icon(Icons.remove_circle_outline_rounded,
                           color: Color(0xFFF87171), size: 16),
                     ),
                     const SizedBox(width: 10),

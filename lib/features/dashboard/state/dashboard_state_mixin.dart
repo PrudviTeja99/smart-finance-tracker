@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../models/transaction_model.dart';
 import '../../../models/account_model.dart';
@@ -193,7 +194,21 @@ mixin DashboardStateMixin<T extends StatefulWidget> on State<T> {
   }
 
   String getTimeframeDisplay() {
-    if (timeframe == 'Custom' && customFilterLabel.isNotEmpty) {
+    final now = DateTime.now();
+    if (timeframe == 'This Month') {
+      return 'This Month (${DateFormat('MMMM yyyy').format(now)})';
+    } else if (timeframe == 'This Year') {
+      return 'This Year (${now.year})';
+    } else if (timeframe == 'Today') {
+      return 'Today (${now.day} ${DateFormat('MMM').format(now)})';
+    } else if (timeframe == 'Yesterday') {
+      final yest = now.subtract(const Duration(days: 1));
+      return 'Yesterday (${yest.day} ${DateFormat('MMM').format(yest)})';
+    } else if (timeframe == 'This Week') {
+      final startOffset = now.weekday - 1;
+      final tempStart = now.subtract(Duration(days: startOffset));
+      return 'This Week (${tempStart.day} ${DateFormat('MMM').format(tempStart)} - ${now.day} ${DateFormat('MMM').format(now)})';
+    } else if (timeframe == 'Custom' && customFilterLabel.isNotEmpty) {
       return customFilterLabel;
     }
     return timeframe;

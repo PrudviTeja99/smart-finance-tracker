@@ -32,17 +32,23 @@ class AnalyticsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // If typeFilter is 'transfer', we don't render donut/bar breakdown
-    if (typeFilter == 'transfer' || transactions.isEmpty) {
+    if (transactions.isEmpty) {
       return const SizedBox.shrink();
     }
 
     final categoryTotals = <int, double>{};
     for (var tx in transactions) {
-      if (tx.type == typeFilter) {
+      if (typeFilter == 'all' || tx.type == typeFilter) {
         categoryTotals[tx.categoryId] =
             (categoryTotals[tx.categoryId] ?? 0.0) + tx.amount;
       }
     }
+
+    final String sectionTitle = typeFilter == 'credit'
+        ? 'Income Analysis'
+        : (typeFilter == 'debit'
+            ? 'Expense Analysis'
+            : (typeFilter == 'transfer' ? 'Transfer Analysis' : 'All Transactions Analysis'));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -51,7 +57,7 @@ class AnalyticsCard extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              typeFilter == 'credit' ? 'Income Analysis' : 'Expense Analysis',
+              sectionTitle,
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             // Donut vs Bar View Toggle Buttons
