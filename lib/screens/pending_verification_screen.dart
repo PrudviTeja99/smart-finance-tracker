@@ -207,14 +207,16 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
   }
 
   // Delete pending transaction and train model to ignore similar patterns
-  Future<void> _discardTransaction(int id) async {
+  Future<void> _discardTransaction(int id, [String? bodyText]) async {
     final dbService = DatabaseService.instance;
-    final pending = _pendingTransactions.where((t) => t.id == id).toList();
+    final body = bodyText ??
+        (_pendingTransactions.any((t) => t.id == id)
+            ? _pendingTransactions.firstWhere((t) => t.id == id).body
+            : '');
 
-    if (pending.isNotEmpty && pending.first.body.isNotEmpty) {
-      final bodyText = pending.first.body;
+    if (body.isNotEmpty) {
       // Active Learning: Train model that this pattern should be ignored
-      await _parser.trainType(bodyText, 'ignore');
+      await _parser.trainType(body, 'ignore');
       await PerceptronStorageService.instance.saveWeights();
     }
 
@@ -1008,7 +1010,14 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
                   return Dismissible(
                     key: Key(tx.id!.toString()),
                     direction: DismissDirection.startToEnd,
-                    onDismissed: (direction) => _discardTransaction(tx.id!),
+                    onDismissed: (direction) {
+                      final txId = tx.id!;
+                      final bodyText = tx.body;
+                      setState(() {
+                        _pendingTransactions.removeWhere((t) => t.id == txId);
+                      });
+                      _discardTransaction(txId, bodyText);
+                    },
                     background: Container(
                       margin: const EdgeInsets.symmetric(vertical: 8.0),
                       decoration: BoxDecoration(
