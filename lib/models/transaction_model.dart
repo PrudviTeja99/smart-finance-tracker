@@ -11,6 +11,7 @@ class TransactionModel {
   final String description; // customizable description
   final DateTime date; // date and time
   final String status; // pending, confirmed
+  final int? notificationLogId; // originating notification_logs ID
 
   TransactionModel({
     this.id,
@@ -25,6 +26,7 @@ class TransactionModel {
     required this.description,
     required this.date,
     required this.status,
+    this.notificationLogId,
   });
 
   Map<String, dynamic> toMap() {
@@ -41,6 +43,7 @@ class TransactionModel {
       'description': description,
       'date': date.toIso8601String(),
       'status': status,
+      'notification_log_id': notificationLogId,
     };
   }
 
@@ -58,6 +61,7 @@ class TransactionModel {
       description: map['description'] as String,
       date: DateTime.parse(map['date'] as String),
       status: map['status'] as String,
+      notificationLogId: map['notification_log_id'] as int?,
     );
   }
 
@@ -74,6 +78,7 @@ class TransactionModel {
     String? description,
     DateTime? date,
     String? status,
+    int? notificationLogId,
   }) {
     return TransactionModel(
       id: id ?? this.id,
@@ -88,6 +93,7 @@ class TransactionModel {
       description: description ?? this.description,
       date: date ?? this.date,
       status: status ?? this.status,
+      notificationLogId: notificationLogId ?? this.notificationLogId,
     );
   }
 }

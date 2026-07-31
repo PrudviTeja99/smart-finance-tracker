@@ -1,0 +1,282 @@
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+
+Future<void> showTimeframeFilterSheet({
+  required BuildContext context,
+  required String timeframe,
+  required DateTime? startDate,
+  required DateTime? endDate,
+  required Function(String timeframe, DateTime? start, DateTime? end) onSelectTimeframe,
+  required VoidCallback onOpenMonthYearPicker,
+}) {
+  FocusManager.instance.primaryFocus?.unfocus();
+
+  return showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: const Color(0xFF0F172A),
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    ),
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setSheetState) {
+          final isCustom = timeframe == 'Custom';
+          bool isSpecificDate = false;
+          bool isSpecificMonth = false;
+          bool isDateRange = false;
+
+          if (isCustom && startDate != null && endDate != null) {
+            if (startDate.year == endDate.year &&
+                startDate.month == endDate.month &&
+                startDate.day == endDate.day) {
+              isSpecificDate = true;
+            } else if (startDate.day == 1 &&
+                endDate.day ==
+                    DateTime(endDate.year, endDate.month + 1, 0).day &&
+                startDate.month == endDate.month &&
+                startDate.year == endDate.year) {
+              isSpecificMonth = true;
+            } else {
+              isDateRange = true;
+            }
+          }
+
+          final dateLabel =
+              isSpecificDate ? DateFormat('dd MMM yyyy').format(startDate!) : '';
+          final monthLabel =
+              isSpecificMonth ? DateFormat('MMMM yyyy').format(startDate!) : '';
+          final rangeLabel = isDateRange
+              ? '${DateFormat('dd MMM').format(startDate!)} - ${DateFormat('dd MMM').format(endDate!)}'
+              : '';
+
+          Widget buildRadioOption(String value) {
+            final now = DateTime.now();
+            final isSelected = timeframe == value;
+            String displayLabel = value;
+
+            if (value == 'Today') {
+              displayLabel = 'Today (${now.day} ${DateFormat('MMM').format(now)})';
+            } else if (value == 'Yesterday') {
+              final yest = now.subtract(const Duration(days: 1));
+              displayLabel = 'Yesterday (${yest.day} ${DateFormat('MMM').format(yest)})';
+            } else if (value == 'This Week') {
+              final startOffset = now.weekday - 1;
+              final tempStart = now.subtract(Duration(days: startOffset));
+              displayLabel =
+                  'This Week (${tempStart.day} ${DateFormat('MMM').format(tempStart)} - ${now.day} ${DateFormat('MMM').format(now)})';
+            } else if (value == 'This Month') {
+              displayLabel = 'This Month (${DateFormat('MMMM yyyy').format(now)})';
+            } else if (value == 'This Year') {
+              displayLabel = 'This Year (${now.year})';
+            }
+
+            return InkWell(
+              onTap: () {
+                onSelectTimeframe(value, null, null);
+                Navigator.pop(context);
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      displayLabel,
+                      style: TextStyle(
+                        color: isSelected ? Colors.white : Colors.white70,
+                        fontSize: 15,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      ),
+                    ),
+                    Radio<String>(
+                      value: value,
+                      groupValue: timeframe,
+                      activeColor: const Color(0xFF6366F1),
+                      onChanged: (newValue) {
+                        if (newValue != null) {
+                          onSelectTimeframe(newValue, null, null);
+                          Navigator.pop(context);
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+
+          Widget buildCustomRadioOption({
+            required String title,
+            required bool isSelected,
+            required String subLabel,
+            required VoidCallback onTap,
+          }) {
+            return InkWell(
+              onTap: onTap,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: TextStyle(
+                            color: isSelected ? Colors.white : Colors.white70,
+                            fontSize: 15,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                        if (subLabel.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            subLabel,
+                            style: const TextStyle(
+                              color: Color(0xFF6366F1),
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    Radio<bool>(
+                      value: true,
+                      groupValue: isSelected ? true : null,
+                      activeColor: const Color(0xFF6366F1),
+                      onChanged: (_) => onTap(),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+
+          return SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.white24,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 24),
+                    child: Text(
+                      'Select Date Filter',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  buildRadioOption('Today'),
+                  buildRadioOption('Yesterday'),
+                  buildRadioOption('This Week'),
+                  buildRadioOption('This Month'),
+                  buildRadioOption('This Year'),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                    child: Divider(color: Colors.white10),
+                  ),
+                  buildCustomRadioOption(
+                    title: 'Specific Date...',
+                    isSelected: isSpecificDate,
+                    subLabel: dateLabel,
+                    onTap: () async {
+                      final date = await showDatePicker(
+                        context: context,
+                        initialDate: startDate ?? DateTime.now(),
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime(2030),
+                        builder: (context, child) {
+                          return Theme(
+                            data: Theme.of(context).copyWith(
+                              colorScheme: const ColorScheme.dark(
+                                primary: Color(0xFF6366F1),
+                                onPrimary: Colors.white,
+                                surface: Color(0xFF1E293B),
+                                onSurface: Colors.white,
+                              ),
+                            ),
+                            child: child!,
+                          );
+                        },
+                      );
+                      if (date != null) {
+                        final s = DateTime(date.year, date.month, date.day);
+                        final e = DateTime(date.year, date.month, date.day, 23, 59, 59);
+                        onSelectTimeframe('Custom', s, e);
+                        if (context.mounted) Navigator.pop(context);
+                      }
+                    },
+                  ),
+                  buildCustomRadioOption(
+                    title: 'Specific Month...',
+                    isSelected: isSpecificMonth,
+                    subLabel: monthLabel,
+                    onTap: () async {
+                      Navigator.pop(context);
+                      onOpenMonthYearPicker();
+                    },
+                  ),
+                  buildCustomRadioOption(
+                    title: 'Custom Date Range...',
+                    isSelected: isDateRange,
+                    subLabel: rangeLabel,
+                    onTap: () async {
+                      final range = await showDateRangePicker(
+                        context: context,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime(2030),
+                        initialDateRange: startDate != null &&
+                                endDate != null &&
+                                isDateRange
+                            ? DateTimeRange(start: startDate, end: endDate)
+                            : null,
+                        builder: (context, child) {
+                          return Theme(
+                            data: Theme.of(context).copyWith(
+                              colorScheme: const ColorScheme.dark(
+                                primary: Color(0xFF6366F1),
+                                onPrimary: Colors.white,
+                                surface: Color(0xFF1E293B),
+                                onSurface: Colors.white,
+                              ),
+                            ),
+                            child: child!,
+                          );
+                        },
+                      );
+                      if (range != null) {
+                        final s = DateTime(range.start.year, range.start.month, range.start.day);
+                        final e = DateTime(range.end.year, range.end.month, range.end.day, 23, 59, 59);
+                        onSelectTimeframe('Custom', s, e);
+                        if (context.mounted) Navigator.pop(context);
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    },
+  );
+}

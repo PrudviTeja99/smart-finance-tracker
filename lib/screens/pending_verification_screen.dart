@@ -1,10 +1,9 @@
 import 'package:finance_tracker/features/inbox/widgets/audit_log_bottom_sheet.dart';
 import 'package:finance_tracker/features/inbox/widgets/batch_progress_banner.dart';
 import 'package:finance_tracker/features/inbox/widgets/captured_app_group_tile.dart';
-import 'package:finance_tracker/features/inbox/widgets/draft_editor.dart';
+import 'package:finance_tracker/shared/sheets/transaction_form_sheet.dart';
 import 'package:finance_tracker/features/inbox/widgets/model_activity_banner.dart';
 import 'package:finance_tracker/features/inbox/widgets/pending_transaction_card.dart';
-import 'package:finance_tracker/features/inbox/widgets/draft_editor_bottom_sheet.dart';
 import 'package:finance_tracker/features/inbox/widgets/app_selection_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -50,6 +49,10 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
   bool _isAppCategorySelectionMode = false;
   final Set<String> _selectedAppPackages = {};
 
+  // Drafts Multi-Selection state
+  bool _isDraftSelectionMode = false;
+  final Set<int> _selectedDraftIds = {};
+
   Widget _buildAppIconWidget(String packageName, String fallbackName,
       {double size = 24}) {
     return AppIconCacheService.instance.buildAppIconWidget(
@@ -90,10 +93,13 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
   }
 
   void _onTabChanged() {
-    // Only rebuild once the tab has actually settled on a new index,
-    // not on every intermediate frame of the swipe animation.
-    if (!_tabController.indexIsChanging && mounted) {
-      setState(() {});
+    if (mounted) {
+      setState(() {
+        _isDraftSelectionMode = false;
+        _selectedDraftIds.clear();
+        _isAppCategorySelectionMode = false;
+        _selectedAppPackages.clear();
+      });
     }
   }
 
@@ -170,7 +176,17 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
 
     // Update status to confirmed and save edits
     final confirmedTx = tx.copyWith(status: 'confirmed');
-    await dbService.updateTransaction(confirmedTx);
+    final rowsUpdated = await dbService.updateTransaction(confirmedTx);
+
+    // Requirement 3: Permanently delete the corresponding notification log after confirmation
+    if (rowsUpdated > 0) {
+      if (confirmedTx.notificationLogId != null) {
+        await dbService.deleteNotificationLog(confirmedTx.notificationLogId!);
+      }
+      if (confirmedTx.body.isNotEmpty && confirmedTx.body != 'Manual transaction entry') {
+        await dbService.deleteNotificationLogByBody(confirmedTx.body);
+      }
+    }
 
     // Look up the name of the selected account
     final account = _accounts.firstWhere((a) => a.id == tx.accountId,
@@ -235,6 +251,83 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
 
 
   // --- BATCH CLEARING & SELECTIVE APP CATEGORY MANAGEMENT ---
+
+  void _toggleDraftSelection(int id) {
+    setState(() {
+      if (_selectedDraftIds.contains(id)) {
+        _selectedDraftIds.remove(id);
+        if (_selectedDraftIds.isEmpty) {
+          _isDraftSelectionMode = false;
+        }
+      } else {
+        _selectedDraftIds.add(id);
+      }
+    });
+  }
+
+  void _enterDraftSelectionMode(int initialId) {
+    HapticFeedback.mediumImpact();
+    setState(() {
+      _isDraftSelectionMode = true;
+      _selectedDraftIds.clear();
+      _selectedDraftIds.add(initialId);
+    });
+  }
+
+  Future<void> _discardSelectedDrafts() async {
+    if (_selectedDraftIds.isEmpty) return;
+
+    final count = _selectedDraftIds.length;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1E293B),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Discard Selected Drafts?',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: Text(
+          'Are you sure you want to discard $count selected draft transactions? They will be removed from your inbox.',
+          style:
+              const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child:
+                const Text('Cancel', style: TextStyle(color: Colors.white38)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Discard',
+                style: TextStyle(
+                    color: Color(0xFFEF4444), fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      for (var id in _selectedDraftIds) {
+        final matching = _pendingTransactions.where((t) => t.id == id).toList();
+        if (matching.isNotEmpty && matching.first.body.isNotEmpty) {
+          await _parser.trainType(matching.first.body, 'ignore');
+        }
+        await DatabaseService.instance.deleteTransaction(id);
+      }
+      await PerceptronStorageService.instance.saveWeights();
+
+      if (mounted) {
+        AppSnackBar.show(context, '$count draft transactions discarded.',
+            type: SnackBarType.neutral);
+        setState(() {
+          _isDraftSelectionMode = false;
+          _selectedDraftIds.clear();
+        });
+      }
+      widget.onConfirmedOrDiscarded();
+      _refreshAll();
+    }
+  }
 
   Future<void> _discardAllDrafts() async {
     if (_pendingTransactions.isEmpty) return;
@@ -404,11 +497,22 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
             type: SnackBarType.neutral);
       }
     } else {
-      // 1. Parse details
+      // Find original notification log date from _capturedAlerts
+      final alertLog = _capturedAlerts.firstWhere(
+        (a) => a['id'] == logId,
+        orElse: () => <String, dynamic>{},
+      );
+      final notificationDate = alertLog['date'] != null
+          ? (DateTime.tryParse(alertLog['date'] as String) ?? DateTime.now())
+          : DateTime.now();
+
+      // 1. Parse details with original notification date & notificationLogId
       final tx = await _parser.parseNotification(
         appName: appName,
         title: title,
         body: body,
+        date: notificationDate,
+        notificationLogId: logId,
       );
 
       if (tx != null) {
@@ -439,8 +543,9 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
           accountId: 1, // Cash/Bank
           categoryId: 6, // Others
           description: title.isNotEmpty ? title : 'New Notification',
-          date: DateTime.now(),
+          date: notificationDate,
           status: 'pending',
+          notificationLogId: logId,
         );
         await dbService.insertTransaction(manualTx);
         await dbService.updateNotificationLogStatus(logId, 'drafted');
@@ -483,12 +588,16 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
     }
     _isKeyboardOpen = isKeyboardNowOpen;
 
+    final bool isSelecting = _isDraftSelectionMode || _isAppCategorySelectionMode;
+
     return PopScope(
-      canPop: !_isAppCategorySelectionMode,
+      canPop: !isSelecting,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
-        if (_isAppCategorySelectionMode) {
+        if (isSelecting) {
           setState(() {
+            _isDraftSelectionMode = false;
+            _selectedDraftIds.clear();
             _isAppCategorySelectionMode = false;
             _selectedAppPackages.clear();
           });
@@ -496,15 +605,18 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
       },
       child: Scaffold(
         appBar: AppBar(
-          backgroundColor: _isAppCategorySelectionMode
-              ? const Color(0xFF1E293B)
-              : Colors.transparent,
+          backgroundColor:
+              (_isDraftSelectionMode || _isAppCategorySelectionMode)
+                  ? const Color(0xFF1E293B)
+                  : Colors.transparent,
           elevation: 0,
-          leading: _isAppCategorySelectionMode
+          leading: (_isDraftSelectionMode || _isAppCategorySelectionMode)
               ? IconButton(
                   icon: const Icon(Icons.close_rounded, color: Colors.white),
                   onPressed: () {
                     setState(() {
+                      _isDraftSelectionMode = false;
+                      _selectedDraftIds.clear();
                       _isAppCategorySelectionMode = false;
                       _selectedAppPackages.clear();
                     });
@@ -512,56 +624,80 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
                 )
               : null,
           title: Text(
-            _isAppCategorySelectionMode
-                ? '${_selectedAppPackages.length} ${_selectedAppPackages.length == 1 ? "App Selected" : "Apps Selected"}'
-                : 'Transaction Inbox',
+            _isDraftSelectionMode
+                ? '${_selectedDraftIds.length} ${_selectedDraftIds.length == 1 ? "Draft Selected" : "Drafts Selected"}'
+                : (_isAppCategorySelectionMode
+                    ? '${_selectedAppPackages.length} ${_selectedAppPackages.length == 1 ? "App Selected" : "Apps Selected"}'
+                    : 'Transaction Inbox'),
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
           ),
-          actions: _isAppCategorySelectionMode
+          actions: _isDraftSelectionMode
               ? [
                   IconButton(
                     icon: const Icon(Icons.delete_sweep_outlined,
                         color: Color(0xFFEF4444)),
-                    tooltip: 'Clear Selected Apps',
-                    onPressed: _archiveSelectedAppCategories,
+                    tooltip: 'Discard Selected Drafts',
+                    onPressed: _discardSelectedDrafts,
                   ),
                 ]
-              : [
-                  if (_tabController.index == 0 &&
-                      _pendingTransactions.isNotEmpty)
-                    IconButton(
-                      icon: const Icon(Icons.delete_sweep_outlined,
-                          color: Colors.white70),
-                      tooltip: 'Discard All Drafts',
-                      onPressed: _discardAllDrafts,
-                    ),
-                  if (_tabController.index == 1) ...[
-                    IconButton(
-                      icon: const Icon(Icons.app_settings_alt_rounded,
-                          color: Color(0xFF818CF8)),
-                      tooltip: 'Track App Notifications',
-                      onPressed: _showAppSelectionBottomSheet,
-                    ),
-                    if (_capturedAlerts.isNotEmpty) ...[
+              : (_isAppCategorySelectionMode
+                  ? [
                       IconButton(
-                        icon: const Icon(Icons.checklist_rounded,
-                            color: Colors.white70),
-                        tooltip: 'Select Apps to Clear',
-                        onPressed: () {
-                          setState(() {
-                            _isAppCategorySelectionMode = true;
-                            _selectedAppPackages.clear();
-                          });
-                        },
+                        icon: const Icon(Icons.delete_sweep_outlined,
+                            color: Color(0xFFEF4444)),
+                        tooltip: 'Clear Selected Apps',
+                        onPressed: _archiveSelectedAppCategories,
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.delete_outline, color: Colors.red),
-                        tooltip: 'Clear All Alerts',
-                        onPressed: _archiveAllCapturedAlerts,
-                      ),
-                    ],
-                  ],
-                ],
+                    ]
+                  : [
+                      if (_tabController.index == 0 &&
+                          _pendingTransactions.isNotEmpty) ...[
+                        IconButton(
+                          icon: const Icon(Icons.checklist_rounded,
+                              color: Colors.white70),
+                          tooltip: 'Select Drafts',
+                          onPressed: () {
+                            setState(() {
+                              _isDraftSelectionMode = true;
+                              _selectedDraftIds.clear();
+                            });
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline,
+                              color: Colors.red),
+                          tooltip: 'Discard All Drafts',
+                          onPressed: _discardAllDrafts,
+                        ),
+                      ],
+                      if (_tabController.index == 1) ...[
+                        IconButton(
+                          icon: const Icon(Icons.app_settings_alt_rounded,
+                              color: Color(0xFF818CF8)),
+                          tooltip: 'Track App Notifications',
+                          onPressed: _showAppSelectionBottomSheet,
+                        ),
+                        if (_capturedAlerts.isNotEmpty) ...[
+                          IconButton(
+                            icon: const Icon(Icons.checklist_rounded,
+                                color: Colors.white70),
+                            tooltip: 'Select Apps to Clear',
+                            onPressed: () {
+                              setState(() {
+                                _isAppCategorySelectionMode = true;
+                                _selectedAppPackages.clear();
+                              });
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline,
+                                color: Colors.red),
+                            tooltip: 'Clear All Alerts',
+                            onPressed: _archiveAllCapturedAlerts,
+                          ),
+                        ],
+                      ],
+                    ]),
         ),
         body: GestureDetector(
           behavior: HitTestBehavior.opaque,
@@ -902,9 +1038,23 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
                       onOnlineLookup: _triggerOnlineCategoryLookup,
                       isLookupLoading: _lookupLoading[tx.id] ?? false,
                       suggestions: _categorySuggestions[tx.id] ?? [],
+                      isSelectionMode: _isDraftSelectionMode,
+                      isSelected: _selectedDraftIds.contains(tx.id),
                       onTap: () {
-                        debugPrint("CARD TAPPED");
+                        if (_isDraftSelectionMode && tx.id != null) {
+                          _toggleDraftSelection(tx.id!);
+                          return;
+                        }
                         _showDraftEditor(tx);
+                      },
+                      onLongPress: () {
+                        if (tx.id != null) {
+                          if (!_isDraftSelectionMode) {
+                            _enterDraftSelectionMode(tx.id!);
+                          } else {
+                            _toggleDraftSelection(tx.id!);
+                          }
+                        }
                       },
                     ),
                   );
@@ -1007,37 +1157,31 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
   }
 
   Future<void> _showDraftEditor(TransactionModel tx) async {
-    await showModalBottomSheet(
+    await showTransactionFormSheet(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) {
-        return DraftEditorBottomSheet(
-          child: DraftEditor(
-            tx: tx,
-            accounts: _accounts,
-            categories: _categories,
-            onConfirm: (updatedTx, categoryName) async {
-              await _confirmTransaction(updatedTx, categoryName);
-              await _refreshAll();
-
-              if (!mounted) return true;
-
-              AppSnackBar.show(
-                context,
-                'Confirmed transaction under "$categoryName"! Learned this pattern.',
-                type: SnackBarType.success,
-              );
-
-              return true;
-            },
-            onDiscard: _discardTransaction,
-            onOnlineLookup: _triggerOnlineCategoryLookup,
-            isLookupLoading: _lookupLoading[tx.id] ?? false,
-            suggestions: _categorySuggestions[tx.id] ?? [],
-          ),
-        );
+      editTx: tx,
+      accounts: _accounts,
+      categories: _categories,
+      isDraft: true,
+      onConfirmDraft: (updatedTx, categoryName) async {
+        await _confirmTransaction(updatedTx, categoryName);
+        await _refreshAll();
+        widget.onConfirmedOrDiscarded();
       },
+      onDeleted: () async {
+        if (tx.id != null) {
+          await _discardTransaction(tx.id!);
+          await _refreshAll();
+          widget.onConfirmedOrDiscarded();
+        }
+      },
+      onSaved: () async {
+        await _refreshAll();
+        widget.onConfirmedOrDiscarded();
+      },
+      onOnlineLookup: _triggerOnlineCategoryLookup,
+      isLookupLoading: _lookupLoading[tx.id] ?? false,
+      suggestions: _categorySuggestions[tx.id] ?? [],
     );
   }
 

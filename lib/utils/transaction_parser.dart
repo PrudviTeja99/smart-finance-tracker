@@ -12,6 +12,8 @@ class TransactionParser {
     required String? appName,
     required String title,
     required String body,
+    DateTime? date,
+    int? notificationLogId,
   }) async {
     final cleanBody = body.toLowerCase();
 
@@ -164,8 +166,9 @@ class TransactionParser {
       accountId: accountId,
       categoryId: categoryId,
       description: description,
-      date: DateTime.now(),
+      date: date ?? DateTime.now(),
       status: 'pending',
+      notificationLogId: notificationLogId,
     );
   }
 

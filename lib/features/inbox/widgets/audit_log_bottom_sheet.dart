@@ -204,12 +204,18 @@ Future<void> showAuditLogBottomSheet({
                                     ),
                                   ),
                                   const SizedBox(width: 8),
-                                  Text(appName,
+                                  Expanded(
+                                    child: Text(
+                                      appName,
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
                                       style: const TextStyle(
                                           color: Colors.white70,
                                           fontSize: 12,
-                                          fontWeight: FontWeight.w600)),
-                                  const Spacer(),
+                                          fontWeight: FontWeight.w600),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
                                   Text(
                                     formattedTime.isNotEmpty
                                         ? formattedTime
