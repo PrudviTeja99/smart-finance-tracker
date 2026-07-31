@@ -247,8 +247,8 @@ class _CapturedAlertsBottomSheetState extends State<CapturedAlertsBottomSheet> {
                             ),
                             const Spacer(),
                             IconButton(
-                              icon: const Icon(Icons.delete_outline,
-                                  color: Colors.red),
+                              icon: const Icon(Icons.delete_sweep_outlined,
+                                  color: Color(0xFFEF4444)),
                               tooltip: 'Clear Selected Alerts',
                               onPressed: _archiveSelectedAlerts,
                             ),
