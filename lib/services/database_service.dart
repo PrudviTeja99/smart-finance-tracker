@@ -21,12 +21,20 @@ class DatabaseService {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
 
-    return await openDatabase(
+    final db = await openDatabase(
       path,
       version: 3,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
+
+    // Ensure notification_log_id column exists on transactions table for existing databases
+    try {
+      await db.execute(
+          'ALTER TABLE transactions ADD COLUMN notification_log_id INTEGER;');
+    } catch (_) {}
+
+    return db;
   }
 
   Future<void> _createDB(Database db, int version) async {
@@ -66,6 +74,7 @@ class DatabaseService {
         description TEXT NOT NULL,
         date TEXT NOT NULL,
         status TEXT NOT NULL,
+        notification_log_id INTEGER,
         FOREIGN KEY (account_id) REFERENCES accounts (id),
         FOREIGN KEY (to_account_id) REFERENCES accounts (id),
         FOREIGN KEY (category_id) REFERENCES categories (id)
@@ -374,6 +383,17 @@ class DatabaseService {
     );
   }
 
+  Future<int> deleteNotificationLogByBody(String body) async {
+    final clean = body.trim();
+    if (clean.isEmpty || clean == 'Manual transaction entry') return 0;
+    final db = await database;
+    return await db.delete(
+      'notification_logs',
+      where: 'body = ?',
+      whereArgs: [clean],
+    );
+  }
+
   Future<void> clearNotificationLogs({String? status}) async {
     final db = await database;
     if (status != null) {
@@ -483,7 +503,7 @@ class DatabaseService {
 
   Future<List<CategoryModel>> getAllCategories() async {
     final db = await database;
-    final result = await db.query('categories', orderBy: 'id ASC');
+    final result = await db.query('categories');
     return result.map((json) => CategoryModel.fromMap(json)).toList();
   }
 
@@ -499,13 +519,6 @@ class DatabaseService {
 
   Future<int> deleteCategory(int id) async {
     final db = await database;
-    // Remap transactions of deleted category to 'Others' (usually id 6)
-    await db.update(
-      'transactions',
-      {'category_id': 6},
-      where: 'category_id = ?',
-      whereArgs: [id],
-    );
     return await db.delete(
       'categories',
       where: 'id = ?',
@@ -520,24 +533,29 @@ class DatabaseService {
   Future<int> insertTransaction(TransactionModel tx) async {
     final db = await database;
 
-    // Deduplication filter: check for identical amount, type, account within a 2-minute window
-    final dateIso = tx.date.toIso8601String();
-    final twoMinBefore =
-        tx.date.subtract(const Duration(minutes: 2)).toIso8601String();
-    final twoMinAfter =
-        tx.date.add(const Duration(minutes: 2)).toIso8601String();
+    // 1. Check duplicate by notificationLogId if present
+    if (tx.notificationLogId != null) {
+      final duplicateCount = Sqflite.firstIntValue(await db.rawQuery('''
+          SELECT COUNT(*) FROM transactions WHERE notification_log_id = ?
+        ''', [tx.notificationLogId]));
+      if (duplicateCount != null && duplicateCount > 0) {
+        return -1;
+      }
+    }
 
-    final duplicateCount = Sqflite.firstIntValue(await db.rawQuery('''
-        SELECT COUNT(*) FROM transactions
-        WHERE amount = ? 
-          AND type = ? 
-          AND account_id = ? 
-          AND date BETWEEN ? AND ?
-      ''', [tx.amount, tx.type, tx.accountId, twoMinBefore, twoMinAfter]));
+    // 2. Check duplicate by notification body & exact amount/type for notification-derived drafts
+    if (tx.body.trim().isNotEmpty && tx.body != 'Manual transaction entry') {
+      final duplicateCount = Sqflite.firstIntValue(await db.rawQuery('''
+          SELECT COUNT(*) FROM transactions
+          WHERE body = ? 
+            AND amount = ? 
+            AND type = ?
+            AND account_id = ?
+        ''', [tx.body.trim(), tx.amount, tx.type, tx.accountId]));
 
-    if (duplicateCount != null && duplicateCount > 0) {
-      // Duplicate detected! Skip insertion.
-      return -1;
+      if (duplicateCount != null && duplicateCount > 0) {
+        return -1;
+      }
     }
 
     return await db.insert('transactions', tx.toMap());

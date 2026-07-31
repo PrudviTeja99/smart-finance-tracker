@@ -156,22 +156,24 @@ class NotificationHandler {
     final dbService = DatabaseService.instance;
     final appName = _getAppNameFromPackage(event.packageName!);
 
+    final notificationDate = event.timestamp != null
+        ? DateTime.fromMillisecondsSinceEpoch(event.timestamp!)
+        : DateTime.now();
+
     try {
-      // 1. Log every incoming notification into notification_logs
+      // 1. Log every incoming notification into notification_logs using original timestamp
       final logId = await dbService.insertNotificationLog(
         appName: appName,
         packageName: event.packageName!,
         title: title,
         body: body,
-        date: DateTime.now(),
+        date: notificationDate,
         status: 'unclassified',
       );
 
       // Load Settings and Perceptron weights in background isolate to get latest AI weights
       await AppSettings.load();
       await PerceptronStorageService.instance.loadWeights();
-
-
 
       // 3. Rule-based Pre-filter for non-financial ignore-keywords & promotional marketing
       final cleanBody = body.toLowerCase();
@@ -245,6 +247,8 @@ class NotificationHandler {
         appName: appName,
         title: title,
         body: body,
+        date: notificationDate,
+        notificationLogId: logId,
       );
 
       if (tx != null && tx.amount > 0.0) {

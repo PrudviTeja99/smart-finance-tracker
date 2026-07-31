@@ -170,7 +170,17 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
 
     // Update status to confirmed and save edits
     final confirmedTx = tx.copyWith(status: 'confirmed');
-    await dbService.updateTransaction(confirmedTx);
+    final rowsUpdated = await dbService.updateTransaction(confirmedTx);
+
+    // Requirement 3: Permanently delete the corresponding notification log after confirmation
+    if (rowsUpdated > 0) {
+      if (confirmedTx.notificationLogId != null) {
+        await dbService.deleteNotificationLog(confirmedTx.notificationLogId!);
+      }
+      if (confirmedTx.body.isNotEmpty && confirmedTx.body != 'Manual transaction entry') {
+        await dbService.deleteNotificationLogByBody(confirmedTx.body);
+      }
+    }
 
     // Look up the name of the selected account
     final account = _accounts.firstWhere((a) => a.id == tx.accountId,
@@ -404,11 +414,22 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
             type: SnackBarType.neutral);
       }
     } else {
-      // 1. Parse details
+      // Find original notification log date from _capturedAlerts
+      final alertLog = _capturedAlerts.firstWhere(
+        (a) => a['id'] == logId,
+        orElse: () => <String, dynamic>{},
+      );
+      final notificationDate = alertLog['date'] != null
+          ? (DateTime.tryParse(alertLog['date'] as String) ?? DateTime.now())
+          : DateTime.now();
+
+      // 1. Parse details with original notification date & notificationLogId
       final tx = await _parser.parseNotification(
         appName: appName,
         title: title,
         body: body,
+        date: notificationDate,
+        notificationLogId: logId,
       );
 
       if (tx != null) {
@@ -439,8 +460,9 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
           accountId: 1, // Cash/Bank
           categoryId: 6, // Others
           description: title.isNotEmpty ? title : 'New Notification',
-          date: DateTime.now(),
+          date: notificationDate,
           status: 'pending',
+          notificationLogId: logId,
         );
         await dbService.insertTransaction(manualTx);
         await dbService.updateNotificationLogStatus(logId, 'drafted');
