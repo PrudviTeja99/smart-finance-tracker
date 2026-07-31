@@ -14,8 +14,10 @@ class PendingTransactionCard extends StatefulWidget {
   final Function(int, String) onOnlineLookup;
   final bool isLookupLoading;
   final List<String> suggestions;
-
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
+  final bool isSelectionMode;
+  final bool isSelected;
 
   const PendingTransactionCard({
     super.key,
@@ -28,6 +30,9 @@ class PendingTransactionCard extends StatefulWidget {
     required this.isLookupLoading,
     required this.suggestions,
     this.onTap,
+    this.onLongPress,
+    this.isSelectionMode = false,
+    this.isSelected = false,
   });
 
   @override
@@ -54,21 +59,29 @@ class _PendingTransactionCardState extends State<PendingTransactionCard> {
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 6.0),
-      color: const Color(0xFF1E293B),
+      color: widget.isSelected
+          ? const Color(0xFF6366F1).withValues(alpha: 0.12)
+          : const Color(0xFF1E293B),
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18),
-        side: BorderSide(color: Colors.white.withValues(alpha: 0.06)),
+        side: BorderSide(
+          color: widget.isSelected
+              ? const Color(0xFF6366F1)
+              : Colors.white.withValues(alpha: 0.06),
+          width: widget.isSelected ? 1.5 : 1.0,
+        ),
       ),
       child: InkWell(
         onTap: widget.onTap,
+        onLongPress: widget.onLongPress,
         borderRadius: BorderRadius.circular(18),
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Header Row: App Pill + Title + Date + Discard Button
+              // Header Row: App Pill + Title + Date + Selection Check / Discard Button
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -108,16 +121,26 @@ class _PendingTransactionCardState extends State<PendingTransactionCard> {
                     DateFormat('dd MMM, hh:mm a').format(widget.tx.date),
                     style: const TextStyle(fontSize: 10, color: Colors.white38),
                   ),
-                  const SizedBox(width: 4),
-                  InkWell(
-                    onTap: () => widget.onDiscard(widget.tx.id!),
-                    borderRadius: BorderRadius.circular(12),
-                    child: const Padding(
-                      padding: EdgeInsets.all(4),
-                      child: Icon(Icons.close_rounded,
-                          color: Colors.white38, size: 18),
-                    ),
-                  ),
+                  const SizedBox(width: 6),
+                  widget.isSelectionMode
+                      ? Icon(
+                          widget.isSelected
+                              ? Icons.check_circle_rounded
+                              : Icons.radio_button_unchecked_rounded,
+                          size: 20,
+                          color: widget.isSelected
+                              ? const Color(0xFF6366F1)
+                              : Colors.white38,
+                        )
+                      : InkWell(
+                          onTap: () => widget.onDiscard(widget.tx.id!),
+                          borderRadius: BorderRadius.circular(12),
+                          child: const Padding(
+                            padding: EdgeInsets.all(4),
+                            child: Icon(Icons.close_rounded,
+                                color: Colors.white38, size: 18),
+                          ),
+                        ),
                 ],
               ),
               const SizedBox(height: 10),
