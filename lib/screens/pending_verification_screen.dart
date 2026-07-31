@@ -1,10 +1,9 @@
 import 'package:finance_tracker/features/inbox/widgets/audit_log_bottom_sheet.dart';
 import 'package:finance_tracker/features/inbox/widgets/batch_progress_banner.dart';
 import 'package:finance_tracker/features/inbox/widgets/captured_app_group_tile.dart';
-import 'package:finance_tracker/features/inbox/widgets/draft_editor.dart';
+import 'package:finance_tracker/shared/sheets/transaction_form_sheet.dart';
 import 'package:finance_tracker/features/inbox/widgets/model_activity_banner.dart';
 import 'package:finance_tracker/features/inbox/widgets/pending_transaction_card.dart';
-import 'package:finance_tracker/features/inbox/widgets/draft_editor_bottom_sheet.dart';
 import 'package:finance_tracker/features/inbox/widgets/app_selection_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -1158,37 +1157,31 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
   }
 
   Future<void> _showDraftEditor(TransactionModel tx) async {
-    await showModalBottomSheet(
+    await showTransactionFormSheet(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) {
-        return DraftEditorBottomSheet(
-          child: DraftEditor(
-            tx: tx,
-            accounts: _accounts,
-            categories: _categories,
-            onConfirm: (updatedTx, categoryName) async {
-              await _confirmTransaction(updatedTx, categoryName);
-              await _refreshAll();
-
-              if (!mounted) return true;
-
-              AppSnackBar.show(
-                context,
-                'Confirmed transaction under "$categoryName"! Learned this pattern.',
-                type: SnackBarType.success,
-              );
-
-              return true;
-            },
-            onDiscard: _discardTransaction,
-            onOnlineLookup: _triggerOnlineCategoryLookup,
-            isLookupLoading: _lookupLoading[tx.id] ?? false,
-            suggestions: _categorySuggestions[tx.id] ?? [],
-          ),
-        );
+      editTx: tx,
+      accounts: _accounts,
+      categories: _categories,
+      isDraft: true,
+      onConfirmDraft: (updatedTx, categoryName) async {
+        await _confirmTransaction(updatedTx, categoryName);
+        await _refreshAll();
+        widget.onConfirmedOrDiscarded();
       },
+      onDeleted: () async {
+        if (tx.id != null) {
+          await _discardTransaction(tx.id!);
+          await _refreshAll();
+          widget.onConfirmedOrDiscarded();
+        }
+      },
+      onSaved: () async {
+        await _refreshAll();
+        widget.onConfirmedOrDiscarded();
+      },
+      onOnlineLookup: _triggerOnlineCategoryLookup,
+      isLookupLoading: _lookupLoading[tx.id] ?? false,
+      suggestions: _categorySuggestions[tx.id] ?? [],
     );
   }
 
