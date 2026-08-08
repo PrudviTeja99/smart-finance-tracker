@@ -46,8 +46,6 @@ class BatchProcessorService {
       final total = pendingRaw.length;
       progressNotifier.value = BatchProgressState(isProcessing: true, totalCount: total, processedCount: 0);
 
-      final List<int> processedRawIds = [];
-
       for (int i = 0; i < total; i++) {
         final rawItem = pendingRaw[i];
         final rawId = rawItem['id'] as int;
@@ -55,7 +53,10 @@ class BatchProcessorService {
         final title = rawItem['title'] as String? ?? '';
         final body = rawItem['body'] as String;
 
-        // Process notification via full 7-field prefill & Perceptron enginez
+        // Mark as processed immediately to claim the raw item and prevent duplicate processing
+        await dbService.markRawNotificationsProcessed([rawId]);
+
+        // Process notification via full 7-field prefill & Perceptron engine
         final mockEvent = NotificationEvent(
           packageName: pkg,
           title: title,
@@ -67,15 +68,17 @@ class BatchProcessorService {
           final result =
               await NotificationHandler.handleNotificationEvent(mockEvent);
 
-          if (result != "error") {
-            processedRawIds.add(rawId);
+          if (result == "error") {
+            // Revert status to pending so it can be retried on next batch
+            await dbService.markRawNotificationPending(rawId);
           }
         } catch (e, st) {
           debugPrint("Failed processing raw notification $rawId");
           debugPrint("$e");
           debugPrintStack(stackTrace: st);
 
-          // Leave it pending for retry.
+          // Revert status to pending for retry
+          await dbService.markRawNotificationPending(rawId);
         }
 
         progressNotifier.value = BatchProgressState(
@@ -91,9 +94,6 @@ class BatchProcessorService {
           );
         }
       }
-
-      // Mark raw items as processed
-      await dbService.markRawNotificationsProcessed(processedRawIds);
 
       progressNotifier.value = BatchProgressState(
         isProcessing: false,
