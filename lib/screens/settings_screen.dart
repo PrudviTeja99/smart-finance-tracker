@@ -152,34 +152,427 @@ class _SettingsScreenState extends State<SettingsScreen>
     _loadSettingsData();
   }
 
-  // Trigger JSON file restore picker
-  Future<void> _importJSONBackup() async {
+  void _showExportFormatSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF0F172A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Export Format',
+                style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Select format for transaction export or database backup',
+                style: TextStyle(fontSize: 12, color: Colors.white54),
+              ),
+              const SizedBox(height: 20),
+              ListTile(
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                tileColor: const Color(0xFF1E293B),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF6366F1).withOpacity(0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.code_rounded,
+                      color: Color(0xFF6366F1), size: 22),
+                ),
+                title: const Text('JSON Backup File (.json)',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold, color: Colors.white)),
+                subtitle: const Text(
+                    'Full database backup (accounts, categories, transactions)',
+                    style: TextStyle(fontSize: 11, color: Colors.white54)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showExportDestinationSheet(ExportFormat.json);
+                },
+              ),
+              const SizedBox(height: 12),
+              ListTile(
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                tileColor: const Color(0xFF1E293B),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981).withOpacity(0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.table_chart_rounded,
+                      color: Color(0xFF10B981), size: 22),
+                ),
+                title: const Text('Excel / CSV Sheet (.csv)',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold, color: Colors.white)),
+                subtitle: const Text(
+                    'Formatted transaction ledger for Excel & Google Sheets',
+                    style: TextStyle(fontSize: 11, color: Colors.white54)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showExportDestinationSheet(ExportFormat.csv);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showExportDestinationSheet(ExportFormat format) {
+    final formatName = format == ExportFormat.json ? 'JSON' : 'CSV';
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF0F172A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Export $formatName File',
+                style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Choose destination for your exported file',
+                style: TextStyle(fontSize: 12, color: Colors.white54),
+              ),
+              const SizedBox(height: 20),
+              ListTile(
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                tileColor: const Color(0xFF1E293B),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF38BDF8).withOpacity(0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.save_alt_rounded,
+                      color: Color(0xFF38BDF8), size: 22),
+                ),
+                title: const Text('Save Locally',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold, color: Colors.white)),
+                subtitle: const Text(
+                    'Save directly to phone downloads or local folder',
+                    style: TextStyle(fontSize: 11, color: Colors.white54)),
+                onTap: () async {
+                  Navigator.pop(context);
+                  String? path;
+                  if (format == ExportFormat.json) {
+                    path = await BackupService.exportBackupJSON(
+                        destination: ExportDestination.saveLocally);
+                  } else {
+                    path = await BackupService.exportToCSV(
+                        destination: ExportDestination.saveLocally);
+                  }
+                  if (mounted) {
+                    if (path != null) {
+                      AppSnackBar.show(context, 'File saved to: $path',
+                          type: SnackBarType.success);
+                    } else {
+                      AppSnackBar.show(context, 'Export canceled or unavailable.',
+                          type: SnackBarType.neutral);
+                    }
+                  }
+                },
+              ),
+              const SizedBox(height: 12),
+              ListTile(
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                tileColor: const Color(0xFF1E293B),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEA80FC).withOpacity(0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.share_rounded,
+                      color: Color(0xFFEA80FC), size: 22),
+                ),
+                title: const Text('Share via Apps',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold, color: Colors.white)),
+                subtitle: const Text(
+                    'Send via WhatsApp, Email, Google Drive, etc.',
+                    style: TextStyle(fontSize: 11, color: Colors.white54)),
+                onTap: () async {
+                  Navigator.pop(context);
+                  if (format == ExportFormat.json) {
+                    await BackupService.exportBackupJSON(
+                        destination: ExportDestination.share);
+                  } else {
+                    await BackupService.exportToCSV(
+                        destination: ExportDestination.share);
+                  }
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _handleImportWorkflow() async {
     try {
+      // Step 1: Pick file
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['json'],
+        allowedExtensions: ['json', 'csv'],
       );
 
-      if (result != null && result.files.single.path != null) {
-        final file = File(result.files.single.path!);
-        final jsonContent = await file.readAsString();
-        final success = await BackupService.restoreBackupJSON(jsonContent);
+      if (result == null || result.files.single.path == null) return;
 
+      final filePath = result.files.single.path!;
+      final fileName = result.files.single.name;
+      final isJson = filePath.toLowerCase().endsWith('.json');
+      final isCsv = filePath.toLowerCase().endsWith('.csv');
+
+      if (!isJson && !isCsv) {
         if (mounted) {
           AppSnackBar.show(
-            context,
-            success
-                ? 'Database restored successfully!'
-                : 'Invalid backup file.',
-            type: success ? SnackBarType.success : SnackBarType.error,
-          );
-          if (success) {
-            _loadSettingsData();
-          }
+              context, 'Invalid file format. Please select a .json or .csv file.',
+              type: SnackBarType.warning);
         }
+        return;
       }
+
+      final file = File(filePath);
+      final content = await file.readAsString();
+
+      if (!mounted) return;
+
+      // Step 2: Show Import Mode Selection Sheet (Append vs Override)
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: const Color(0xFF0F172A),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        builder: (context) {
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.white24,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Import Data',
+                  style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Selected: $fileName',
+                  style:
+                      const TextStyle(fontSize: 12, color: Color(0xFF6366F1)),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 20),
+                ListTile(
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  tileColor: const Color(0xFF1E293B),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16)),
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withOpacity(0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.add_circle_outline_rounded,
+                        color: Color(0xFF10B981), size: 22),
+                  ),
+                  title: const Text('Append to Existing Data',
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold, color: Colors.white)),
+                  subtitle: const Text(
+                      'Safely merge new transactions without deleting current data. Duplicates auto-skipped.',
+                      style: TextStyle(fontSize: 11, color: Colors.white54)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _executeImport(content,
+                        isJson: isJson, isCsv: isCsv, mode: ImportMode.append);
+                  },
+                ),
+                const SizedBox(height: 12),
+                ListTile(
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  tileColor: const Color(0xFF1E293B),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16)),
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEF4444).withOpacity(0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.warning_amber_rounded,
+                        color: Color(0xFFEF4444), size: 22),
+                  ),
+                  title: const Text('Override (Replace All)',
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFFCA5A5))),
+                  subtitle: const Text(
+                      'Wipe existing transactions and replace completely with file data.',
+                      style: TextStyle(fontSize: 11, color: Colors.white54)),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        backgroundColor: const Color(0xFF1E293B),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20)),
+                        icon: const Icon(Icons.warning_amber_rounded,
+                            color: Color(0xFFEF4444), size: 36),
+                        title: const Text('Confirm Data Override',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 17)),
+                        content: const Text(
+                            'Are you sure you want to replace all current database records? Existing transactions will be overwritten.'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: const Text('Cancel',
+                                style: TextStyle(color: Colors.white60)),
+                          ),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFEF4444),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10)),
+                            ),
+                            onPressed: () => Navigator.pop(context, true),
+                            child: const Text('Replace All'),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (confirm == true) {
+                      _executeImport(content,
+                          isJson: isJson, isCsv: isCsv, mode: ImportMode.override);
+                    }
+                  },
+                ),
+              ],
+            ),
+          );
+        },
+      );
     } catch (e) {
-      debugPrint('Restore file picker error: $e');
+      debugPrint('Import file picker error: $e');
+      if (mounted) {
+        AppSnackBar.show(context, 'Failed to read import file.',
+            type: SnackBarType.error);
+      }
+    }
+  }
+
+  Future<void> _executeImport(
+    String content, {
+    required bool isJson,
+    required bool isCsv,
+    required ImportMode mode,
+  }) async {
+    bool success = false;
+    if (isJson) {
+      success = await BackupService.importBackupJSON(content, mode: mode);
+    } else if (isCsv) {
+      success = await BackupService.importFromCSV(content, mode: mode);
+    }
+
+    if (mounted) {
+      AppSnackBar.show(
+        context,
+        success
+            ? (mode == ImportMode.override
+                ? 'Database replaced successfully!'
+                : 'Data imported & merged successfully!')
+            : 'Invalid or corrupted import file.',
+        type: success ? SnackBarType.success : SnackBarType.error,
+      );
+      if (success) {
+        _loadSettingsData();
+      }
     }
   }
 
@@ -684,39 +1077,43 @@ class _SettingsScreenState extends State<SettingsScreen>
                 icon: Icons.sync_rounded,
                 children: [
                   ListTile(
-                    leading: const Icon(Icons.table_rows_rounded,
-                        color: Color(0xFF10B981)),
-                    title: const Text('Export Ledger to CSV',
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF6366F1).withOpacity(0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.upload_rounded,
+                          color: Color(0xFF6366F1), size: 20),
+                    ),
+                    title: const Text('Export Data / Backup',
                         style: TextStyle(fontWeight: FontWeight.bold)),
                     subtitle: const Text(
-                        'Share transactions as Excel-compatible file',
-                        style: TextStyle(fontSize: 11)),
-                    onTap: () async {
-                      await BackupService.exportToCSV();
-                    },
+                        'Export transactions as JSON or Excel/CSV (Save or Share)',
+                        style: TextStyle(fontSize: 11, color: Colors.white54)),
+                    trailing: const Icon(Icons.chevron_right_rounded,
+                        color: Colors.white38),
+                    onTap: _showExportFormatSheet,
                   ),
                   const Divider(color: Colors.white10),
                   ListTile(
-                    leading:
-                        const Icon(Icons.download, color: Color(0xFF6366F1)),
-                    title: const Text('Backup Data (JSON)',
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withOpacity(0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.download_rounded,
+                          color: Color(0xFF10B981), size: 20),
+                    ),
+                    title: const Text('Import Data / Restore',
                         style: TextStyle(fontWeight: FontWeight.bold)),
                     subtitle: const Text(
-                        'Generate database backup file to share',
-                        style: TextStyle(fontSize: 11)),
-                    onTap: () async {
-                      await BackupService.exportBackupJSON();
-                    },
-                  ),
-                  const Divider(color: Colors.white10),
-                  ListTile(
-                    leading: const Icon(Icons.upload, color: Color(0xFFEA80FC)),
-                    title: const Text('Restore Data (JSON)',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: const Text(
-                        'Select JSON backup file to overwrite database',
-                        style: TextStyle(fontSize: 11)),
-                    onTap: _importJSONBackup,
+                        'Select file (.json or .csv) to append or replace data',
+                        style: TextStyle(fontSize: 11, color: Colors.white54)),
+                    trailing: const Icon(Icons.chevron_right_rounded,
+                        color: Colors.white38),
+                    onTap: _handleImportWorkflow,
                   ),
                 ],
               ),
