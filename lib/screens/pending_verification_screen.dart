@@ -1007,65 +1007,34 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
                 itemCount: _pendingTransactions.length,
                 itemBuilder: (context, index) {
                   final tx = _pendingTransactions[index];
-                  return Dismissible(
-                    key: Key(tx.id!.toString()),
-                    direction: DismissDirection.startToEnd,
-                    onDismissed: (direction) {
-                      final txId = tx.id!;
-                      final bodyText = tx.body;
-                      setState(() {
-                        _pendingTransactions.removeWhere((t) => t.id == txId);
-                      });
-                      _discardTransaction(txId, bodyText);
+                  return PendingTransactionCard(
+                    key: ValueKey(tx.id),
+                    tx: tx,
+                    accounts: _accounts,
+                    categories: _categories,
+                    onConfirm: _confirmTransaction,
+                    onDiscard: _discardTransaction,
+                    onOnlineLookup: _triggerOnlineCategoryLookup,
+                    isLookupLoading: _lookupLoading[tx.id] ?? false,
+                    suggestions: _categorySuggestions[tx.id] ?? [],
+                    isSelectionMode: _isDraftSelectionMode,
+                    isSelected: _selectedDraftIds.contains(tx.id),
+                    onTap: () {
+                      if (_isDraftSelectionMode && tx.id != null) {
+                        _toggleDraftSelection(tx.id!);
+                        return;
+                      }
+                      _showDraftEditor(tx);
                     },
-                    background: Container(
-                      margin: const EdgeInsets.symmetric(vertical: 8.0),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFEF4444).withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      alignment: Alignment.centerLeft,
-                      padding: const EdgeInsets.only(left: 20),
-                      child: const Row(
-                        children: [
-                          Icon(Icons.delete, color: Color(0xFFEF4444)),
-                          SizedBox(width: 8),
-                          Text('Discard',
-                              style: TextStyle(
-                                  color: Color(0xFFEF4444),
-                                  fontWeight: FontWeight.bold)),
-                        ],
-                      ),
-                    ),
-                    child: PendingTransactionCard(
-                      key: ValueKey(tx.id),
-                      tx: tx,
-                      accounts: _accounts,
-                      categories: _categories,
-                      onConfirm: _confirmTransaction,
-                      onDiscard: _discardTransaction,
-                      onOnlineLookup: _triggerOnlineCategoryLookup,
-                      isLookupLoading: _lookupLoading[tx.id] ?? false,
-                      suggestions: _categorySuggestions[tx.id] ?? [],
-                      isSelectionMode: _isDraftSelectionMode,
-                      isSelected: _selectedDraftIds.contains(tx.id),
-                      onTap: () {
-                        if (_isDraftSelectionMode && tx.id != null) {
+                    onLongPress: () {
+                      if (tx.id != null) {
+                        if (!_isDraftSelectionMode) {
+                          _enterDraftSelectionMode(tx.id!);
+                        } else {
                           _toggleDraftSelection(tx.id!);
-                          return;
                         }
-                        _showDraftEditor(tx);
-                      },
-                      onLongPress: () {
-                        if (tx.id != null) {
-                          if (!_isDraftSelectionMode) {
-                            _enterDraftSelectionMode(tx.id!);
-                          } else {
-                            _toggleDraftSelection(tx.id!);
-                          }
-                        }
-                      },
-                    ),
+                      }
+                    },
                   );
                 },
               ),
