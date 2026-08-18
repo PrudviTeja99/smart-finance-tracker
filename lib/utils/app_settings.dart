@@ -5,6 +5,7 @@ class AppSettings {
   static bool autoHideEnabled = false;
   static int autoHideSeconds = 5; // Default 5s
   static String currencySymbol = '₹'; // Default rupee
+  static String numberLocale = 'auto'; // 'auto', 'en_IN', 'en_US', 'de_DE', 'en_GB'
   static bool autoDeleteArchive = false;
   static int autoDeleteValue = 30;
   static String autoDeleteUnit = 'days'; // 'days', 'months', 'years'
@@ -17,6 +18,7 @@ class AppSettings {
     autoHideEnabled = prefs.getBool('auto_hide_enabled') ?? false;
     autoHideSeconds = prefs.getInt('auto_hide_seconds') ?? 5;
     currencySymbol = prefs.getString('currency_symbol') ?? '₹';
+    numberLocale = prefs.getString('number_locale') ?? 'auto';
     autoDeleteArchive = prefs.getBool('auto_delete_archive') ?? false;
     autoDeleteValue = prefs.getInt('auto_delete_value') ?? 30;
     autoDeleteUnit = prefs.getString('auto_delete_unit') ?? 'days';
@@ -46,6 +48,12 @@ class AppSettings {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('currency_symbol', symbol);
     currencySymbol = symbol;
+  }
+
+  static Future<void> setNumberLocale(String locale) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('number_locale', locale);
+    numberLocale = locale;
   }
 
   static Future<void> setAutoDeleteArchive(bool enabled) async {

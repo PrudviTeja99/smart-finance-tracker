@@ -12,6 +12,7 @@ import '../utils/bio_tagger.dart';
 import '../utils/app_settings.dart';
 import '../utils/icon_helper.dart';
 import '../utils/app_snackbar.dart';
+import '../utils/app_formatters.dart';
 import '../services/perceptron_storage_service.dart';
 import 'archived_alerts_screen.dart';
 import 'model_training_screen.dart';
@@ -907,6 +908,61 @@ class _SettingsScreenState extends State<SettingsScreen>
                           onChanged: (val) async {
                             if (val != null) {
                               await AppSettings.setCurrencySymbol(val);
+                              setState(() {});
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                  const Divider(color: Colors.white10),
+                  ListTile(
+                    leading: const Icon(Icons.pin_rounded,
+                        color: Color(0xFF6366F1)),
+                    title: const Text('Number Comma Format',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: const Text('Comma separation & number localization',
+                        style: TextStyle(fontSize: 11)),
+                    trailing: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF6366F1).withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                            color: const Color(0xFF6366F1).withOpacity(0.25)),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: AppSettings.numberLocale,
+                          dropdownColor: const Color(0xFF1E293B),
+                          isDense: true,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF6366F1),
+                            fontSize: 13,
+                          ),
+                          icon: const Padding(
+                            padding: EdgeInsets.only(left: 4),
+                            child: Icon(Icons.arrow_drop_down,
+                                color: Color(0xFF6366F1), size: 18),
+                          ),
+                          items: const [
+                            DropdownMenuItem(
+                                value: 'auto', child: Text('🌐 Auto (System)')),
+                            DropdownMenuItem(
+                                value: 'en_IN', child: Text('🇮🇳 Indian (12,34,567)')),
+                            DropdownMenuItem(
+                                value: 'en_US', child: Text('🌍 Standard (1,234,567)')),
+                            DropdownMenuItem(
+                                value: 'de_DE', child: Text('🇪🇺 European (1.234.567)')),
+                            DropdownMenuItem(
+                                value: 'en_GB', child: Text('🇬🇧 UK (1,234,567)')),
+                          ],
+                          onChanged: (val) async {
+                            if (val != null) {
+                              await AppSettings.setNumberLocale(val);
+                              AppFormatters.clearCache();
                               setState(() {});
                             }
                           },

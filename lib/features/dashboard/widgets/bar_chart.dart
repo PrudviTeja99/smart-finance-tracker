@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../models/transaction_model.dart';
 import '../../../utils/app_settings.dart';
+import '../../../utils/app_formatters.dart';
 
 class DashboardBarChart extends StatelessWidget {
   final List<TransactionModel> transactions;
@@ -170,9 +171,7 @@ class DashboardBarChart extends StatelessWidget {
                   getTooltipItem: (group, groupIndex, rod, rodIndex) {
                     if (rod.toY == 0) return null;
                     return BarTooltipItem(
-                      shouldHideAmounts
-                          ? '${AppSettings.currencySymbol}••••'
-                          : '${AppSettings.currencySymbol}${rod.toY.toStringAsFixed(0)}',
+                      AppFormatters.formatAmount(rod.toY, shouldHide: shouldHideAmounts),
                       const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -230,7 +229,7 @@ class DashboardBarChart extends StatelessWidget {
           child: Text(
             shouldHideAmounts
                 ? 'Average: ${AppSettings.currencySymbol}•••• • Peak: ${peakPeriod.isEmpty ? "N/A" : peakPeriod}'
-                : 'Avg: ${AppSettings.currencySymbol}${avgVal.toStringAsFixed(0)} • Peak: ${peakPeriod.isEmpty ? "N/A" : peakPeriod}',
+                : 'Avg: ${AppFormatters.formatAmount(avgVal)} • Peak: ${peakPeriod.isEmpty ? "N/A" : peakPeriod}',
             style: const TextStyle(fontSize: 11, color: Colors.white60),
           ),
         ),

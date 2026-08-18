@@ -4,6 +4,7 @@ import 'package:finance_tracker/models/transaction_model.dart';
 import 'package:finance_tracker/screens/dashboard_screen.dart';
 import 'package:finance_tracker/services/database_service.dart';
 import 'package:finance_tracker/utils/app_settings.dart';
+import 'package:finance_tracker/utils/app_formatters.dart';
 import 'package:finance_tracker/utils/app_snackbar.dart';
 import 'package:finance_tracker/utils/icon_helper.dart';
 import 'package:flutter/material.dart';
@@ -703,7 +704,7 @@ class _DraftEditorState extends State<DraftEditor> {
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
-                                        'Balance: ${AppSettings.currencySymbol}${acc.balance.toStringAsFixed(2)}',
+                                        'Balance: ${AppFormatters.formatAmount(acc.balance)}',
                                         style: const TextStyle(
                                           fontSize: 11,
                                           color: Colors.white54,

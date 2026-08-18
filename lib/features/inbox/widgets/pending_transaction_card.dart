@@ -2,6 +2,7 @@ import 'package:finance_tracker/models/account_model.dart';
 import 'package:finance_tracker/models/category_model.dart';
 import 'package:finance_tracker/models/transaction_model.dart';
 import 'package:finance_tracker/utils/app_settings.dart';
+import 'package:finance_tracker/utils/app_formatters.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -163,7 +164,7 @@ class _PendingTransactionCardState extends State<PendingTransactionCard> {
               Row(
                 children: [
                   Text(
-                    '${AppSettings.currencySymbol}${widget.tx.amount.toStringAsFixed(widget.tx.amount % 1 == 0 ? 0 : 2)}',
+                    AppFormatters.formatAmount(widget.tx.amount),
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,

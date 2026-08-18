@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../models/account_model.dart';
 import '../../../utils/app_settings.dart';
+import '../../../utils/app_formatters.dart';
 
 class AccountCarousel extends StatelessWidget {
   final List<AccountModel> accounts;
@@ -124,9 +125,7 @@ class AccountCarousel extends StatelessWidget {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              shouldHideAmounts
-                                  ? '${AppSettings.currencySymbol}••••'
-                                  : '${AppSettings.currencySymbol}${account.balance.toStringAsFixed(2)}',
+                              AppFormatters.formatAmount(account.balance, shouldHide: shouldHideAmounts),
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,

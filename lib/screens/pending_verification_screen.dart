@@ -19,6 +19,7 @@ import '../services/perceptron_storage_service.dart';
 import '../utils/transaction_parser.dart';
 import '../utils/app_settings.dart';
 import '../utils/app_snackbar.dart';
+import '../utils/app_formatters.dart';
 
 class PendingVerificationScreen extends StatefulWidget {
   final VoidCallback onConfirmedOrDiscarded;
@@ -421,7 +422,7 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            '${selectedTxs.length} ${selectedTxs.length == 1 ? "transaction" : "transactions"} • Total ${AppSettings.currencySymbol}${totalSum.toStringAsFixed(totalSum % 1 == 0 ? 0 : 2)}',
+                            '${selectedTxs.length} ${selectedTxs.length == 1 ? "transaction" : "transactions"} • Total ${AppFormatters.formatAmount(totalSum)}',
                             style: const TextStyle(
                                 fontSize: 12, color: Color(0xFF10B981)),
                           ),
@@ -544,7 +545,7 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
                                 ),
                               ),
                               Text(
-                                '${AppSettings.currencySymbol}${tx.amount.toStringAsFixed(tx.amount % 1 == 0 ? 0 : 2)}',
+                                AppFormatters.formatAmount(tx.amount),
                                 style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 13,

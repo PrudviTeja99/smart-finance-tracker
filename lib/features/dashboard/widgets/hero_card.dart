@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../utils/app_settings.dart';
+import '../../../utils/app_formatters.dart';
 
 class HeroCard extends StatelessWidget {
   final double netBalance;
@@ -89,9 +90,7 @@ class HeroCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            shouldHideAmounts
-                ? '${AppSettings.currencySymbol}••••'
-                : '${AppSettings.currencySymbol}${netBalance.toStringAsFixed(2)}',
+            AppFormatters.formatAmount(netBalance, shouldHide: shouldHideAmounts),
             style: TextStyle(
               fontSize: 32,
               fontWeight: FontWeight.bold,
@@ -129,9 +128,7 @@ class HeroCard extends StatelessWidget {
                                   TextStyle(fontSize: 11, color: Colors.white54)),
                           const SizedBox(height: 2),
                           Text(
-                            shouldHideAmounts
-                                ? '${AppSettings.currencySymbol}••••'
-                                : '${AppSettings.currencySymbol}${totalIncome.toStringAsFixed(2)}',
+                            AppFormatters.formatAmount(totalIncome, shouldHide: shouldHideAmounts),
                             style: const TextStyle(
                                 fontSize: 13.5,
                                 fontWeight: FontWeight.bold,
@@ -169,9 +166,7 @@ class HeroCard extends StatelessWidget {
                                   TextStyle(fontSize: 11, color: Colors.white54)),
                           const SizedBox(height: 2),
                           Text(
-                            shouldHideAmounts
-                                ? '${AppSettings.currencySymbol}••••'
-                                : '${AppSettings.currencySymbol}${totalExpense.toStringAsFixed(2)}',
+                            AppFormatters.formatAmount(totalExpense, shouldHide: shouldHideAmounts),
                             style: const TextStyle(
                                 fontSize: 13.5,
                                 fontWeight: FontWeight.bold,

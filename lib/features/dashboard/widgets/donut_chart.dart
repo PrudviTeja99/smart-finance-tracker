@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../models/transaction_model.dart';
 import '../../../models/category_model.dart';
 import '../../../utils/app_settings.dart';
+import '../../../utils/app_formatters.dart';
 
 class DonutChart extends StatelessWidget {
   final Map<int, double> categoryTotals;
@@ -62,9 +63,7 @@ class DonutChart extends StatelessWidget {
         : (typeFilter == 'debit'
             ? 'TOTAL SPENT'
             : (typeFilter == 'transfer' ? 'TRANSFERS' : 'TOTAL VOLUME'));
-    String centerAmountText = shouldHideAmounts
-        ? '${AppSettings.currencySymbol}••••'
-        : '${AppSettings.currencySymbol}${totalSum.toStringAsFixed(0)}';
+    String centerAmountText = AppFormatters.formatAmount(totalSum, shouldHide: shouldHideAmounts);
     
     int totalTxCount = 0;
     if (categoryCounts != null && categoryCounts!.isNotEmpty) {
@@ -91,9 +90,7 @@ class DonutChart extends StatelessWidget {
 
       centerTitle = cat.name.toUpperCase();
       centerTitleColor = Color(cat.color);
-      centerAmountText = shouldHideAmounts
-          ? '${AppSettings.currencySymbol}••••'
-          : '${AppSettings.currencySymbol}${catAmount.toStringAsFixed(0)}';
+      centerAmountText = AppFormatters.formatAmount(catAmount, shouldHide: shouldHideAmounts);
       
       centerSubtext = catTxCount > 0
           ? '${percentage.toStringAsFixed(0)}% ($catTxCount ${catTxCount == 1 ? "transaction" : "transactions"})'

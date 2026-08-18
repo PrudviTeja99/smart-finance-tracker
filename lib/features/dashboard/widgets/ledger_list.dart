@@ -4,6 +4,7 @@ import '../../../models/transaction_model.dart';
 import '../../../models/account_model.dart';
 import '../../../models/category_model.dart';
 import '../../../utils/app_settings.dart';
+import '../../../utils/app_formatters.dart';
 import '../../../utils/icon_helper.dart';
 
 class LedgerItem extends StatelessWidget {
@@ -143,7 +144,7 @@ class LedgerItem extends StatelessWidget {
                   Text(
                     shouldHideAmounts
                         ? '${AppSettings.currencySymbol}••••'
-                        : '$sign${AppSettings.currencySymbol}${tx.amount.toStringAsFixed(2)}',
+                        : '$sign${AppFormatters.formatAmount(tx.amount)}',
                     style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,

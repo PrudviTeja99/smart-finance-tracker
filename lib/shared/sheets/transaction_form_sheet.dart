@@ -5,6 +5,7 @@ import '../../models/account_model.dart';
 import '../../models/category_model.dart';
 import '../../services/database_service.dart';
 import '../../utils/app_settings.dart';
+import '../../utils/app_formatters.dart';
 import '../../utils/app_snackbar.dart';
 import '../../utils/icon_helper.dart';
 import '../../features/dashboard/utils/custom_select_field.dart';
@@ -241,9 +242,9 @@ class __TransactionFormContentState extends State<_TransactionFormContent> {
                                         ),
                                       ),
                                       const SizedBox(height: 2),
-                                      Text(
-                                        'Balance: ${AppSettings.currencySymbol}${acc.balance.toStringAsFixed(2)}',
-                                        style: const TextStyle(
+                                       Text(
+                                         'Balance: ${AppFormatters.formatAmount(acc.balance)}',
+                                         style: const TextStyle(
                                           fontSize: 11,
                                           color: Colors.white54,
                                         ),

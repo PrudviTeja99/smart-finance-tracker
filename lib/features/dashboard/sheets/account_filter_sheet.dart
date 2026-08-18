@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../models/account_model.dart';
 import '../../../utils/app_settings.dart';
+import '../../../utils/app_formatters.dart';
 
 Future<void> showAccountFilterSheet({
   required BuildContext context,
@@ -148,7 +149,7 @@ Future<void> showAccountFilterSheet({
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  '${AppSettings.currencySymbol}${account.balance.toStringAsFixed(2)}',
+                                  AppFormatters.formatAmount(account.balance),
                                   style: TextStyle(
                                     color: account.balance >= 0
                                         ? const Color(0xFF10B981)
