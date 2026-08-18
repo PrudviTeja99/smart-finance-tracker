@@ -42,6 +42,11 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
   bool _isServiceEnabled = false;
   bool _hasModelActivity = false;
 
+  // Pagination state
+  final ScrollController _draftsScrollController = ScrollController();
+  static const int _batchSize = 30;
+  int _draftsMaxDisplay = 30;
+
   // Dual-tab controller
   late TabController _tabController;
 
@@ -77,6 +82,7 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(_onTabChanged);
+    _draftsScrollController.addListener(_onDraftsScroll);
 
     PerceptronStorageService.instance.loadWeights();
 
@@ -91,6 +97,17 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
         if (mounted) _refreshAll();
       });
     });
+  }
+
+  void _onDraftsScroll() {
+    if (_draftsScrollController.position.pixels >=
+        _draftsScrollController.position.maxScrollExtent - 300) {
+      if (_draftsMaxDisplay < _pendingTransactions.length) {
+        setState(() {
+          _draftsMaxDisplay += _batchSize;
+        });
+      }
+    }
   }
 
   void _onTabChanged() {
@@ -112,6 +129,8 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
 
   @override
   void dispose() {
+    _draftsScrollController.removeListener(_onDraftsScroll);
+    _draftsScrollController.dispose();
     widget.refreshSignal?.removeListener(_onForegroundRefresh);
     _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
@@ -1348,9 +1367,34 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
                 ),
               )
             : ListView.builder(
+                controller: _draftsScrollController,
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 90),
-                itemCount: _pendingTransactions.length,
+                itemCount: (_pendingTransactions.length < _draftsMaxDisplay
+                        ? _pendingTransactions.length
+                        : _draftsMaxDisplay) +
+                    (_pendingTransactions.length > _draftsMaxDisplay ? 1 : 0),
                 itemBuilder: (context, index) {
+                  final visibleCount =
+                      _pendingTransactions.length < _draftsMaxDisplay
+                          ? _pendingTransactions.length
+                          : _draftsMaxDisplay;
+
+                  if (index == visibleCount) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      child: Center(
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Color(0xFF6366F1),
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+
                   final tx = _pendingTransactions[index];
                   return PendingTransactionCard(
                     key: ValueKey(tx.id),

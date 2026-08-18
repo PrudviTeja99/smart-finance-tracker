@@ -14,6 +14,9 @@ class ArchivedAlertsScreen extends StatefulWidget {
 }
 
 class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
+  final ScrollController _scrollController = ScrollController();
+  static const int _batchSize = 30;
+  int _maxDisplay = 30;
 
   List<Map<String, dynamic>> _archivedLogs = [];
   bool _isLoading = true;
@@ -27,19 +30,31 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
   bool _isAppCategorySelectionMode = false;
   final Set<String> _selectedAppPackages = {};
 
-
-
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     _loadArchivedLogs();
   }
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 300) {
+      if (_maxDisplay < _archivedLogs.length) {
+        setState(() {
+          _maxDisplay += _batchSize;
+        });
+      }
+    }
   }
 
   Future<void> _loadArchivedLogs() async {
@@ -642,9 +657,33 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
                   : sortedPackages.isEmpty
                       ? _buildEmptyState()
                       : ListView.builder(
+                          controller: _scrollController,
                           padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
-                          itemCount: sortedPackages.length,
+                          itemCount: (sortedPackages.length < _maxDisplay
+                                  ? sortedPackages.length
+                                  : _maxDisplay) +
+                              (sortedPackages.length > _maxDisplay ? 1 : 0),
                           itemBuilder: (context, index) {
+                            final visibleCount = sortedPackages.length < _maxDisplay
+                                ? sortedPackages.length
+                                : _maxDisplay;
+
+                            if (index == visibleCount) {
+                              return const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 16),
+                                child: Center(
+                                  child: SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Color(0xFF6366F1),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }
+
                             final pkg = sortedPackages[index];
                             final list = groups[pkg]!;
                             final fallbackAppName = list.first['app_name'] as String? ?? 'Unknown';
