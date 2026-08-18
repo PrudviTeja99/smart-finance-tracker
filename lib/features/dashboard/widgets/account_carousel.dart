@@ -43,7 +43,7 @@ class AccountCarousel extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+          padding: const EdgeInsets.only(bottom: 12),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -85,7 +85,8 @@ class AccountCarousel extends StatelessWidget {
           height: 105,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            clipBehavior: Clip.antiAlias,
+            padding: EdgeInsets.zero,
             itemCount: accounts.length,
             itemBuilder: (context, index) {
               final account = accounts[index];

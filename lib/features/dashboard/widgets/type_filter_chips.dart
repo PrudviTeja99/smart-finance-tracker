@@ -22,6 +22,7 @@ class TypeFilterChips extends StatelessWidget {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       physics: const BouncingScrollPhysics(),
+      clipBehavior: Clip.antiAlias,
       child: Row(
         children: options.map((opt) {
           final key = opt['key'] as String;

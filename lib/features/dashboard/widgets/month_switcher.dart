@@ -29,7 +29,7 @@ class MonthSwitcher extends StatelessWidget {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       physics: const BouncingScrollPhysics(),
-      clipBehavior: Clip.none,
+      clipBehavior: Clip.antiAlias,
       child: Row(
         children: [
           // Timeframe / Month Selector Chip
