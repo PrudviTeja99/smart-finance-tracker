@@ -64,26 +64,26 @@ class LedgerItem extends StatelessWidget {
       padding: EdgeInsets.zero,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
             color: const Color(0xFF1E293B),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.02)),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.03)),
           ),
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: Color(category.color).withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(IconHelper.getIcon(category.icon),
-                    color: Color(category.color), size: 18),
+                    color: Color(category.color), size: 20),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -91,7 +91,7 @@ class LedgerItem extends StatelessWidget {
                     Text(
                       tx.description,
                       style: const TextStyle(
-                          fontSize: 15, fontWeight: FontWeight.bold),
+                          fontSize: 15, fontWeight: FontWeight.w600),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -103,34 +103,34 @@ class LedgerItem extends StatelessWidget {
                               ? '${account.name} ➔ ${accounts.firstWhere((a) => a.id == tx.toAccountId, orElse: () => accounts.first).name}'
                               : account.name,
                           style: const TextStyle(
-                              fontSize: 11, color: Colors.white38),
+                              fontSize: 12, color: Colors.white54),
                         ),
                         const SizedBox(width: 6),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 4, vertical: 1),
+                              horizontal: 5, vertical: 2),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.05),
+                            color: Colors.white.withValues(alpha: 0.06),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
                             _getAccountTypeDisplay(account.type),
                             style: const TextStyle(
-                                fontSize: 8, color: Colors.white38),
+                                fontSize: 9, color: Colors.white54),
                           ),
                         ),
                         if (tx.appName != null) ...[
                           const SizedBox(width: 6),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 4, vertical: 1),
+                                horizontal: 5, vertical: 2),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.05),
+                              color: Colors.white.withValues(alpha: 0.06),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(tx.appName!,
                                 style: const TextStyle(
-                                    fontSize: 8, color: Colors.white38)),
+                                    fontSize: 9, color: Colors.white54)),
                           ),
                         ],
                       ],
@@ -138,6 +138,7 @@ class LedgerItem extends StatelessWidget {
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -153,7 +154,7 @@ class LedgerItem extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     DateFormat('dd MMM, hh:mm a').format(tx.date),
-                    style: const TextStyle(fontSize: 10, color: Colors.white38),
+                    style: const TextStyle(fontSize: 11, color: Colors.white38),
                   ),
                 ],
               ),

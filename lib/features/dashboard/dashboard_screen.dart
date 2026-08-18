@@ -10,6 +10,7 @@ import 'widgets/type_filter_chips.dart';
 import 'widgets/analytics_card.dart';
 import 'widgets/search_bar.dart';
 import 'widgets/ledger_list.dart';
+import '../../screens/transactions_screen.dart';
 import 'sheets/timeframe_filter_sheet.dart';
 import 'sheets/account_filter_sheet.dart';
 import 'sheets/month_year_picker_sheet.dart';
@@ -307,7 +308,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                     ),
                   ),
 
-                  // Transactions Group Panel
+                  // Latest Transactions Group Panel
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(6, 10, 6, 0),
@@ -322,41 +323,24 @@ class _DashboardScreenState extends State<DashboardScreen>
                         ),
                         child: Builder(
                           builder: (context) {
-                            final displayedTxList = showAllDashboardTransactions
-                                ? filteredTransactions
-                                : filteredTransactions.take(5).toList();
+                            final latest5Transactions =
+                                allTransactions.take(5).toList();
 
                             return Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text(
-                                      'Latest Transactions',
-                                      style: TextStyle(
-                                          fontSize: 18, fontWeight: FontWeight.bold),
-                                    ),
-                                    Text(
-                                      '${filteredTransactions.length} items',
-                                      style: const TextStyle(
-                                          fontSize: 12, color: Colors.white54),
-                                    ),
-                                  ],
+                                const Text(
+                                  'Latest Transactions',
+                                  style: TextStyle(
+                                      fontSize: 18, fontWeight: FontWeight.bold),
                                 ),
-                                const SizedBox(height: 12),
-                                DashboardSearchBar(
-                                  controller: searchController,
-                                  focusNode: searchFocusNode,
-                                  onClear: unfocusSearch,
-                                ),
-                                const SizedBox(height: 12),
-                                if (filteredTransactions.isEmpty)
+                                const SizedBox(height: 8),
+                                if (latest5Transactions.isEmpty)
                                   const Padding(
                                     padding: EdgeInsets.symmetric(vertical: 24),
                                     child: Center(
                                       child: Text(
-                                        'No transactions found for this period.',
+                                        'No transactions recorded yet.',
                                         style: TextStyle(color: Colors.white54),
                                       ),
                                     ),
@@ -365,11 +349,11 @@ class _DashboardScreenState extends State<DashboardScreen>
                                   ListView.separated(
                                     shrinkWrap: true,
                                     physics: const NeverScrollableScrollPhysics(),
-                                    itemCount: displayedTxList.length,
+                                    itemCount: latest5Transactions.length,
                                     separatorBuilder: (context, index) =>
-                                        const SizedBox(height: 6),
+                                        const SizedBox(height: 8),
                                     itemBuilder: (context, index) {
-                                      final tx = displayedTxList[index];
+                                      final tx = latest5Transactions[index];
                                       return LedgerItem(
                                         tx: tx,
                                         accounts: accounts,
@@ -380,28 +364,27 @@ class _DashboardScreenState extends State<DashboardScreen>
                                       );
                                     },
                                   ),
-                                  if (filteredTransactions.length > 5) ...[
+                                  if (allTransactions.length > 5) ...[
                                     const SizedBox(height: 10),
                                     Center(
                                       child: TextButton.icon(
                                         onPressed: () {
-                                          setState(() {
-                                            showAllDashboardTransactions =
-                                                !showAllDashboardTransactions;
-                                          });
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  const TransactionsScreen(),
+                                            ),
+                                          ).then((_) => refreshData());
                                         },
-                                        icon: Icon(
-                                          showAllDashboardTransactions
-                                              ? Icons.keyboard_arrow_up_rounded
-                                              : Icons.keyboard_arrow_down_rounded,
-                                          color: const Color(0xFF6366F1),
-                                          size: 18,
+                                        icon: const Icon(
+                                          Icons.arrow_forward_rounded,
+                                          color: Color(0xFF6366F1),
+                                          size: 16,
                                         ),
-                                        label: Text(
-                                          showAllDashboardTransactions
-                                              ? 'Show Less'
-                                              : 'Show More (${filteredTransactions.length - 5} more)',
-                                          style: const TextStyle(
+                                        label: const Text(
+                                          'Show More',
+                                          style: TextStyle(
                                             color: Color(0xFF6366F1),
                                             fontSize: 13,
                                             fontWeight: FontWeight.bold,
