@@ -36,6 +36,9 @@ class AccountCarousel extends StatelessWidget {
   Widget build(BuildContext context) {
     if (accounts.isEmpty) return const SizedBox.shrink();
 
+    final totalBalance = accounts.fold(0.0, (sum, a) => sum + a.balance);
+    final formattedTotal = AppFormatters.formatAmount(totalBalance, shouldHide: shouldHideAmounts);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -43,10 +46,25 @@ class AccountCarousel extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const Text(
-                'Accounts',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Accounts',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Total Balance: $formattedTotal',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white54,
+                    ),
+                  ),
+                ],
               ),
               if (selectedAccountId != null && onClearAccountFilter != null)
                 TextButton(

@@ -230,34 +230,10 @@ class _DashboardScreenState extends State<DashboardScreen>
                     ),
                   ),
 
-                  // Account Carousel
-                  SliverToBoxAdapter(
-                    child: AccountCarousel(
-                      accounts: accounts,
-                      selectedAccountId: selectedAccountFilterId,
-                      onAccountTapped: (acc) {
-                        setState(() {
-                          selectedAccountFilterId =
-                              selectedAccountFilterId == acc.id
-                                  ? null
-                                  : acc.id;
-                        });
-                        applyFilters();
-                      },
-                      onClearAccountFilter: () {
-                        setState(() {
-                          selectedAccountFilterId = null;
-                        });
-                        applyFilters();
-                      },
-                      shouldHideAmounts: privacyController.obscureAmounts,
-                    ),
-                  ),
-
                   // Analytics Card + Type Filter Chips
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+                      padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
@@ -290,7 +266,42 @@ class _DashboardScreenState extends State<DashboardScreen>
                             },
                             shouldHideAmounts: privacyController.obscureAmounts,
                           ),
-                          const SizedBox(height: 24),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Account Carousel
+                  SliverToBoxAdapter(
+                    child: AccountCarousel(
+                      accounts: accounts,
+                      selectedAccountId: selectedAccountFilterId,
+                      onAccountTapped: (acc) {
+                        setState(() {
+                          selectedAccountFilterId =
+                              selectedAccountFilterId == acc.id
+                                  ? null
+                                  : acc.id;
+                        });
+                        applyFilters();
+                      },
+                      onClearAccountFilter: () {
+                        setState(() {
+                          selectedAccountFilterId = null;
+                        });
+                        applyFilters();
+                      },
+                      shouldHideAmounts: privacyController.obscureAmounts,
+                    ),
+                  ),
+
+                  // Transactions Header & Search Bar
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
                           const Text(
                             'Transactions',
                             style: TextStyle(
