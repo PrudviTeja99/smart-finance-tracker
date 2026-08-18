@@ -276,6 +276,318 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
     });
   }
 
+  Future<void> _confirmSelectedDrafts(int? bulkCategoryId) async {
+    if (_selectedDraftIds.isEmpty) return;
+
+    final selectedTxs = _pendingTransactions
+        .where((t) => t.id != null && _selectedDraftIds.contains(t.id))
+        .toList();
+    if (selectedTxs.isEmpty) return;
+
+    final dbService = DatabaseService.instance;
+    final db = await dbService.database;
+
+    final accountMap = {for (var a in _accounts) a.id: a};
+    final categoryMap = {for (var c in _categories) c.id: c.name};
+
+    // 1. Perform database updates inside transaction block
+    await db.transaction((txn) async {
+      for (var tx in selectedTxs) {
+        final targetCatId = bulkCategoryId ?? tx.categoryId;
+
+        final confirmedTx = tx.copyWith(
+          status: 'confirmed',
+          categoryId: targetCatId,
+        );
+
+        // Update in DB
+        await txn.update(
+          'transactions',
+          confirmedTx.toMap(),
+          where: 'id = ?',
+          whereArgs: [confirmedTx.id],
+        );
+
+        // Clean corresponding notification log
+        if (confirmedTx.notificationLogId != null) {
+          await txn.delete('notification_logs',
+              where: 'id = ?', whereArgs: [confirmedTx.notificationLogId]);
+        }
+        if (confirmedTx.body.isNotEmpty &&
+            confirmedTx.body != 'Manual transaction entry') {
+          await txn.delete('notification_logs',
+              where: 'body = ?', whereArgs: [confirmedTx.body]);
+        }
+      }
+    });
+
+    // 2. Train AI Classifier on-device AFTER the database transaction finishes
+    for (var tx in selectedTxs) {
+      final targetCatId = bulkCategoryId ?? tx.categoryId;
+      final categoryName = categoryMap[targetCatId] ?? 'Others';
+      final account = accountMap[tx.accountId] ??
+          (_accounts.isNotEmpty
+              ? _accounts.first
+              : AccountModel(
+                  id: 1, name: 'Bank Account', type: 'bank', keywords: '', balance: 0.0));
+
+      await _parser.trainConfirm(
+        body: tx.body,
+        categoryName: categoryName,
+        accountName: account.name,
+        accountKeywords: account.keywords,
+        description: tx.description,
+        amount: tx.amount,
+        type: tx.type,
+      );
+    }
+
+    final count = selectedTxs.length;
+    if (mounted) {
+      AppSnackBar.show(
+        context,
+        'Confirmed $count draft ${count == 1 ? "transaction" : "transactions"}!',
+        type: SnackBarType.success,
+      );
+      setState(() {
+        _isDraftSelectionMode = false;
+        _selectedDraftIds.clear();
+      });
+    }
+
+    widget.onConfirmedOrDiscarded();
+    await _refreshAll();
+  }
+
+  void _showBatchDraftConfirmSheet() {
+    if (_selectedDraftIds.isEmpty) return;
+
+    final selectedTxs = _pendingTransactions
+        .where((t) => t.id != null && _selectedDraftIds.contains(t.id))
+        .toList();
+    if (selectedTxs.isEmpty) return;
+
+    final totalSum = selectedTxs.fold(0.0, (sum, t) => sum + t.amount);
+    int? selectedBulkCatId;
+
+    final categoryMap = {for (var c in _categories) c.id: c.name};
+    final accountMap = {for (var a in _accounts) a.id: a.name};
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF0F172A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+                top: 16,
+                left: 20,
+                right: 20,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.white24,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Confirm Drafts',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${selectedTxs.length} ${selectedTxs.length == 1 ? "transaction" : "transactions"} • Total ${AppSettings.currencySymbol}${totalSum.toStringAsFixed(totalSum % 1 == 0 ? 0 : 2)}',
+                            style: const TextStyle(
+                                fontSize: 12, color: Color(0xFF10B981)),
+                          ),
+                        ],
+                      ),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981).withOpacity(0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.check_circle_rounded,
+                            color: Color(0xFF10B981), size: 24),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Bulk Category Assignment (Optional)',
+                    style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.white54,
+                        fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        ChoiceChip(
+                          label: const Text('Keep AI/Individual'),
+                          selected: selectedBulkCatId == null,
+                          selectedColor: const Color(0xFF6366F1),
+                          backgroundColor: const Color(0xFF1E293B),
+                          labelStyle: TextStyle(
+                            color: selectedBulkCatId == null
+                                ? Colors.white
+                                : Colors.white70,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          onSelected: (selected) {
+                            if (selected) {
+                              setSheetState(() => selectedBulkCatId = null);
+                            }
+                          },
+                        ),
+                        const SizedBox(width: 8),
+                        ..._categories.map((cat) {
+                          final isSelected = selectedBulkCatId == cat.id;
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: ChoiceChip(
+                              label: Text(cat.name),
+                              selected: isSelected,
+                              selectedColor: Color(cat.color),
+                              backgroundColor: const Color(0xFF1E293B),
+                              labelStyle: TextStyle(
+                                color:
+                                    isSelected ? Colors.black : Colors.white70,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              onSelected: (selected) {
+                                setSheetState(() {
+                                  selectedBulkCatId = selected ? cat.id : null;
+                                });
+                              },
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 200),
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: selectedTxs.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 8),
+                      itemBuilder: (context, i) {
+                        final tx = selectedTxs[i];
+                        final catName = selectedBulkCatId != null
+                            ? (categoryMap[selectedBulkCatId] ?? 'Others')
+                            : (categoryMap[tx.categoryId] ?? 'Others');
+                        final accName =
+                            accountMap[tx.accountId] ?? 'Bank Account';
+
+                        return Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1E293B),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      tx.description.isNotEmpty
+                                          ? tx.description
+                                          : tx.title,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13,
+                                          color: Colors.white),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '$accName • $catName',
+                                      style: const TextStyle(
+                                          fontSize: 10, color: Colors.white54),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Text(
+                                '${AppSettings.currencySymbol}${tx.amount.toStringAsFixed(tx.amount % 1 == 0 ? 0 : 2)}',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                    color: Colors.white),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF10B981),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
+                      ),
+                      icon: const Icon(Icons.check_circle_rounded, size: 20),
+                      label: Text(
+                        'Confirm ${selectedTxs.length} ${selectedTxs.length == 1 ? "Draft" : "Drafts"}',
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 15),
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _confirmSelectedDrafts(selectedBulkCatId);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   Future<void> _discardSelectedDrafts() async {
     if (_selectedDraftIds.isEmpty) return;
 
@@ -635,6 +947,38 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
           ),
           actions: _isDraftSelectionMode
               ? [
+                  IconButton(
+                    icon: Icon(
+                      _selectedDraftIds.length == _pendingTransactions.length
+                          ? Icons.deselect_rounded
+                          : Icons.select_all_rounded,
+                      color: Colors.white70,
+                    ),
+                    tooltip:
+                        _selectedDraftIds.length == _pendingTransactions.length
+                            ? 'Deselect All'
+                            : 'Select All',
+                    onPressed: () {
+                      setState(() {
+                        if (_selectedDraftIds.length ==
+                            _pendingTransactions.length) {
+                          _selectedDraftIds.clear();
+                          _isDraftSelectionMode = false;
+                        } else {
+                          _selectedDraftIds.clear();
+                          _selectedDraftIds.addAll(_pendingTransactions
+                              .where((t) => t.id != null)
+                              .map((t) => t.id!));
+                        }
+                      });
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.check_circle_outline_rounded,
+                        color: Color(0xFF10B981)),
+                    tooltip: 'Confirm Selected Drafts',
+                    onPressed: _showBatchDraftConfirmSheet,
+                  ),
                   IconButton(
                     icon: const Icon(Icons.delete_sweep_outlined,
                         color: Color(0xFFEF4444)),
