@@ -36,13 +36,18 @@ class AnalyticsCard extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    final categoryTotals = <int, double>{};
+    final unsortedTotals = <int, double>{};
     for (var tx in transactions) {
       if (typeFilter == 'all' || tx.type == typeFilter) {
-        categoryTotals[tx.categoryId] =
-            (categoryTotals[tx.categoryId] ?? 0.0) + tx.amount;
+        unsortedTotals[tx.categoryId] =
+            (unsortedTotals[tx.categoryId] ?? 0.0) + tx.amount;
       }
     }
+
+    final sortedEntries = unsortedTotals.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    final categoryTotals = Map<int, double>.fromEntries(sortedEntries);
 
     final String sectionTitle = typeFilter == 'credit'
         ? 'Income Analysis'

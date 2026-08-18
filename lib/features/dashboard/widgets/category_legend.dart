@@ -23,7 +23,8 @@ class CategoryLegend extends StatelessWidget {
     if (categoryTotals.isEmpty) return const SizedBox.shrink();
 
     final totalSum = categoryTotals.values.fold(0.0, (a, b) => a + b);
-    final entries = categoryTotals.entries.toList();
+    final entries = categoryTotals.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
 
     return Wrap(
       spacing: 8,

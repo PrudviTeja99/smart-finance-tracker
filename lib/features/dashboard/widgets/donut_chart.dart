@@ -25,7 +25,8 @@ class DonutChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final totalSum = categoryTotals.values.fold(0.0, (a, b) => a + b);
-    final entries = categoryTotals.entries.toList();
+    final entries = categoryTotals.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
 
     if (categoryTotals.isEmpty || totalSum == 0) {
       return Container(
