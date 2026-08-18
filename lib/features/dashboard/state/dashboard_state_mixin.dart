@@ -20,6 +20,7 @@ mixin DashboardStateMixin<T extends StatefulWidget> on State<T> {
   String selectedTypeFilter = 'debit'; // 'debit' (Expenses), 'credit' (Income), 'transfer' (Transfers)
   String chartView = 'donut'; // 'donut', 'bar'
   int touchedChartIndex = -1;
+  bool showAllDashboardTransactions = false;
 
   // Data lists
   List<TransactionModel> allTransactions = [];

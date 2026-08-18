@@ -320,61 +320,100 @@ class _DashboardScreenState extends State<DashboardScreen>
                           border: Border.all(
                               color: Colors.white.withValues(alpha: 0.05)),
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        child: Builder(
+                          builder: (context) {
+                            final displayedTxList = showAllDashboardTransactions
+                                ? filteredTransactions
+                                : filteredTransactions.take(5).toList();
+
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                const Text(
-                                  'Transactions',
-                                  style: TextStyle(
-                                      fontSize: 18, fontWeight: FontWeight.bold),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text(
+                                      'Latest Transactions',
+                                      style: TextStyle(
+                                          fontSize: 18, fontWeight: FontWeight.bold),
+                                    ),
+                                    Text(
+                                      '${filteredTransactions.length} items',
+                                      style: const TextStyle(
+                                          fontSize: 12, color: Colors.white54),
+                                    ),
+                                  ],
                                 ),
-                                Text(
-                                  '${filteredTransactions.length} items',
-                                  style: const TextStyle(
-                                      fontSize: 12, color: Colors.white54),
+                                const SizedBox(height: 12),
+                                DashboardSearchBar(
+                                  controller: searchController,
+                                  focusNode: searchFocusNode,
+                                  onClear: unfocusSearch,
                                 ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            DashboardSearchBar(
-                              controller: searchController,
-                              focusNode: searchFocusNode,
-                              onClear: unfocusSearch,
-                            ),
-                            const SizedBox(height: 12),
-                            if (filteredTransactions.isEmpty)
-                              const Padding(
-                                padding: EdgeInsets.symmetric(vertical: 24),
-                                child: Center(
-                                  child: Text(
-                                    'No transactions found for this period.',
-                                    style: TextStyle(color: Colors.white54),
+                                const SizedBox(height: 12),
+                                if (filteredTransactions.isEmpty)
+                                  const Padding(
+                                    padding: EdgeInsets.symmetric(vertical: 24),
+                                    child: Center(
+                                      child: Text(
+                                        'No transactions found for this period.',
+                                        style: TextStyle(color: Colors.white54),
+                                      ),
+                                    ),
+                                  )
+                                else ...[
+                                  ListView.separated(
+                                    shrinkWrap: true,
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    itemCount: displayedTxList.length,
+                                    separatorBuilder: (context, index) =>
+                                        const SizedBox(height: 6),
+                                    itemBuilder: (context, index) {
+                                      final tx = displayedTxList[index];
+                                      return LedgerItem(
+                                        tx: tx,
+                                        accounts: accounts,
+                                        categories: categories,
+                                        shouldHideAmounts:
+                                            privacyController.obscureAmounts,
+                                        onTap: () => _openTransactionForm(tx),
+                                      );
+                                    },
                                   ),
-                                ),
-                              )
-                            else
-                              ListView.separated(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemCount: filteredTransactions.length,
-                                separatorBuilder: (context, index) =>
-                                    const SizedBox(height: 6),
-                                itemBuilder: (context, index) {
-                                  final tx = filteredTransactions[index];
-                                  return LedgerItem(
-                                    tx: tx,
-                                    accounts: accounts,
-                                    categories: categories,
-                                    shouldHideAmounts:
-                                        privacyController.obscureAmounts,
-                                    onTap: () => _openTransactionForm(tx),
-                                  );
-                                },
-                              ),
-                          ],
+                                  if (filteredTransactions.length > 5) ...[
+                                    const SizedBox(height: 10),
+                                    Center(
+                                      child: TextButton.icon(
+                                        onPressed: () {
+                                          setState(() {
+                                            showAllDashboardTransactions =
+                                                !showAllDashboardTransactions;
+                                          });
+                                        },
+                                        icon: Icon(
+                                          showAllDashboardTransactions
+                                              ? Icons.keyboard_arrow_up_rounded
+                                              : Icons.keyboard_arrow_down_rounded,
+                                          color: const Color(0xFF6366F1),
+                                          size: 18,
+                                        ),
+                                        label: Text(
+                                          showAllDashboardTransactions
+                                              ? 'Show Less'
+                                              : 'Show More (${filteredTransactions.length - 5} more)',
+                                          style: const TextStyle(
+                                            color: Color(0xFF6366F1),
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ],
+                            );
+                          },
                         ),
                       ),
                     ),
