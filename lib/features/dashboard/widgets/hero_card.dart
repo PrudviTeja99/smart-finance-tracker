@@ -8,6 +8,7 @@ class HeroCard extends StatelessWidget {
   final double totalExpense;
   final double savingsRate;
   final bool shouldHideAmounts;
+  final String? timeframeDisplay;
 
   const HeroCard({
     super.key,
@@ -16,6 +17,7 @@ class HeroCard extends StatelessWidget {
     required this.totalExpense,
     required this.savingsRate,
     required this.shouldHideAmounts,
+    this.timeframeDisplay,
   });
 
   @override
@@ -25,6 +27,10 @@ class HeroCard extends StatelessWidget {
     final badgeLabel = isPositive
         ? '+${savingsRate.toStringAsFixed(0)}% saved'
         : '${savingsRate.toStringAsFixed(0)}% overspent';
+
+    final String titleText = timeframeDisplay != null && timeframeDisplay!.isNotEmpty
+        ? 'NET CASHFLOW • ${timeframeDisplay!.toUpperCase()}'
+        : 'NET CASHFLOW';
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -44,48 +50,29 @@ class HeroCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: badgeColor,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'NET CASHFLOW',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white54,
-                      letterSpacing: 1.0,
-                    ),
-                  ),
-                ],
-              ),
-              if (totalIncome > 0)
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: badgeColor.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: badgeColor.withValues(alpha: 0.3)),
-                  ),
-                  child: Text(
-                    badgeLabel,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: badgeColor,
-                    ),
-                  ),
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: badgeColor,
+                  shape: BoxShape.circle,
                 ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  titleText,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white54,
+                    letterSpacing: 1.0,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 10),

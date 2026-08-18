@@ -225,6 +225,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                         totalExpense: totalExpense,
                         savingsRate: savingsRate,
                         shouldHideAmounts: privacyController.obscureAmounts,
+                        timeframeDisplay: getTimeframeDisplay(),
                       ),
                     ),
                   ),
