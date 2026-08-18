@@ -4,6 +4,7 @@ import '../../../utils/app_settings.dart';
 
 class CategoryLegend extends StatelessWidget {
   final Map<int, double> categoryTotals;
+  final Map<int, int>? categoryCounts;
   final List<CategoryModel> categories;
   final int touchedIndex;
   final ValueChanged<int> onCategoryTapped;
@@ -12,6 +13,7 @@ class CategoryLegend extends StatelessWidget {
   const CategoryLegend({
     super.key,
     required this.categoryTotals,
+    this.categoryCounts,
     required this.categories,
     required this.touchedIndex,
     required this.onCategoryTapped,
@@ -42,6 +44,7 @@ class CategoryLegend extends StatelessWidget {
         );
         final value = entry.value;
         final percentage = totalSum > 0 ? (value / totalSum) * 100 : 0.0;
+        final count = categoryCounts?[entry.key] ?? 0;
         final catColor = Color(category.color);
 
         return GestureDetector(
@@ -83,17 +86,6 @@ class CategoryLegend extends StatelessWidget {
                     fontSize: 10,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                     color: isSelected ? Colors.white : Colors.white70,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  shouldHideAmounts
-                      ? '${AppSettings.currencySymbol}••••'
-                      : '${AppSettings.currencySymbol}${entry.value.toStringAsFixed(0)}',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: isSelected ? catColor : Colors.white,
                   ),
                 ),
               ],

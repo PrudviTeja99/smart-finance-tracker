@@ -37,10 +37,13 @@ class AnalyticsCard extends StatelessWidget {
     }
 
     final unsortedTotals = <int, double>{};
+    final categoryCounts = <int, int>{};
     for (var tx in transactions) {
       if (typeFilter == 'all' || tx.type == typeFilter) {
         unsortedTotals[tx.categoryId] =
             (unsortedTotals[tx.categoryId] ?? 0.0) + tx.amount;
+        categoryCounts[tx.categoryId] =
+            (categoryCounts[tx.categoryId] ?? 0) + 1;
       }
     }
 
@@ -141,6 +144,7 @@ class AnalyticsCard extends StatelessWidget {
               if (chartView == 'donut') ...[
                 DonutChart(
                   categoryTotals: categoryTotals,
+                  categoryCounts: categoryCounts,
                   categories: categories,
                   typeFilter: typeFilter,
                   touchedIndex: touchedIndex,
@@ -150,6 +154,7 @@ class AnalyticsCard extends StatelessWidget {
                 const SizedBox(height: 16),
                 CategoryLegend(
                   categoryTotals: categoryTotals,
+                  categoryCounts: categoryCounts,
                   categories: categories,
                   touchedIndex: touchedIndex,
                   onCategoryTapped: onTouchIndexChanged,

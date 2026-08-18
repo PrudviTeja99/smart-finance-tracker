@@ -6,6 +6,7 @@ import '../../../utils/app_settings.dart';
 
 class DonutChart extends StatelessWidget {
   final Map<int, double> categoryTotals;
+  final Map<int, int>? categoryCounts;
   final List<CategoryModel> categories;
   final String typeFilter; // 'debit', 'credit', 'all', 'transfer'
   final int touchedIndex; // -1 if none selected
@@ -15,6 +16,7 @@ class DonutChart extends StatelessWidget {
   const DonutChart({
     super.key,
     required this.categoryTotals,
+    this.categoryCounts,
     required this.categories,
     required this.typeFilter,
     required this.touchedIndex,
@@ -63,7 +65,15 @@ class DonutChart extends StatelessWidget {
     String centerAmountText = shouldHideAmounts
         ? '${AppSettings.currencySymbol}••••'
         : '${AppSettings.currencySymbol}${totalSum.toStringAsFixed(0)}';
-    String centerSubtext = '';
+    
+    int totalTxCount = 0;
+    if (categoryCounts != null && categoryCounts!.isNotEmpty) {
+      totalTxCount = categoryCounts!.values.fold(0, (a, b) => a + b);
+    }
+
+    String centerSubtext = totalTxCount > 0
+        ? '$totalTxCount ${totalTxCount == 1 ? "transaction" : "transactions"}'
+        : '';
     Color centerTitleColor = Colors.white38;
 
     if (touchedIndex >= 0 && touchedIndex < entries.length) {
@@ -77,13 +87,17 @@ class DonutChart extends StatelessWidget {
       );
       final catAmount = selectedEntry.value;
       final percentage = (catAmount / totalSum) * 100;
+      final catTxCount = categoryCounts?[selectedEntry.key] ?? 0;
 
       centerTitle = cat.name.toUpperCase();
       centerTitleColor = Color(cat.color);
       centerAmountText = shouldHideAmounts
           ? '${AppSettings.currencySymbol}••••'
           : '${AppSettings.currencySymbol}${catAmount.toStringAsFixed(0)}';
-      centerSubtext = '${percentage.toStringAsFixed(0)}% of total';
+      
+      centerSubtext = catTxCount > 0
+          ? '${percentage.toStringAsFixed(0)}% ($catTxCount ${catTxCount == 1 ? "transaction" : "transactions"})'
+          : '${percentage.toStringAsFixed(0)}% of total';
     }
 
     final sections = List.generate(entries.length, (i) {
@@ -98,7 +112,7 @@ class DonutChart extends StatelessWidget {
       );
       final value = entry.value;
 
-      final radius = isTouched ? 42.0 : 32.0;
+      final radius = isTouched ? 34.0 : 26.0;
       final color = isTouched
           ? Color(category.color)
           : (touchedIndex >= 0
@@ -135,47 +149,60 @@ class DonutChart extends StatelessWidget {
                 },
               ),
               sectionsSpace: 2,
-              centerSpaceRadius: 60,
+              centerSpaceRadius: 68,
               sections: sections,
             ),
           ),
           GestureDetector(
             onTap: () => onTouchChanged(-1), // Reset selection on center tap
             behavior: HitTestBehavior.opaque,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  centerTitle,
-                  style: TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.bold,
-                    color: centerTitleColor,
-                    letterSpacing: 1.0,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  centerAmountText,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                if (centerSubtext.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    centerSubtext,
-                    style: const TextStyle(
-                      fontSize: 10,
-                      color: Colors.white60,
+            child: Container(
+              width: 125,
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      centerTitle,
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                        color: centerTitleColor,
+                        letterSpacing: 1.0,
+                      ),
+                      maxLines: 1,
                     ),
                   ),
+                  const SizedBox(height: 3),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      centerAmountText,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  if (centerSubtext.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        centerSubtext,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: Colors.white60,
+                        ),
+                        maxLines: 1,
+                      ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ],
