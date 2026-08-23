@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../models/account_model.dart';
@@ -8,6 +9,7 @@ import '../models/transaction_model.dart';
 class DatabaseService {
   static final DatabaseService instance = DatabaseService._init();
   static Database? _database;
+  final ValueNotifier<int> dashboardDataVersion = ValueNotifier<int>(0);
 
   DatabaseService._init();
 
@@ -441,7 +443,9 @@ class DatabaseService {
 
   Future<int> insertAccount(AccountModel account) async {
     final db = await database;
-    return await db.insert('accounts', account.toMap());
+    final result = await db.insert('accounts', account.toMap());
+    _notifyDashboardDataChanged();
+    return result;
   }
 
   Future<List<AccountModel>> getAllAccounts() async {
@@ -463,21 +467,25 @@ class DatabaseService {
 
   Future<int> updateAccount(AccountModel account) async {
     final db = await database;
-    return await db.update(
+    final result = await db.update(
       'accounts',
       account.toMap(),
       where: 'id = ?',
       whereArgs: [account.id],
     );
+    if (result > 0) _notifyDashboardDataChanged();
+    return result;
   }
 
   Future<int> deleteAccount(int id) async {
     final db = await database;
-    return await db.delete(
+    final result = await db.delete(
       'accounts',
       where: 'id = ?',
       whereArgs: [id],
     );
+    if (result > 0) _notifyDashboardDataChanged();
+    return result;
   }
 
   // Calculate account balances dynamically based on confirmed transactions
@@ -531,7 +539,9 @@ class DatabaseService {
 
   Future<int> insertCategory(CategoryModel category) async {
     final db = await database;
-    return await db.insert('categories', category.toMap());
+    final result = await db.insert('categories', category.toMap());
+    _notifyDashboardDataChanged();
+    return result;
   }
 
   Future<List<CategoryModel>> getAllCategories() async {
@@ -542,21 +552,25 @@ class DatabaseService {
 
   Future<int> updateCategory(CategoryModel category) async {
     final db = await database;
-    return await db.update(
+    final result = await db.update(
       'categories',
       category.toMap(),
       where: 'id = ?',
       whereArgs: [category.id],
     );
+    if (result > 0) _notifyDashboardDataChanged();
+    return result;
   }
 
   Future<int> deleteCategory(int id) async {
     final db = await database;
-    return await db.delete(
+    final result = await db.delete(
       'categories',
       where: 'id = ?',
       whereArgs: [id],
     );
+    if (result > 0) _notifyDashboardDataChanged();
+    return result;
   }
 
   // --- TRANSACTIONS CRUD ---
@@ -591,7 +605,9 @@ class DatabaseService {
       }
     }
 
-    return await db.insert('transactions', tx.toMap());
+    final result = await db.insert('transactions', tx.toMap());
+    _notifyDashboardDataChanged();
+    return result;
   }
 
   // Retrieve pending transactions
@@ -635,21 +651,34 @@ class DatabaseService {
 
   Future<int> updateTransaction(TransactionModel tx) async {
     final db = await database;
-    return await db.update(
+    final result = await db.update(
       'transactions',
       tx.toMap(),
       where: 'id = ?',
       whereArgs: [tx.id],
     );
+    if (result > 0) _notifyDashboardDataChanged();
+    return result;
   }
 
   Future<int> deleteTransaction(int id) async {
     final db = await database;
-    return await db.delete(
+    final result = await db.delete(
       'transactions',
       where: 'id = ?',
       whereArgs: [id],
     );
+    if (result > 0) _notifyDashboardDataChanged();
+    return result;
+  }
+
+  /// Call this after a bulk import or restore that writes directly to SQLite.
+  void notifyDashboardDataChanged() {
+    _notifyDashboardDataChanged();
+  }
+
+  void _notifyDashboardDataChanged() {
+    dashboardDataVersion.value++;
   }
 
   Future<List<String>> getUniqueDescriptions() async {

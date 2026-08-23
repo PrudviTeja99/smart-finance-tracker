@@ -264,6 +264,7 @@ class BackupService {
         }
       });
 
+      dbService.notifyDashboardDataChanged();
       return true;
     } catch (e) {
       debugPrint('Error during JSON import: $e');
@@ -319,6 +320,7 @@ class BackupService {
         }
       });
 
+      dbService.notifyDashboardDataChanged();
       return true;
     } catch (e) {
       debugPrint('Error during restore: $e');
@@ -428,6 +430,7 @@ class BackupService {
         }
       }
 
+      dbService.notifyDashboardDataChanged();
       return true;
     } catch (e) {
       debugPrint('Error importing CSV: $e');

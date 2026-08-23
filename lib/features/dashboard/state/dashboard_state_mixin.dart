@@ -7,6 +7,7 @@ import '../../../models/account_model.dart';
 import '../../../models/category_model.dart';
 import '../../../services/database_service.dart';
 import '../models/dashboard_data.dart';
+import '../models/dashboard_data_cache.dart';
 import '../logic/filter_logic.dart';
 import '../logic/privacy_logic.dart';
 
@@ -33,6 +34,12 @@ mixin DashboardStateMixin<T extends StatefulWidget> on State<T> {
   double totalExpense = 0.0;
   double netBalance = 0.0;
   double savingsRate = 0.0;
+
+  final DashboardDataCache _dataCache = DashboardDataCache();
+  int _loadedDataVersion = -1;
+  String? _baseFilterKey;
+  List<TransactionModel> _baseFilteredTransactions = const [];
+  DashboardTotals? _baseTotals;
 
   // Controllers
   final TextEditingController searchController = TextEditingController();
@@ -118,12 +125,18 @@ mixin DashboardStateMixin<T extends StatefulWidget> on State<T> {
   Future<void> refreshData() async {
     if (!mounted) return;
     try {
-      final data = await fetchDashboardData();
+      final dbService = DatabaseService.instance;
+      final version = dbService.dashboardDataVersion.value;
+      final data = await _dataCache.load(
+        version: version,
+        loader: fetchDashboardData,
+      );
       if (!mounted) return;
       setState(() {
         allTransactions = data.allTransactions;
         accounts = data.accounts;
         categories = data.categories;
+        _loadedDataVersion = version;
       });
       applyFilters();
     } catch (e) {
@@ -135,24 +148,30 @@ mixin DashboardStateMixin<T extends StatefulWidget> on State<T> {
     final dateRange = FilterLogic.getDateRange(timeframe, startDate, endDate);
     customFilterLabel = dateRange.customLabel;
 
-    // 1. Calculate overall totals for Hero Card (unfiltered by type/search)
-    final dateAndAccountMatched = FilterLogic.applyFilters(
-      allTransactions: allTransactions,
-      dateRange: dateRange,
-      selectedAccountId: selectedAccountFilterId,
-      typeFilter: 'all',
-      searchQuery: '',
-    );
-    final totals = FilterLogic.calculateTotals(dateAndAccountMatched);
+    final baseFilterKey = [
+      _loadedDataVersion,
+      dateRange.start.microsecondsSinceEpoch,
+      dateRange.end.microsecondsSinceEpoch,
+      selectedAccountFilterId,
+    ].join('|');
 
-    // 2. Filter transactions for Analytics Chart & Ledger List
-    final matched = FilterLogic.applyFilters(
-      allTransactions: allTransactions,
-      dateRange: dateRange,
-      selectedAccountId: selectedAccountFilterId,
+    if (_baseFilterKey != baseFilterKey) {
+      _baseFilteredTransactions = FilterLogic.filterByDateAndAccount(
+        allTransactions: allTransactions,
+        dateRange: dateRange,
+        selectedAccountId: selectedAccountFilterId,
+      );
+      _baseTotals = FilterLogic.calculateTotals(_baseFilteredTransactions);
+      _baseFilterKey = baseFilterKey;
+    }
+
+    // Only type/search changes need to filter the already-matched base set.
+    final matched = FilterLogic.filterByTypeAndSearch(
+      transactions: _baseFilteredTransactions,
       typeFilter: selectedTypeFilter,
       searchQuery: searchController.text,
     );
+    final totals = _baseTotals!;
 
     setState(() {
       filteredTransactions = matched;

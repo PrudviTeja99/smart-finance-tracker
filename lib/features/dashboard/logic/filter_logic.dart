@@ -85,7 +85,25 @@ class FilterLogic {
     required String typeFilter, // 'all', 'debit', 'credit', 'transfer'
     required String searchQuery,
   }) {
-    final filteredByDateAndAccount = allTransactions.where((tx) {
+    final filteredByDateAndAccount = filterByDateAndAccount(
+      allTransactions: allTransactions,
+      dateRange: dateRange,
+      selectedAccountId: selectedAccountId,
+    );
+
+    return filterByTypeAndSearch(
+      transactions: filteredByDateAndAccount,
+      typeFilter: typeFilter,
+      searchQuery: searchQuery,
+    );
+  }
+
+  static List<TransactionModel> filterByDateAndAccount({
+    required List<TransactionModel> allTransactions,
+    required DateRange dateRange,
+    required int? selectedAccountId,
+  }) {
+    return allTransactions.where((tx) {
       final isWithinDates =
           tx.date.isAfter(dateRange.start.subtract(const Duration(seconds: 1))) &&
               tx.date.isBefore(dateRange.end.add(const Duration(seconds: 1)));
@@ -93,15 +111,20 @@ class FilterLogic {
           tx.accountId == selectedAccountId ||
           tx.toAccountId == selectedAccountId;
       return isWithinDates && matchesAccount;
-    }).toList();
+    }).toList(growable: false);
+  }
 
-    // Type filter
-    final filteredByType = filteredByDateAndAccount.where((tx) {
+  static List<TransactionModel> filterByTypeAndSearch({
+    required List<TransactionModel> transactions,
+    required String typeFilter,
+    required String searchQuery,
+  }) {
+    final filteredByType = transactions.where((tx) {
       if (typeFilter == 'debit') return tx.type == 'debit';
       if (typeFilter == 'credit') return tx.type == 'credit';
       if (typeFilter == 'transfer') return tx.type == 'transfer';
       return true; // 'all'
-    }).toList();
+    }).toList(growable: false);
 
     // Search query
     final query = searchQuery.toLowerCase().trim();
