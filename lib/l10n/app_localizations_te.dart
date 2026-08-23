@@ -175,8 +175,10 @@ class AppLocalizationsTe extends AppLocalizations {
       'స్మార్ట్ ట్రాకింగ్ పనితీరును పెంచడానికి క్రింది వికల్పాలను కాన్ఫిగర్ చేయండి.';
 
   @override
-  String get settingsEnableAutoStartTitle =>
-      'ఆటో స్టార్ట్ ప్రారంభించు (సిఫార్సు చేయబడింది)';
+  String get settingsHighlyRecommendedTag => 'అత్యంత సిఫార్సు చేయబడింది';
+
+  @override
+  String get settingsEnableAutoStartTitle => 'ఆటో స్టార్ట్ ప్రారంభించు';
 
   @override
   String get settingsEnableAutoStartDescription =>

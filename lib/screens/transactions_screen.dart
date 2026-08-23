@@ -490,7 +490,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                 _customStartDate = start;
                                 _customEndDate = end;
                                 _customMonthLabel =
-                                    DateFormat('MMMM yyyy').format(start);
+                                    DateFormat('MMMM yyyy', Localizations.localeOf(context).toString()).format(start);
                               });
                               setSheetState(() {});
                             },

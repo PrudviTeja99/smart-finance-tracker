@@ -216,22 +216,38 @@ mixin DashboardStateMixin<T extends StatefulWidget> on State<T> {
 
   String getTimeframeDisplay(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).toString();
     final now = DateTime.now();
     if (timeframe == 'This Month') {
-      return '${strings.transactionsThisMonth} (${DateFormat('MMMM yyyy').format(now)})';
+      return '${strings.transactionsThisMonth} (${DateFormat('MMMM yyyy', locale).format(now)})';
     } else if (timeframe == 'This Year') {
       return '${strings.transactionsThisYear} (${now.year})';
     } else if (timeframe == 'Today') {
-      return '${strings.timeframeToday} (${now.day} ${DateFormat('MMM').format(now)})';
+      return '${strings.timeframeToday} (${now.day} ${DateFormat('MMM', locale).format(now)})';
     } else if (timeframe == 'Yesterday') {
       final yest = now.subtract(const Duration(days: 1));
-      return '${strings.timeframeYesterday} (${yest.day} ${DateFormat('MMM').format(yest)})';
+      return '${strings.timeframeYesterday} (${yest.day} ${DateFormat('MMM', locale).format(yest)})';
     } else if (timeframe == 'This Week') {
       final startOffset = now.weekday - 1;
       final tempStart = now.subtract(Duration(days: startOffset));
-      return '${strings.transactionsThisWeek} (${tempStart.day} ${DateFormat('MMM').format(tempStart)} - ${now.day} ${DateFormat('MMM').format(now)})';
-    } else if (timeframe == 'Custom' && customFilterLabel.isNotEmpty) {
-      return customFilterLabel;
+      return '${strings.transactionsThisWeek} (${tempStart.day} ${DateFormat('MMM', locale).format(tempStart)} - ${now.day} ${DateFormat('MMM', locale).format(now)})';
+    } else if (timeframe == 'Custom') {
+      if (startDate != null && endDate != null) {
+        final df = DateFormat('dd MMM', locale);
+        if (startDate!.year == endDate!.year &&
+            startDate!.month == endDate!.month &&
+            startDate!.day == endDate!.day) {
+          return df.format(startDate!);
+        } else if (startDate!.day == 1 &&
+            endDate!.day == DateTime(endDate!.year, endDate!.month + 1, 0).day &&
+            startDate!.month == endDate!.month &&
+            startDate!.year == endDate!.year) {
+          return DateFormat('MMMM yyyy', locale).format(startDate!);
+        } else {
+          return '${df.format(startDate!)} - ${df.format(endDate!)}';
+        }
+      }
+      if (customFilterLabel.isNotEmpty) return customFilterLabel;
     }
     return timeframe;
   }

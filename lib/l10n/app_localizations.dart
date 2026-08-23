@@ -398,10 +398,16 @@ abstract class AppLocalizations {
   /// **'Configure the options below to maximize Smart Tracking reliability, especially on devices with aggressive background management.'**
   String get settingsReliabilityRecommendationsSubtitle;
 
+  /// No description provided for @settingsHighlyRecommendedTag.
+  ///
+  /// In en, this message translates to:
+  /// **'HIGHLY RECOMMENDED'**
+  String get settingsHighlyRecommendedTag;
+
   /// No description provided for @settingsEnableAutoStartTitle.
   ///
   /// In en, this message translates to:
-  /// **'Enable Auto Start (Highly Recommended)'**
+  /// **'Enable Auto Start'**
   String get settingsEnableAutoStartTitle;
 
   /// No description provided for @settingsEnableAutoStartDescription.

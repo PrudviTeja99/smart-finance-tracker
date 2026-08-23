@@ -44,12 +44,14 @@ Future<void> showTimeframeFilterSheet({
             }
           }
 
+          final locale = Localizations.localeOf(context).toString();
+
           final dateLabel =
-              isSpecificDate ? DateFormat('dd MMM yyyy').format(startDate!) : '';
+              isSpecificDate ? DateFormat('dd MMM yyyy', locale).format(startDate!) : '';
           final monthLabel =
-              isSpecificMonth ? DateFormat('MMMM yyyy').format(startDate!) : '';
+              isSpecificMonth ? DateFormat('MMMM yyyy', locale).format(startDate!) : '';
           final rangeLabel = isDateRange
-              ? '${DateFormat('dd MMM').format(startDate!)} - ${DateFormat('dd MMM').format(endDate!)}'
+              ? '${DateFormat('dd MMM', locale).format(startDate!)} - ${DateFormat('dd MMM', locale).format(endDate!)}'
               : '';
 
           Widget buildRadioOption(String value) {
@@ -58,17 +60,17 @@ Future<void> showTimeframeFilterSheet({
             String displayLabel = value;
 
             if (value == 'Today') {
-              displayLabel = '${strings.timeframeToday} (${now.day} ${DateFormat('MMM').format(now)})';
+              displayLabel = '${strings.timeframeToday} (${now.day} ${DateFormat('MMM', locale).format(now)})';
             } else if (value == 'Yesterday') {
               final yest = now.subtract(const Duration(days: 1));
-              displayLabel = '${strings.timeframeYesterday} (${yest.day} ${DateFormat('MMM').format(yest)})';
+              displayLabel = '${strings.timeframeYesterday} (${yest.day} ${DateFormat('MMM', locale).format(yest)})';
             } else if (value == 'This Week') {
               final startOffset = now.weekday - 1;
               final tempStart = now.subtract(Duration(days: startOffset));
               displayLabel =
-                  '${strings.transactionsThisWeek} (${tempStart.day} ${DateFormat('MMM').format(tempStart)} - ${now.day} ${DateFormat('MMM').format(now)})';
+                  '${strings.transactionsThisWeek} (${tempStart.day} ${DateFormat('MMM', locale).format(tempStart)} - ${now.day} ${DateFormat('MMM', locale).format(now)})';
             } else if (value == 'This Month') {
-              displayLabel = '${strings.transactionsThisMonth} (${DateFormat('MMMM yyyy').format(now)})';
+              displayLabel = '${strings.transactionsThisMonth} (${DateFormat('MMMM yyyy', locale).format(now)})';
             } else if (value == 'This Year') {
               displayLabel = '${strings.transactionsThisYear} (${now.year})';
             }

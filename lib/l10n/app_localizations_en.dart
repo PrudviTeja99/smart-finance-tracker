@@ -177,8 +177,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Configure the options below to maximize Smart Tracking reliability, especially on devices with aggressive background management.';
 
   @override
-  String get settingsEnableAutoStartTitle =>
-      'Enable Auto Start (Highly Recommended)';
+  String get settingsHighlyRecommendedTag => 'HIGHLY RECOMMENDED';
+
+  @override
+  String get settingsEnableAutoStartTitle => 'Enable Auto Start';
 
   @override
   String get settingsEnableAutoStartDescription =>

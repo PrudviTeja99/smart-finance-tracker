@@ -1,5 +1,6 @@
 import 'package:finance_tracker/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 Future<void> showMonthYearPickerSheet({
   required BuildContext context,
@@ -8,10 +9,10 @@ Future<void> showMonthYearPickerSheet({
   FocusManager.instance.primaryFocus?.unfocus();
 
   final now = DateTime.now();
-  final months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
+  final locale = Localizations.localeOf(context).toString();
+  final months = List.generate(12, (index) {
+    return DateFormat('MMMM', locale).format(DateTime(now.year, index + 1, 1));
+  });
   final years = List.generate(11, (index) => 2020 + index);
 
   int tempSelectedMonth = now.month;

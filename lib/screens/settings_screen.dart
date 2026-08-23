@@ -1367,67 +1367,123 @@ class _SettingsScreenState extends State<SettingsScreen>
     required String description,
     required String buttonText,
     required VoidCallback onTap,
+    bool isHighlyRecommended = false,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildLeadingIcon(icon, color: const Color(0xFF818CF8)),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                  color: Colors.white,
+            Row(
+              children: [
+                _buildLeadingIcon(icon, color: const Color(0xFF818CF8)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
+                const Icon(Icons.chevron_right_rounded,
+                    color: Color(0xFF94A3B8), size: 20),
+              ],
+            ),
+            if (isHighlyRecommended) ...[
+              const SizedBox(height: 6),
+              Padding(
+                padding: const EdgeInsets.only(left: 46),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                        color: const Color(0xFFF59E0B).withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.star_rounded,
+                        size: 11,
+                        color: Color(0xFFF59E0B),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        AppLocalizations.of(context)!
+                            .settingsHighlyRecommendedTag
+                            .toUpperCase(),
+                        style: const TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFF59E0B),
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 6),
+            Padding(
+              padding: const EdgeInsets.only(left: 46),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    description,
+                    style: const TextStyle(
+                      color: Colors.white54,
+                      fontSize: 11,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF6366F1).withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: const Color(0xFF6366F1).withValues(alpha: 0.35),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          buttonText,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF818CF8),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        const Icon(
+                          Icons.arrow_forward_rounded,
+                          size: 14,
+                          color: Color(0xFF818CF8),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
         ),
-        const SizedBox(height: 8),
-        Text(
-          description,
-          style: const TextStyle(
-            color: Colors.white54,
-            fontSize: 12,
-            height: 1.4,
-          ),
-        ),
-        const SizedBox(height: 12),
-        InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(8),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(
-              color: const Color(0xFF6366F1).withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: const Color(0xFF6366F1).withValues(alpha: 0.3),
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.settings_rounded,
-                    size: 16, color: Color(0xFF818CF8)),
-                const SizedBox(width: 8),
-                Text(
-                  buttonText,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF818CF8),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
+      ),
     );
   }
 
@@ -1457,51 +1513,73 @@ class _SettingsScreenState extends State<SettingsScreen>
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFF0F172A),
+                color: const Color(0xFF0B132B),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFF334155).withValues(alpha: 0.5)),
+                border: Border.all(
+                  color: const Color(0xFF6366F1).withValues(alpha: 0.35),
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      _buildLeadingIcon(Icons.shield_rounded, color: const Color(0xFF818CF8)),
-                      const SizedBox(width: 10),
-                      Text(
-                        strings.settingsReliabilityRecommendations,
-                        style: const TextStyle(
-                            color: Color(0xFFE2E8F0),
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold),
-                      ),
-                    ],
+                  // Explanation Header Banner
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                          color: const Color(0xFF6366F1).withValues(alpha: 0.2)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            _buildLeadingIcon(Icons.shield_rounded,
+                                color: const Color(0xFF818CF8)),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                strings.settingsReliabilityRecommendations,
+                                style: const TextStyle(
+                                    color: Color(0xFFE2E8F0),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          strings.settingsReliabilityRecommendationsSubtitle,
+                          style: const TextStyle(
+                              color: Colors.white70, fontSize: 12, height: 1.4),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    strings.settingsReliabilityRecommendationsSubtitle,
-                    style: const TextStyle(
-                        color: Colors.white54, fontSize: 12, height: 1.4),
-                  ),
-                  const SizedBox(height: 16),
                   _buildReliabilityAction(
                     icon: Icons.rocket_launch_rounded,
+                    isHighlyRecommended: true,
                     title: strings.settingsEnableAutoStartTitle,
                     description:
                         strings.settingsEnableAutoStartDescription,
                     buttonText: strings.settingsEnableAutoStartBtn,
                     onTap: () => NotificationHandler.openAutoStartSettings(),
                   ),
-                  Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 24),
+                  Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 16),
                   _buildReliabilityAction(
                     icon: Icons.battery_saver_rounded,
+                    isHighlyRecommended: true,
                     title: strings.settingsEnableUnrestrictedRunTitle,
                     description:
                         strings.settingsEnableUnrestrictedRunDescription,
                     buttonText: strings.settingsEnableUnrestrictedRunBtn,
                     onTap: () => NotificationHandler.requestBatteryExemption(),
                   ),
-                  Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 24),
+                  Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 16),
                   _buildReliabilityAction(
                     icon: Icons.notifications_active_rounded,
                     title: strings.settingsKeepNotificationAccessTitle,
