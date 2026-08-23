@@ -2313,6 +2313,252 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Model trained: this pattern will be ignored.'**
   String get modelTrainingPatternIgnoredSuccess;
+
+  /// No description provided for @categoriesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Categories'**
+  String get categoriesTitle;
+
+  /// No description provided for @categoriesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No categories yet. Tap + to add one.'**
+  String get categoriesEmpty;
+
+  /// No description provided for @categoriesDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Category?'**
+  String get categoriesDeleteTitle;
+
+  /// No description provided for @categoriesDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete \"{name}\"?'**
+  String categoriesDeleteConfirm(String name);
+
+  /// No description provided for @categoriesAddTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Category'**
+  String get categoriesAddTitle;
+
+  /// No description provided for @categoriesEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Category'**
+  String get categoriesEditTitle;
+
+  /// No description provided for @categoriesNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Category Name'**
+  String get categoriesNameLabel;
+
+  /// No description provided for @categoriesThemeColor.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme Color'**
+  String get categoriesThemeColor;
+
+  /// No description provided for @categoriesIconLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Category Icon'**
+  String get categoriesIconLabel;
+
+  /// No description provided for @categoriesSearchIconPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Search from 60+ modern icons'**
+  String get categoriesSearchIconPrompt;
+
+  /// No description provided for @categoriesBrowseIcons.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse'**
+  String get categoriesBrowseIcons;
+
+  /// No description provided for @categoriesSearchIconTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Search Category Icons'**
+  String get categoriesSearchIconTitle;
+
+  /// No description provided for @categoriesSearchIconHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by keyword (e.g. food, taxi, bill...)'**
+  String get categoriesSearchIconHint;
+
+  /// No description provided for @categoriesNoIconsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching icons found'**
+  String get categoriesNoIconsFound;
+
+  /// No description provided for @accountFilterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Account Filter'**
+  String get accountFilterTitle;
+
+  /// No description provided for @timeframeFilterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Date Filter'**
+  String get timeframeFilterTitle;
+
+  /// No description provided for @timeframeToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get timeframeToday;
+
+  /// No description provided for @timeframeYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get timeframeYesterday;
+
+  /// No description provided for @timeframeSpecificDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Specific Date...'**
+  String get timeframeSpecificDate;
+
+  /// No description provided for @timeframeSpecificMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Specific Month...'**
+  String get timeframeSpecificMonth;
+
+  /// No description provided for @timeframeCustomRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom Date Range...'**
+  String get timeframeCustomRange;
+
+  /// No description provided for @pickerSelectMonthYear.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Month & Year'**
+  String get pickerSelectMonthYear;
+
+  /// No description provided for @pickerApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get pickerApply;
+
+  /// No description provided for @logInspectorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Log Inspector'**
+  String get logInspectorTitle;
+
+  /// No description provided for @logInspectorSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search logs...'**
+  String get logInspectorSearchHint;
+
+  /// No description provided for @logInspectorCloseSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Close Search'**
+  String get logInspectorCloseSearch;
+
+  /// No description provided for @logInspectorSearchLogs.
+  ///
+  /// In en, this message translates to:
+  /// **'Search Logs'**
+  String get logInspectorSearchLogs;
+
+  /// No description provided for @logInspectorAutoScrollOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-scroll ON'**
+  String get logInspectorAutoScrollOn;
+
+  /// No description provided for @logInspectorAutoScrollOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-scroll OFF'**
+  String get logInspectorAutoScrollOff;
+
+  /// No description provided for @logInspectorDeleteDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete This Day\'s Log'**
+  String get logInspectorDeleteDay;
+
+  /// No description provided for @logInspectorClearTodayTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Today\'s Logs?'**
+  String get logInspectorClearTodayTitle;
+
+  /// No description provided for @logInspectorDeleteFileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete This Day\'s Log File?'**
+  String get logInspectorDeleteFileTitle;
+
+  /// No description provided for @logInspectorDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'This permanently deletes the log file for {date}.'**
+  String logInspectorDeleteConfirm(String date);
+
+  /// No description provided for @logInspectorToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get logInspectorToday;
+
+  /// No description provided for @logInspectorNoLogsMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'No logs match \"{query}\"'**
+  String logInspectorNoLogsMatch(String query);
+
+  /// No description provided for @logInspectorNoLogsForDay.
+  ///
+  /// In en, this message translates to:
+  /// **'No logs for this day.'**
+  String get logInspectorNoLogsForDay;
+
+  /// No description provided for @dashboardOverviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get dashboardOverviewTitle;
+
+  /// No description provided for @dashboardLockClockTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to reveal amounts'**
+  String get dashboardLockClockTooltip;
+
+  /// No description provided for @dashboardLatestTransactions.
+  ///
+  /// In en, this message translates to:
+  /// **'Latest Transactions'**
+  String get dashboardLatestTransactions;
+
+  /// No description provided for @dashboardNoTransactions.
+  ///
+  /// In en, this message translates to:
+  /// **'No transactions recorded yet.'**
+  String get dashboardNoTransactions;
+
+  /// No description provided for @dashboardShowMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Show More'**
+  String get dashboardShowMore;
 }
 
 class _AppLocalizationsDelegate

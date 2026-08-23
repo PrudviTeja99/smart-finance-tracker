@@ -1,3 +1,4 @@
+import 'package:finance_tracker/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -19,6 +20,7 @@ Future<void> showTimeframeFilterSheet({
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
     builder: (context) {
+      final strings = AppLocalizations.of(context)!;
       return StatefulBuilder(
         builder: (context, setSheetState) {
           final isCustom = timeframe == 'Custom';
@@ -56,19 +58,19 @@ Future<void> showTimeframeFilterSheet({
             String displayLabel = value;
 
             if (value == 'Today') {
-              displayLabel = 'Today (${now.day} ${DateFormat('MMM').format(now)})';
+              displayLabel = '${strings.timeframeToday} (${now.day} ${DateFormat('MMM').format(now)})';
             } else if (value == 'Yesterday') {
               final yest = now.subtract(const Duration(days: 1));
-              displayLabel = 'Yesterday (${yest.day} ${DateFormat('MMM').format(yest)})';
+              displayLabel = '${strings.timeframeYesterday} (${yest.day} ${DateFormat('MMM').format(yest)})';
             } else if (value == 'This Week') {
               final startOffset = now.weekday - 1;
               final tempStart = now.subtract(Duration(days: startOffset));
               displayLabel =
-                  'This Week (${tempStart.day} ${DateFormat('MMM').format(tempStart)} - ${now.day} ${DateFormat('MMM').format(now)})';
+                  '${strings.transactionsThisWeek} (${tempStart.day} ${DateFormat('MMM').format(tempStart)} - ${now.day} ${DateFormat('MMM').format(now)})';
             } else if (value == 'This Month') {
-              displayLabel = 'This Month (${DateFormat('MMMM yyyy').format(now)})';
+              displayLabel = '${strings.transactionsThisMonth} (${DateFormat('MMMM yyyy').format(now)})';
             } else if (value == 'This Year') {
-              displayLabel = 'This Year (${now.year})';
+              displayLabel = '${strings.transactionsThisYear} (${now.year})';
             }
 
             return InkWell(
@@ -173,11 +175,11 @@ Future<void> showTimeframeFilterSheet({
                     ),
                   ),
                   const SizedBox(height: 20),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 24),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Text(
-                      'Select Date Filter',
-                      style: TextStyle(
+                      strings.timeframeFilterTitle,
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -195,7 +197,7 @@ Future<void> showTimeframeFilterSheet({
                     child: Divider(color: Colors.white10),
                   ),
                   buildCustomRadioOption(
-                    title: 'Specific Date...',
+                    title: strings.timeframeSpecificDate,
                     isSelected: isSpecificDate,
                     subLabel: dateLabel,
                     onTap: () async {
@@ -227,7 +229,7 @@ Future<void> showTimeframeFilterSheet({
                     },
                   ),
                   buildCustomRadioOption(
-                    title: 'Specific Month...',
+                    title: strings.timeframeSpecificMonth,
                     isSelected: isSpecificMonth,
                     subLabel: monthLabel,
                     onTap: () async {
@@ -236,7 +238,7 @@ Future<void> showTimeframeFilterSheet({
                     },
                   ),
                   buildCustomRadioOption(
-                    title: 'Custom Date Range...',
+                    title: strings.timeframeCustomRange,
                     isSelected: isDateRange,
                     subLabel: rangeLabel,
                     onTap: () async {

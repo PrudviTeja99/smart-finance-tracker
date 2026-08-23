@@ -1,6 +1,6 @@
+import 'package:finance_tracker/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import '../../models/transaction_model.dart';
-import '../../models/account_model.dart';
 import 'state/dashboard_state_mixin.dart';
 import 'widgets/summary_header.dart';
 import 'widgets/hero_card.dart';
@@ -8,7 +8,6 @@ import 'widgets/account_carousel.dart';
 import 'widgets/month_switcher.dart';
 import 'widgets/type_filter_chips.dart';
 import 'widgets/analytics_card.dart';
-import 'widgets/search_bar.dart';
 import 'widgets/ledger_list.dart';
 import '../../screens/transactions_screen.dart';
 import 'sheets/timeframe_filter_sheet.dart';
@@ -323,25 +322,26 @@ class _DashboardScreenState extends State<DashboardScreen>
                         ),
                         child: Builder(
                           builder: (context) {
+                            final strings = AppLocalizations.of(context)!;
                             final latest5Transactions =
                                 allTransactions.take(5).toList();
 
                             return Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                const Text(
-                                  'Latest Transactions',
-                                  style: TextStyle(
+                                Text(
+                                  strings.dashboardLatestTransactions,
+                                  style: const TextStyle(
                                       fontSize: 18, fontWeight: FontWeight.bold),
                                 ),
                                 const SizedBox(height: 8),
                                 if (latest5Transactions.isEmpty)
-                                  const Padding(
-                                    padding: EdgeInsets.symmetric(vertical: 24),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 24),
                                     child: Center(
                                       child: Text(
-                                        'No transactions recorded yet.',
-                                        style: TextStyle(color: Colors.white54),
+                                        strings.dashboardNoTransactions,
+                                        style: const TextStyle(color: Colors.white54),
                                       ),
                                     ),
                                   )
@@ -382,9 +382,9 @@ class _DashboardScreenState extends State<DashboardScreen>
                                           color: Color(0xFF6366F1),
                                           size: 16,
                                         ),
-                                        label: const Text(
-                                          'Show More',
-                                          style: TextStyle(
+                                        label: Text(
+                                          strings.dashboardShowMore,
+                                          style: const TextStyle(
                                             color: Color(0xFF6366F1),
                                             fontSize: 13,
                                             fontWeight: FontWeight.bold,

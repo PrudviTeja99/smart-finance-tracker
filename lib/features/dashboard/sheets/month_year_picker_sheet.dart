@@ -1,3 +1,4 @@
+import 'package:finance_tracker/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 Future<void> showMonthYearPickerSheet({
@@ -24,6 +25,7 @@ Future<void> showMonthYearPickerSheet({
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
     builder: (context) {
+      final strings = AppLocalizations.of(context)!;
       return StatefulBuilder(
         builder: (context, setPickerState) {
           return SafeArea(
@@ -46,9 +48,9 @@ Future<void> showMonthYearPickerSheet({
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Select Month & Year',
-                        style: TextStyle(
+                      Text(
+                        strings.pickerSelectMonthYear,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -68,9 +70,9 @@ Future<void> showMonthYearPickerSheet({
                           onMonthSelected(start, end);
                           Navigator.pop(context);
                         },
-                        child: const Text(
-                          'Apply',
-                          style: TextStyle(
+                        child: Text(
+                          strings.pickerApply,
+                          style: const TextStyle(
                             color: Color(0xFF6366F1),
                             fontWeight: FontWeight.bold,
                             fontSize: 16,

@@ -1,3 +1,4 @@
+import 'package:finance_tracker/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../services/developer/log_service.dart';
@@ -107,6 +108,7 @@ class _LogInspectorScreenState extends State<LogInspectorScreen> {
   }
 
   Future<void> _confirmClearCurrentDay() async {
+    final strings = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -114,25 +116,25 @@ class _LogInspectorScreenState extends State<LogInspectorScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           _isViewingToday
-              ? 'Clear Today\'s Logs?'
-              : 'Delete This Day\'s Log File?',
+              ? strings.logInspectorClearTodayTitle
+              : strings.logInspectorDeleteFileTitle,
           style:
               const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         content: Text(
-          'This permanently deletes the log file for ${DateFormat('dd MMM yyyy').format(_selectedDate)}.',
+          strings.logInspectorDeleteConfirm(DateFormat('dd MMM yyyy').format(_selectedDate)),
           style: const TextStyle(color: Colors.white70),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child:
-                const Text('Cancel', style: TextStyle(color: Colors.white38)),
+                Text(strings.inboxCancel, style: const TextStyle(color: Colors.white38)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete',
-                style: TextStyle(
+            child: Text(strings.archivedAlertsDelete,
+                style: const TextStyle(
                     color: Color(0xFFEF4444), fontWeight: FontWeight.bold)),
           ),
         ],
@@ -150,6 +152,7 @@ class _LogInspectorScreenState extends State<LogInspectorScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     final sourceLogs = _isViewingToday ? LogService.instance.logs : _staticLogs;
     final filtered = _query.isEmpty
         ? sourceLogs
@@ -167,15 +170,15 @@ class _LogInspectorScreenState extends State<LogInspectorScreen> {
                 focusNode: _searchFocusNode,
                 autofocus: true,
                 style: const TextStyle(color: Colors.white, fontSize: 14),
-                decoration: const InputDecoration(
-                  hintText: 'Search logs...',
-                  hintStyle: TextStyle(color: Colors.white30, fontSize: 14),
+                decoration: InputDecoration(
+                  hintText: strings.logInspectorSearchHint,
+                  hintStyle: const TextStyle(color: Colors.white30, fontSize: 14),
                   border: InputBorder.none,
                 ),
                 onChanged: (val) => setState(() => _query = val),
               )
-            : const Text('Log Inspector',
-                style: TextStyle(fontWeight: FontWeight.bold)),
+            : Text(strings.logInspectorTitle,
+                style: const TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
@@ -183,7 +186,7 @@ class _LogInspectorScreenState extends State<LogInspectorScreen> {
             icon: Icon(
                 _isSearching ? Icons.close_rounded : Icons.search_rounded,
                 color: Colors.white70),
-            tooltip: _isSearching ? 'Close Search' : 'Search Logs',
+            tooltip: _isSearching ? strings.logInspectorCloseSearch : strings.logInspectorSearchLogs,
             onPressed: _toggleSearch,
           ),
           if (_isViewingToday)
@@ -194,12 +197,12 @@ class _LogInspectorScreenState extends State<LogInspectorScreen> {
                     : Icons.pause_circle_outline_rounded,
                 color: _autoScroll ? const Color(0xFF6366F1) : Colors.white54,
               ),
-              tooltip: _autoScroll ? 'Auto-scroll ON' : 'Auto-scroll OFF',
+              tooltip: _autoScroll ? strings.logInspectorAutoScrollOn : strings.logInspectorAutoScrollOff,
               onPressed: () => setState(() => _autoScroll = !_autoScroll),
             ),
           IconButton(
             icon: const Icon(Icons.delete_sweep_rounded, color: Colors.white70),
-            tooltip: 'Delete This Day\'s Log',
+            tooltip: strings.logInspectorDeleteDay,
             onPressed: _confirmClearCurrentDay,
           ),
         ],
@@ -221,7 +224,7 @@ class _LogInspectorScreenState extends State<LogInspectorScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: ChoiceChip(
                     label: Text(
-                        isToday ? 'Today' : DateFormat('dd MMM').format(date)),
+                        isToday ? strings.logInspectorToday : DateFormat('dd MMM').format(date)),
                     selected: isSelected,
                     onSelected: (_) => _selectDate(date),
                     selectedColor: const Color(0xFF6366F1),
@@ -250,8 +253,8 @@ class _LogInspectorScreenState extends State<LogInspectorScreen> {
                     ? Center(
                         child: Text(
                           _query.isNotEmpty
-                              ? 'No logs match "$_query"'
-                              : 'No logs for this day.',
+                              ? strings.logInspectorNoLogsMatch(_query)
+                              : strings.logInspectorNoLogsForDay,
                           style: const TextStyle(color: Colors.white38),
                         ),
                       )

@@ -1283,4 +1283,134 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get modelTrainingPatternIgnoredSuccess =>
       'Model trained: this pattern will be ignored.';
+
+  @override
+  String get categoriesTitle => 'Manage Categories';
+
+  @override
+  String get categoriesEmpty => 'No categories yet. Tap + to add one.';
+
+  @override
+  String get categoriesDeleteTitle => 'Delete Category?';
+
+  @override
+  String categoriesDeleteConfirm(String name) {
+    return 'Are you sure you want to delete \"$name\"?';
+  }
+
+  @override
+  String get categoriesAddTitle => 'Add Category';
+
+  @override
+  String get categoriesEditTitle => 'Edit Category';
+
+  @override
+  String get categoriesNameLabel => 'Category Name';
+
+  @override
+  String get categoriesThemeColor => 'Theme Color';
+
+  @override
+  String get categoriesIconLabel => 'Category Icon';
+
+  @override
+  String get categoriesSearchIconPrompt => 'Search from 60+ modern icons';
+
+  @override
+  String get categoriesBrowseIcons => 'Browse';
+
+  @override
+  String get categoriesSearchIconTitle => 'Search Category Icons';
+
+  @override
+  String get categoriesSearchIconHint =>
+      'Search by keyword (e.g. food, taxi, bill...)';
+
+  @override
+  String get categoriesNoIconsFound => 'No matching icons found';
+
+  @override
+  String get accountFilterTitle => 'Select Account Filter';
+
+  @override
+  String get timeframeFilterTitle => 'Select Date Filter';
+
+  @override
+  String get timeframeToday => 'Today';
+
+  @override
+  String get timeframeYesterday => 'Yesterday';
+
+  @override
+  String get timeframeSpecificDate => 'Specific Date...';
+
+  @override
+  String get timeframeSpecificMonth => 'Specific Month...';
+
+  @override
+  String get timeframeCustomRange => 'Custom Date Range...';
+
+  @override
+  String get pickerSelectMonthYear => 'Select Month & Year';
+
+  @override
+  String get pickerApply => 'Apply';
+
+  @override
+  String get logInspectorTitle => 'Log Inspector';
+
+  @override
+  String get logInspectorSearchHint => 'Search logs...';
+
+  @override
+  String get logInspectorCloseSearch => 'Close Search';
+
+  @override
+  String get logInspectorSearchLogs => 'Search Logs';
+
+  @override
+  String get logInspectorAutoScrollOn => 'Auto-scroll ON';
+
+  @override
+  String get logInspectorAutoScrollOff => 'Auto-scroll OFF';
+
+  @override
+  String get logInspectorDeleteDay => 'Delete This Day\'s Log';
+
+  @override
+  String get logInspectorClearTodayTitle => 'Clear Today\'s Logs?';
+
+  @override
+  String get logInspectorDeleteFileTitle => 'Delete This Day\'s Log File?';
+
+  @override
+  String logInspectorDeleteConfirm(String date) {
+    return 'This permanently deletes the log file for $date.';
+  }
+
+  @override
+  String get logInspectorToday => 'Today';
+
+  @override
+  String logInspectorNoLogsMatch(String query) {
+    return 'No logs match \"$query\"';
+  }
+
+  @override
+  String get logInspectorNoLogsForDay => 'No logs for this day.';
+
+  @override
+  String get dashboardOverviewTitle => 'Overview';
+
+  @override
+  String get dashboardLockClockTooltip => 'Tap to reveal amounts';
+
+  @override
+  String get dashboardLatestTransactions => 'Latest Transactions';
+
+  @override
+  String get dashboardNoTransactions => 'No transactions recorded yet.';
+
+  @override
+  String get dashboardShowMore => 'Show More';
 }

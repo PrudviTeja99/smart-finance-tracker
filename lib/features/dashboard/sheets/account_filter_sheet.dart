@@ -1,6 +1,6 @@
+import 'package:finance_tracker/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import '../../../models/account_model.dart';
-import '../../../utils/app_settings.dart';
 import '../../../utils/app_formatters.dart';
 
 Future<void> showAccountFilterSheet({
@@ -19,6 +19,7 @@ Future<void> showAccountFilterSheet({
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
     builder: (context) {
+      final strings = AppLocalizations.of(context)!;
       return SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(vertical: 20),
@@ -37,11 +38,11 @@ Future<void> showAccountFilterSheet({
                 ),
               ),
               const SizedBox(height: 20),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Text(
-                  'Select Account Filter',
-                  style: TextStyle(
+                  strings.accountFilterTitle,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -68,7 +69,7 @@ Future<void> showAccountFilterSheet({
                               color: Color(0xFF6366F1), size: 20),
                           const SizedBox(width: 12),
                           Text(
-                            'All Accounts',
+                            strings.transactionsAllAccounts,
                             style: TextStyle(
                               color: selectedAccountId == null
                                   ? Colors.white

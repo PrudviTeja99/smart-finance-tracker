@@ -1,3 +1,4 @@
+import 'package:finance_tracker/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import '../../models/category_model.dart';
 import '../../services/database_service.dart';
@@ -20,6 +21,7 @@ Future<void> showManageCategoriesSheet({
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
     builder: (context) {
+      final strings = AppLocalizations.of(context)!;
       return StatefulBuilder(
         builder: (context, setSheetState) {
           return Container(
@@ -31,9 +33,9 @@ Future<void> showManageCategoriesSheet({
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Manage Categories',
-                      style: TextStyle(
+                    Text(
+                      strings.categoriesTitle,
+                      style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: Colors.white),
@@ -62,10 +64,10 @@ Future<void> showManageCategoriesSheet({
                 const SizedBox(height: 16),
                 Expanded(
                   child: categories.isEmpty
-                      ? const Center(
+                      ? Center(
                           child: Text(
-                            'No categories yet. Tap + to add one.',
-                            style: TextStyle(color: Colors.white38),
+                            strings.categoriesEmpty,
+                            style: const TextStyle(color: Colors.white38),
                           ),
                         )
                       : ListView.builder(
@@ -124,20 +126,20 @@ Future<void> showManageCategoriesSheet({
                                           builder: (context) => AlertDialog(
                                             backgroundColor:
                                                 const Color(0xFF1E293B),
-                                            title: const Text('Delete Category?'),
+                                            title: Text(strings.categoriesDeleteTitle),
                                             content: Text(
-                                                'Are you sure you want to delete "${cat.name}"?'),
+                                                strings.categoriesDeleteConfirm(cat.name)),
                                             actions: [
                                               TextButton(
                                                 onPressed: () =>
                                                     Navigator.pop(context, false),
-                                                child: const Text('Cancel'),
+                                                child: Text(strings.inboxCancel),
                                               ),
                                               TextButton(
                                                 onPressed: () =>
                                                     Navigator.pop(context, true),
-                                                child: const Text('Delete',
-                                                    style: TextStyle(
+                                                child: Text(strings.archivedAlertsDelete,
+                                                    style: const TextStyle(
                                                         color: Color(0xFFEF4444))),
                                               ),
                                             ],
@@ -205,6 +207,7 @@ Future<void> showCategoryFormDialog(
       borderRadius: BorderRadius.vertical(top: Radius.circular(24.0)),
     ),
     builder: (context) {
+      final strings = AppLocalizations.of(context)!;
       return StatefulBuilder(
         builder: (context, setDialogState) {
           return GestureDetector(
@@ -234,7 +237,7 @@ Future<void> showCategoryFormDialog(
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      isEdit ? 'Edit Category' : 'Add Category',
+                      isEdit ? strings.categoriesEditTitle : strings.categoriesAddTitle,
                       style: const TextStyle(
                           fontSize: 20, fontWeight: FontWeight.bold),
                       textAlign: TextAlign.center,
@@ -243,15 +246,15 @@ Future<void> showCategoryFormDialog(
                     TextField(
                       controller: nameController,
                       focusNode: nameFocusNode,
-                      decoration: const InputDecoration(
-                        labelText: 'Category Name',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.category_outlined),
+                      decoration: InputDecoration(
+                        labelText: strings.categoriesNameLabel,
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.category_outlined),
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const Text('Theme Color',
-                        style: TextStyle(fontSize: 12, color: Colors.white54)),
+                    Text(strings.categoriesThemeColor,
+                        style: const TextStyle(fontSize: 12, color: Colors.white54)),
                     const SizedBox(height: 8),
                     Center(
                       child: Wrap(
@@ -289,8 +292,8 @@ Future<void> showCategoryFormDialog(
                       ),
                     ),
                     const SizedBox(height: 20),
-                    const Text('Category Icon',
-                        style: TextStyle(fontSize: 12, color: Colors.white54)),
+                    Text(strings.categoriesIconLabel,
+                        style: const TextStyle(fontSize: 12, color: Colors.white54)),
                     const SizedBox(height: 10),
                     InkWell(
                       onTap: () {
@@ -340,9 +343,9 @@ Future<void> showCategoryFormDialog(
                                         fontSize: 14),
                                   ),
                                   const SizedBox(height: 2),
-                                  const Text(
-                                    'Search from 60+ modern icons',
-                                    style: TextStyle(
+                                  Text(
+                                    strings.categoriesSearchIconPrompt,
+                                    style: const TextStyle(
                                         fontSize: 10, color: Color(0xFF818CF8)),
                                   ),
                                 ],
@@ -363,8 +366,8 @@ Future<void> showCategoryFormDialog(
                               ),
                               icon: const Icon(Icons.search_rounded,
                                   size: 14, color: Color(0xFF6366F1)),
-                              label: const Text('Browse',
-                                  style: TextStyle(
+                              label: Text(strings.categoriesBrowseIcons,
+                                  style: const TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold)),
                               onPressed: () {
@@ -402,8 +405,8 @@ Future<void> showCategoryFormDialog(
                                   borderRadius: BorderRadius.circular(12)),
                             ),
                             onPressed: () => Navigator.pop(context),
-                            child: const Text('Cancel',
-                                style: TextStyle(color: Colors.white70)),
+                            child: Text(strings.inboxCancel,
+                                style: const TextStyle(color: Colors.white70)),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -438,7 +441,7 @@ Future<void> showCategoryFormDialog(
 
                               if (context.mounted) Navigator.pop(context);
                             },
-                            child: Text(isEdit ? 'Save' : 'Add',
+                            child: Text(isEdit ? strings.transactionFormSave : strings.inboxConfirm,
                                 style: const TextStyle(
                                     fontWeight: FontWeight.bold)),
                           ),
@@ -496,6 +499,7 @@ class _SearchableIconPickerState extends State<SearchableIconPicker> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     final filteredKeys = IconHelper.searchIcons(_query);
 
     return DraggableScrollableSheet(
@@ -527,9 +531,9 @@ class _SearchableIconPickerState extends State<SearchableIconPicker> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text(
-                  'Search Category Icons',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                Text(
+                  strings.categoriesSearchIconTitle,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 12),
                 // Search field
@@ -538,7 +542,7 @@ class _SearchableIconPickerState extends State<SearchableIconPicker> {
                   autofocus: false,
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
-                    hintText: 'Search by keyword (e.g. food, taxi, bill...)',
+                    hintText: strings.categoriesSearchIconHint,
                     hintStyle: const TextStyle(color: Colors.white38),
                     prefixIcon: const Icon(Icons.search_rounded,
                         color: Color(0xFF6366F1)),
@@ -562,10 +566,10 @@ class _SearchableIconPickerState extends State<SearchableIconPicker> {
                 const SizedBox(height: 16),
                 Expanded(
                   child: filteredKeys.isEmpty
-                      ? const Center(
+                      ? Center(
                           child: Text(
-                            'No matching icons found',
-                            style: TextStyle(color: Colors.white38),
+                            strings.categoriesNoIconsFound,
+                            style: const TextStyle(color: Colors.white38),
                           ),
                         )
                       : GridView.builder(
