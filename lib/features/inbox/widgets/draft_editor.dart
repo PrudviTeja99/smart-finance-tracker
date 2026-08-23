@@ -436,7 +436,7 @@ class _DraftEditorState extends State<DraftEditor> {
               onPressed: () async {
                 final amt = double.tryParse(_amountController.text) ?? 0.0;
                 if (amt <= 0) {
-                  AppSnackBar.show(context, 'Please enter a valid amount',
+                  AppSnackBar.show(context, strings.transactionFormEnterValidAmount,
                       type: SnackBarType.warning);
                   return;
                 }
@@ -463,8 +463,8 @@ class _DraftEditorState extends State<DraftEditor> {
                   Navigator.pop(context);
                 }
               },
-              child: const Text('Verify & Confirm',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+              child: Text(strings.inboxVerifyAndConfirm,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
             ),
           ],
         ),

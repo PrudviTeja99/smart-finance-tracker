@@ -1413,4 +1413,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dashboardShowMore => 'Show More';
+
+  @override
+  String get archivedAlertsRestoreAlert => 'Restore Alert';
+
+  @override
+  String get archivedAlertsDeleteAlert => 'Delete Alert';
+
+  @override
+  String get inboxPromotedAlertToDrafts =>
+      'Promoted alert to Transaction Drafts!';
+
+  @override
+  String get inboxRestoredToCapturedAlerts => 'Restored to Captured Alerts!';
 }

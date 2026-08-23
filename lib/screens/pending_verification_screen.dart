@@ -896,6 +896,7 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
 
   Future<void> _handleFeedback(int logId, String appName, String title,
       String body, bool isFinancial, bool isRelevant) async {
+    final strings = AppLocalizations.of(context)!;
     final dbService = DatabaseService.instance;
 
     if (!isFinancial || !isRelevant) {
@@ -939,7 +940,7 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
           await dbService.updateNotificationLogStatus(logId, 'drafted');
 
           if (mounted) {
-            AppSnackBar.show(context, 'Promoted alert to Transaction Drafts!',
+            AppSnackBar.show(context, strings.inboxPromotedAlertToDrafts,
                 type: SnackBarType.success);
           }
         } else {
@@ -965,7 +966,7 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
         await dbService.updateNotificationLogStatus(logId, 'drafted');
 
         if (mounted) {
-          AppSnackBar.show(context, 'Promoted alert to Transaction Drafts!',
+          AppSnackBar.show(context, strings.inboxPromotedAlertToDrafts,
               type: SnackBarType.success);
         }
       }
@@ -1318,6 +1319,7 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
   }
 
   Future<void> _undoAuditAction(Map<String, dynamic> auditLog) async {
+    final strings = AppLocalizations.of(context)!;
     final auditId = auditLog['id'] as int;
     final logId = auditLog['log_id'] as int?;
     final actionType = auditLog['action_type'] as String;
@@ -1329,7 +1331,7 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
         await dbService.updateNotificationLogStatus(logId, 'unclassified');
       }
       if (mounted) {
-        AppSnackBar.show(context, 'Restored to Captured Alerts!',
+        AppSnackBar.show(context, strings.inboxRestoredToCapturedAlerts,
             type: SnackBarType.success);
       }
     } else if (actionType == 'auto_drafted') {

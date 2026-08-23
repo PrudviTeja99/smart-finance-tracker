@@ -495,5 +495,10 @@
   "dashboardLockClockTooltip": "Tap to reveal amounts",
   "dashboardLatestTransactions": "Latest Transactions",
   "dashboardNoTransactions": "No transactions recorded yet.",
-  "dashboardShowMore": "Show More"
+  "dashboardShowMore": "Show More",
+
+  "archivedAlertsRestoreAlert": "Restore Alert",
+  "archivedAlertsDeleteAlert": "Delete Alert",
+  "inboxPromotedAlertToDrafts": "Promoted alert to Transaction Drafts!",
+  "inboxRestoredToCapturedAlerts": "Restored to Captured Alerts!"
 }

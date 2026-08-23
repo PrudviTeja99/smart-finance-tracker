@@ -763,6 +763,7 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
   }
 
   Widget _buildArchivedLogItem(Map<String, dynamic> log, String resolvedAppName) {
+    final strings = AppLocalizations.of(context)!;
     final title = log['title'] as String? ?? '';
     final body = log['body'] as String? ?? '';
     final dateStr = log['date'] as String? ?? '';
@@ -906,25 +907,25 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
                               }
                             },
                             itemBuilder: (context) => [
-                              const PopupMenuItem(
+                              PopupMenuItem(
                                 value: 'restore',
                                 height: 44,
                                 child: Row(
                                   children: [
-                                    Icon(Icons.settings_backup_restore_rounded, size: 18, color: Color(0xFF818CF8)),
-                                    SizedBox(width: 10),
-                                    Text('Restore Alert', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+                                    const Icon(Icons.settings_backup_restore_rounded, size: 18, color: Color(0xFF818CF8)),
+                                    const SizedBox(width: 10),
+                                    Text(strings.archivedAlertsRestoreAlert, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
                                   ],
                                 ),
                               ),
-                              const PopupMenuItem(
+                              PopupMenuItem(
                                 value: 'delete',
                                 height: 44,
                                 child: Row(
                                   children: [
-                                    Icon(Icons.delete_outline_rounded, size: 18, color: Color(0xFFEF4444)),
-                                    SizedBox(width: 10),
-                                    Text('Delete Alert', style: TextStyle(color: Color(0xFFEF4444), fontSize: 13, fontWeight: FontWeight.w600)),
+                                    const Icon(Icons.delete_outline_rounded, size: 18, color: Color(0xFFEF4444)),
+                                    const SizedBox(width: 10),
+                                    Text(strings.archivedAlertsDeleteAlert, style: const TextStyle(color: Color(0xFFEF4444), fontSize: 13, fontWeight: FontWeight.w600)),
                                   ],
                                 ),
                               ),

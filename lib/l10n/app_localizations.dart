@@ -2559,6 +2559,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Show More'**
   String get dashboardShowMore;
+
+  /// No description provided for @archivedAlertsRestoreAlert.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore Alert'**
+  String get archivedAlertsRestoreAlert;
+
+  /// No description provided for @archivedAlertsDeleteAlert.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Alert'**
+  String get archivedAlertsDeleteAlert;
+
+  /// No description provided for @inboxPromotedAlertToDrafts.
+  ///
+  /// In en, this message translates to:
+  /// **'Promoted alert to Transaction Drafts!'**
+  String get inboxPromotedAlertToDrafts;
+
+  /// No description provided for @inboxRestoredToCapturedAlerts.
+  ///
+  /// In en, this message translates to:
+  /// **'Restored to Captured Alerts!'**
+  String get inboxRestoredToCapturedAlerts;
 }
 
 class _AppLocalizationsDelegate
