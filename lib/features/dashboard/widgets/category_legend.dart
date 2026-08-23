@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../models/category_model.dart';
-import '../../../utils/app_settings.dart';
 
 class CategoryLegend extends StatelessWidget {
   final Map<int, double> categoryTotals;
@@ -81,7 +80,7 @@ class CategoryLegend extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  '${category.name} (${percentage.toStringAsFixed(0)}%)',
+                  '${category.getLocalizedName(context)} (${percentage.toStringAsFixed(0)}%)',
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,

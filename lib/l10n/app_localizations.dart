@@ -2564,6 +2564,126 @@ abstract class AppLocalizations {
   /// **'Show More'**
   String get dashboardShowMore;
 
+  /// No description provided for @heroNetCashflow.
+  ///
+  /// In en, this message translates to:
+  /// **'NET CASHFLOW'**
+  String get heroNetCashflow;
+
+  /// No description provided for @heroSavedPct.
+  ///
+  /// In en, this message translates to:
+  /// **'+{pct}% saved'**
+  String heroSavedPct(String pct);
+
+  /// No description provided for @heroOverspentPct.
+  ///
+  /// In en, this message translates to:
+  /// **'{pct}% overspent'**
+  String heroOverspentPct(String pct);
+
+  /// No description provided for @donutNoIncome.
+  ///
+  /// In en, this message translates to:
+  /// **'No income transactions recorded for this period.'**
+  String get donutNoIncome;
+
+  /// No description provided for @donutNoExpense.
+  ///
+  /// In en, this message translates to:
+  /// **'No expense transactions recorded for this period.'**
+  String get donutNoExpense;
+
+  /// No description provided for @donutTotalIncome.
+  ///
+  /// In en, this message translates to:
+  /// **'TOTAL INCOME'**
+  String get donutTotalIncome;
+
+  /// No description provided for @donutTotalSpent.
+  ///
+  /// In en, this message translates to:
+  /// **'TOTAL SPENT'**
+  String get donutTotalSpent;
+
+  /// No description provided for @donutTransfers.
+  ///
+  /// In en, this message translates to:
+  /// **'TRANSFERS'**
+  String get donutTransfers;
+
+  /// No description provided for @donutTotalVolume.
+  ///
+  /// In en, this message translates to:
+  /// **'TOTAL VOLUME'**
+  String get donutTotalVolume;
+
+  /// No description provided for @donutTxCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 transaction} other{{count} transactions}}'**
+  String donutTxCount(int count);
+
+  /// No description provided for @donutPctOfTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'{pct}% of total'**
+  String donutPctOfTotal(String pct);
+
+  /// No description provided for @catFood.
+  ///
+  /// In en, this message translates to:
+  /// **'Food'**
+  String get catFood;
+
+  /// No description provided for @catShopping.
+  ///
+  /// In en, this message translates to:
+  /// **'Shopping'**
+  String get catShopping;
+
+  /// No description provided for @catTravel.
+  ///
+  /// In en, this message translates to:
+  /// **'Travel'**
+  String get catTravel;
+
+  /// No description provided for @catBills.
+  ///
+  /// In en, this message translates to:
+  /// **'Bills & Utilities'**
+  String get catBills;
+
+  /// No description provided for @catSalary.
+  ///
+  /// In en, this message translates to:
+  /// **'Salary'**
+  String get catSalary;
+
+  /// No description provided for @catSentMoney.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent Money'**
+  String get catSentMoney;
+
+  /// No description provided for @catReceivedMoney.
+  ///
+  /// In en, this message translates to:
+  /// **'Received Money'**
+  String get catReceivedMoney;
+
+  /// No description provided for @catOthers.
+  ///
+  /// In en, this message translates to:
+  /// **'Others'**
+  String get catOthers;
+
+  /// No description provided for @catTransfer.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer'**
+  String get catTransfer;
+
   /// No description provided for @archivedAlertsRestoreAlert.
   ///
   /// In en, this message translates to:

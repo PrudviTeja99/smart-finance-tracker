@@ -1415,6 +1415,82 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashboardShowMore => 'Show More';
 
   @override
+  String get heroNetCashflow => 'NET CASHFLOW';
+
+  @override
+  String heroSavedPct(String pct) {
+    return '+$pct% saved';
+  }
+
+  @override
+  String heroOverspentPct(String pct) {
+    return '$pct% overspent';
+  }
+
+  @override
+  String get donutNoIncome =>
+      'No income transactions recorded for this period.';
+
+  @override
+  String get donutNoExpense =>
+      'No expense transactions recorded for this period.';
+
+  @override
+  String get donutTotalIncome => 'TOTAL INCOME';
+
+  @override
+  String get donutTotalSpent => 'TOTAL SPENT';
+
+  @override
+  String get donutTransfers => 'TRANSFERS';
+
+  @override
+  String get donutTotalVolume => 'TOTAL VOLUME';
+
+  @override
+  String donutTxCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count transactions',
+      one: '1 transaction',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String donutPctOfTotal(String pct) {
+    return '$pct% of total';
+  }
+
+  @override
+  String get catFood => 'Food';
+
+  @override
+  String get catShopping => 'Shopping';
+
+  @override
+  String get catTravel => 'Travel';
+
+  @override
+  String get catBills => 'Bills & Utilities';
+
+  @override
+  String get catSalary => 'Salary';
+
+  @override
+  String get catSentMoney => 'Sent Money';
+
+  @override
+  String get catReceivedMoney => 'Received Money';
+
+  @override
+  String get catOthers => 'Others';
+
+  @override
+  String get catTransfer => 'Transfer';
+
+  @override
   String get archivedAlertsRestoreAlert => 'Restore Alert';
 
   @override

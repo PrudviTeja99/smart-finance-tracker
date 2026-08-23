@@ -1432,6 +1432,75 @@ class AppLocalizationsTe extends AppLocalizations {
   String get dashboardShowMore => 'మరిన్ని చూడండి';
 
   @override
+  String get heroNetCashflow => 'నికర నగదు ప్రవాహం';
+
+  @override
+  String heroSavedPct(String pct) {
+    return '+$pct% ఆదా అయింది';
+  }
+
+  @override
+  String heroOverspentPct(String pct) {
+    return '$pct% అదనపు ఖర్చు';
+  }
+
+  @override
+  String get donutNoIncome => 'ఈ సమయానికి ఎటువంటి ఆదాయ లావాదేవీలు నమోదు కావు.';
+
+  @override
+  String get donutNoExpense =>
+      'ఈ సమయానికి ఎటువంటి ఖర్చు లావాదేవీలు నమోదు కావు.';
+
+  @override
+  String get donutTotalIncome => 'మొత్తం ఆదాయం';
+
+  @override
+  String get donutTotalSpent => 'మొత్తం ఖర్చు';
+
+  @override
+  String get donutTransfers => 'బదిలీలు';
+
+  @override
+  String get donutTotalVolume => 'మొత్తం పరిమాణం';
+
+  @override
+  String donutTxCount(int count) {
+    return '$count లావాదేవీలు';
+  }
+
+  @override
+  String donutPctOfTotal(String pct) {
+    return 'మొత్తంలో $pct%';
+  }
+
+  @override
+  String get catFood => 'ఆహారం';
+
+  @override
+  String get catShopping => 'షాపింగ్';
+
+  @override
+  String get catTravel => 'ప్రయాణం';
+
+  @override
+  String get catBills => 'బిల్లులు & సేవలు';
+
+  @override
+  String get catSalary => 'జీతం';
+
+  @override
+  String get catSentMoney => 'పంపిన డబ్బు';
+
+  @override
+  String get catReceivedMoney => 'వచ్చిన డబ్బు';
+
+  @override
+  String get catOthers => 'ఇతరులు';
+
+  @override
+  String get catTransfer => 'బదిలీ';
+
+  @override
   String get archivedAlertsRestoreAlert => 'అలర్ట్‌ను పునరుద్ధరించు';
 
   @override

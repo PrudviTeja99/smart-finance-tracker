@@ -217,11 +217,11 @@ class _DashboardScreenState extends State<DashboardScreen>
                           children: [
                             MonthSwitcher(
                               timeframe: timeframe,
-                              timeframeDisplay: getTimeframeDisplay(),
+                              timeframeDisplay: getTimeframeDisplay(context),
                               onOpenTimeframeSheet: _openTimeframeSheet,
                               onPreviousMonth: previousMonth,
                               onNextMonth: nextMonth,
-                              accountFilterDisplay: getAccountFilterDisplay(),
+                              accountFilterDisplay: getAccountFilterDisplay(context),
                               isAccountFiltered: selectedAccountFilterId != null,
                               onOpenAccountSheet: _openAccountSheet,
                             ),
@@ -232,7 +232,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                               totalExpense: totalExpense,
                               savingsRate: savingsRate,
                               shouldHideAmounts: privacyController.obscureAmounts,
-                              timeframeDisplay: getTimeframeDisplay(),
+                              timeframeDisplay: getTimeframeDisplay(context),
                             ),
                             const SizedBox(height: 12),
                             TypeFilterChips(

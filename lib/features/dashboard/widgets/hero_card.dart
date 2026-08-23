@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../utils/app_settings.dart';
 import '../../../utils/app_formatters.dart';
 import '../../../l10n/app_localizations.dart';
 
@@ -26,13 +25,10 @@ class HeroCard extends StatelessWidget {
     final strings = AppLocalizations.of(context)!;
     final isPositive = netBalance >= 0;
     final badgeColor = isPositive ? const Color(0xFF10B981) : const Color(0xFFEF4444);
-    final badgeLabel = isPositive
-        ? '+${savingsRate.toStringAsFixed(0)}% saved'
-        : '${savingsRate.toStringAsFixed(0)}% overspent';
 
     final String titleText = timeframeDisplay != null && timeframeDisplay!.isNotEmpty
-        ? 'NET CASHFLOW • ${timeframeDisplay!.toUpperCase()}'
-        : 'NET CASHFLOW';
+        ? '${strings.heroNetCashflow} • ${timeframeDisplay!.toUpperCase()}'
+        : strings.heroNetCashflow;
 
     return Container(
       padding: const EdgeInsets.all(20),

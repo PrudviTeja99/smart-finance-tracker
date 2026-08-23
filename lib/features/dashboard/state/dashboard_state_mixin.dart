@@ -6,6 +6,7 @@ import '../../../models/transaction_model.dart';
 import '../../../models/account_model.dart';
 import '../../../models/category_model.dart';
 import '../../../services/database_service.dart';
+import '../../../l10n/app_localizations.dart';
 import '../models/dashboard_data.dart';
 import '../models/dashboard_data_cache.dart';
 import '../logic/filter_logic.dart';
@@ -213,29 +214,31 @@ mixin DashboardStateMixin<T extends StatefulWidget> on State<T> {
     applyFilters();
   }
 
-  String getTimeframeDisplay() {
+  String getTimeframeDisplay(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     final now = DateTime.now();
     if (timeframe == 'This Month') {
-      return 'This Month (${DateFormat('MMMM yyyy').format(now)})';
+      return '${strings.transactionsThisMonth} (${DateFormat('MMMM yyyy').format(now)})';
     } else if (timeframe == 'This Year') {
-      return 'This Year (${now.year})';
+      return '${strings.transactionsThisYear} (${now.year})';
     } else if (timeframe == 'Today') {
-      return 'Today (${now.day} ${DateFormat('MMM').format(now)})';
+      return '${strings.timeframeToday} (${now.day} ${DateFormat('MMM').format(now)})';
     } else if (timeframe == 'Yesterday') {
       final yest = now.subtract(const Duration(days: 1));
-      return 'Yesterday (${yest.day} ${DateFormat('MMM').format(yest)})';
+      return '${strings.timeframeYesterday} (${yest.day} ${DateFormat('MMM').format(yest)})';
     } else if (timeframe == 'This Week') {
       final startOffset = now.weekday - 1;
       final tempStart = now.subtract(Duration(days: startOffset));
-      return 'This Week (${tempStart.day} ${DateFormat('MMM').format(tempStart)} - ${now.day} ${DateFormat('MMM').format(now)})';
+      return '${strings.transactionsThisWeek} (${tempStart.day} ${DateFormat('MMM').format(tempStart)} - ${now.day} ${DateFormat('MMM').format(now)})';
     } else if (timeframe == 'Custom' && customFilterLabel.isNotEmpty) {
       return customFilterLabel;
     }
     return timeframe;
   }
 
-  String getAccountFilterDisplay() {
-    if (selectedAccountFilterId == null) return 'All Accounts';
+  String getAccountFilterDisplay(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
+    if (selectedAccountFilterId == null) return strings.transactionsAllAccounts;
     final acc = accounts.firstWhere(
       (a) => a.id == selectedAccountFilterId,
       orElse: () => AccountModel(

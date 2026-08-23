@@ -1,3 +1,4 @@
+import 'package:finance_tracker/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 class TypeFilterChips extends StatelessWidget {
@@ -12,11 +13,12 @@ class TypeFilterChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     final options = [
-      {'key': 'debit', 'label': 'Expenses', 'activeColor': const Color(0xFFEF4444)},
-      {'key': 'credit', 'label': 'Income', 'activeColor': const Color(0xFF10B981)},
-      {'key': 'transfer', 'label': 'Transfers', 'activeColor': const Color(0xFF38BDF8)},
-      {'key': 'all', 'label': 'All', 'activeColor': const Color(0xFF6366F1)},
+      {'key': 'debit', 'label': strings.transactionsExpensesType, 'activeColor': const Color(0xFFEF4444)},
+      {'key': 'credit', 'label': strings.transactionsIncomeType, 'activeColor': const Color(0xFF10B981)},
+      {'key': 'transfer', 'label': strings.transactionsTransfersType, 'activeColor': const Color(0xFF38BDF8)},
+      {'key': 'all', 'label': strings.transactionsAllType, 'activeColor': const Color(0xFF6366F1)},
     ];
 
     return SingleChildScrollView(

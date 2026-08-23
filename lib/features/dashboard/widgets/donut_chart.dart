@@ -1,9 +1,8 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import '../../../models/transaction_model.dart';
 import '../../../models/category_model.dart';
-import '../../../utils/app_settings.dart';
 import '../../../utils/app_formatters.dart';
+import '../../../l10n/app_localizations.dart';
 
 class DonutChart extends StatelessWidget {
   final Map<int, double> categoryTotals;
@@ -27,6 +26,7 @@ class DonutChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     final totalSum = categoryTotals.values.fold(0.0, (a, b) => a + b);
     final entries = categoryTotals.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
@@ -48,8 +48,8 @@ class DonutChart extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               typeFilter == 'credit'
-                  ? 'No income transactions recorded for this period.'
-                  : 'No expense transactions recorded for this period.',
+                  ? strings.donutNoIncome
+                  : strings.donutNoExpense,
               style: const TextStyle(fontSize: 12, color: Colors.white38),
               textAlign: TextAlign.center,
             ),
@@ -59,10 +59,10 @@ class DonutChart extends StatelessWidget {
     }
 
     String centerTitle = typeFilter == 'credit'
-        ? 'TOTAL INCOME'
+        ? strings.donutTotalIncome
         : (typeFilter == 'debit'
-            ? 'TOTAL SPENT'
-            : (typeFilter == 'transfer' ? 'TRANSFERS' : 'TOTAL VOLUME'));
+            ? strings.donutTotalSpent
+            : (typeFilter == 'transfer' ? strings.donutTransfers : strings.donutTotalVolume));
     String centerAmountText = AppFormatters.formatAmount(totalSum, shouldHide: shouldHideAmounts);
     
     int totalTxCount = 0;
@@ -71,7 +71,7 @@ class DonutChart extends StatelessWidget {
     }
 
     String centerSubtext = totalTxCount > 0
-        ? '$totalTxCount ${totalTxCount == 1 ? "transaction" : "transactions"}'
+        ? strings.donutTxCount(totalTxCount)
         : '';
     Color centerTitleColor = Colors.white38;
 
@@ -88,13 +88,13 @@ class DonutChart extends StatelessWidget {
       final percentage = (catAmount / totalSum) * 100;
       final catTxCount = categoryCounts?[selectedEntry.key] ?? 0;
 
-      centerTitle = cat.name.toUpperCase();
+      centerTitle = cat.getLocalizedName(strings).toUpperCase();
       centerTitleColor = Color(cat.color);
       centerAmountText = AppFormatters.formatAmount(catAmount, shouldHide: shouldHideAmounts);
       
       centerSubtext = catTxCount > 0
-          ? '${percentage.toStringAsFixed(0)}% ($catTxCount ${catTxCount == 1 ? "transaction" : "transactions"})'
-          : '${percentage.toStringAsFixed(0)}% of total';
+          ? '${percentage.toStringAsFixed(0)}% (${strings.donutTxCount(catTxCount)})'
+          : strings.donutPctOfTotal(percentage.toStringAsFixed(0));
     }
 
     final sections = List.generate(entries.length, (i) {
