@@ -868,46 +868,6 @@ class _SettingsScreenState extends State<SettingsScreen>
                   ),
                   const Divider(color: Colors.white10),
                   ListTile(
-                    leading: const Icon(Icons.language_rounded,
-                        color: Color(0xFF6366F1)),
-                    title: Text(strings.settingsAppLanguage,
-                        style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text(
-                      strings.settingsAppLanguageSubtitle,
-                      style: TextStyle(fontSize: 11),
-                    ),
-                    trailing: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value:
-                            AppLanguageService.instance.selectedLanguage.code,
-                        dropdownColor: const Color(0xFF1E293B),
-                        isDense: true,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF818CF8),
-                          fontSize: 13,
-                        ),
-                        items: AppLanguageService.instance.supportedLanguages
-                            .map(
-                              (language) => DropdownMenuItem(
-                                value: language.code,
-                                child: Text(language.code == 'en'
-                                    ? strings.languageEnglish
-                                    : language.nativeName),
-                              ),
-                            )
-                            .toList(growable: false),
-                        onChanged: (code) async {
-                          if (code == null) return;
-                          await AppLanguageService.instance
-                              .selectLanguage(code);
-                          if (mounted) setState(() {});
-                        },
-                      ),
-                    ),
-                  ),
-                  const Divider(color: Colors.white10),
-                  ListTile(
                     leading: const Icon(Icons.category_rounded,
                         color: Color(0xFF6366F1)),
                     title: Text(strings.settingsManageCategories,
@@ -917,6 +877,62 @@ class _SettingsScreenState extends State<SettingsScreen>
                     trailing: const Icon(Icons.arrow_forward_ios_rounded,
                         size: 16, color: Colors.white54),
                     onTap: _showManageCategoriesSheet,
+                  ),
+                  const Divider(color: Colors.white10),
+                  ListTile(
+                    leading: const Icon(Icons.language_rounded,
+                        color: Color(0xFF6366F1)),
+                    title: Text(strings.settingsAppLanguage,
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text(
+                      strings.settingsAppLanguageSubtitle,
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                    trailing: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF6366F1).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                            color: const Color(0xFF6366F1).withValues(alpha: 0.25)),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: AppLanguageService.instance.selectedLanguage.code,
+                          dropdownColor: const Color(0xFF1E293B),
+                          isDense: true,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF6366F1),
+                            fontSize: 13,
+                          ),
+                          icon: const Padding(
+                            padding: EdgeInsets.only(left: 4),
+                            child: Icon(Icons.arrow_drop_down,
+                                color: Color(0xFF6366F1), size: 18),
+                          ),
+                          items: AppLanguageService.instance.supportedLanguages
+                              .map(
+                                (language) => DropdownMenuItem(
+                                  value: language.code,
+                                  child: Text(language.code == 'te'
+                                      ? strings.languageTelugu
+                                      : (language.code == 'en'
+                                          ? strings.languageEnglish
+                                          : language.nativeName)),
+                                ),
+                              )
+                              .toList(growable: false),
+                          onChanged: (code) async {
+                            if (code == null) return;
+                            await AppLanguageService.instance
+                                .selectLanguage(code);
+                            if (mounted) setState(() {});
+                          },
+                        ),
+                      ),
+                    ),
                   ),
                   const Divider(color: Colors.white10),
                   ListTile(

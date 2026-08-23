@@ -9,6 +9,7 @@
   "settingsAppLanguage": "App Language",
   "settingsAppLanguageSubtitle": "Choose the display language for the app",
   "languageEnglish": "English",
+  "languageTelugu": "తెలుగు (Telugu)",
   "settingsPreferences": "Preferences",
   "settingsManageAccounts": "Manage Payment Accounts",
   "settingsActiveAccounts": "{count} active accounts",

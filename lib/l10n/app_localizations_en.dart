@@ -37,6 +37,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get languageEnglish => 'English';
 
   @override
+  String get languageTelugu => 'తెలుగు (Telugu)';
+
+  @override
   String get settingsPreferences => 'Preferences';
 
   @override

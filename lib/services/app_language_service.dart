@@ -27,14 +27,21 @@ class AppLanguageService {
   static final AppLanguageService instance = AppLanguageService._();
 
   List<AppLanguage> get supportedLanguages => AppLocalizations.supportedLocales
-      .map(
-        (locale) => AppLanguage(
-          code: locale.languageCode,
-          name: locale.languageCode == 'en' ? 'English' : locale.languageCode,
-          nativeName:
-              locale.languageCode == 'en' ? 'English' : locale.languageCode,
-        ),
-      )
+      .map((locale) {
+        final code = locale.languageCode;
+        if (code == 'te') {
+          return const AppLanguage(
+            code: 'te',
+            name: 'Telugu',
+            nativeName: 'తెలుగు (Telugu)',
+          );
+        }
+        return const AppLanguage(
+          code: 'en',
+          name: 'English',
+          nativeName: 'English',
+        );
+      })
       .toList(growable: false);
 
   final ValueNotifier<Locale> locale = ValueNotifier(const Locale('en'));

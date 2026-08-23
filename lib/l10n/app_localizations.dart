@@ -152,6 +152,12 @@ abstract class AppLocalizations {
   /// **'English'**
   String get languageEnglish;
 
+  /// No description provided for @languageTelugu.
+  ///
+  /// In en, this message translates to:
+  /// **'తెలుగు (Telugu)'**
+  String get languageTelugu;
+
   /// No description provided for @settingsPreferences.
   ///
   /// In en, this message translates to:
