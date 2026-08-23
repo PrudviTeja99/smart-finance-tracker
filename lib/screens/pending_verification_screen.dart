@@ -5,6 +5,7 @@ import 'package:finance_tracker/shared/sheets/transaction_form_sheet.dart';
 import 'package:finance_tracker/features/inbox/widgets/model_activity_banner.dart';
 import 'package:finance_tracker/features/inbox/widgets/pending_transaction_card.dart';
 import 'package:finance_tracker/features/inbox/widgets/app_selection_bottom_sheet.dart';
+import 'package:finance_tracker/features/inbox/widgets/inbox_skeleton.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/transaction_model.dart';
@@ -16,7 +17,6 @@ import '../services/merchant_search_service.dart';
 import '../services/notification_handler.dart';
 import '../services/perceptron_storage_service.dart';
 import '../utils/transaction_parser.dart';
-import '../utils/app_settings.dart';
 import '../utils/app_snackbar.dart';
 import '../utils/app_formatters.dart';
 
@@ -47,6 +47,11 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
   final TransactionParser _parser = TransactionParser();
   bool _isServiceEnabled = false;
   bool _hasModelActivity = false;
+  bool _hasLoadedPrimaryData = false;
+  bool _hasLoadedSecondaryData = false;
+  Future<void>? _primaryLoad;
+  Future<void>? _secondaryLoad;
+  int _supportingDataVersion = -1;
 
   // Pagination state
   final ScrollController _draftsScrollController = ScrollController();
@@ -91,8 +96,7 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
     _draftsScrollController.addListener(_onDraftsScroll);
 
     PerceptronStorageService.instance.loadWeights();
-
-    _refreshAll();
+    _scheduleInitialLoad();
 
     // Listen for foreground refresh signals (new notifications while app is open)
     widget.refreshSignal?.addListener(_onForegroundRefresh);
@@ -102,7 +106,11 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
   void didUpdateWidget(PendingVerificationScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.isActive && !oldWidget.isActive) {
-      _refreshAll();
+      if (_hasLoadedPrimaryData) {
+        _refreshAll();
+      } else {
+        _scheduleInitialLoad();
+      }
     }
 
     if (oldWidget.refreshSignal != widget.refreshSignal) {
@@ -139,6 +147,17 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
     }
   }
 
+  void _scheduleInitialLoad() {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // Let the navigation transition complete before database and platform
+      // work competes with the first Inbox frame.
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      if (mounted && widget.isActive && !_hasLoadedPrimaryData) {
+        await _refreshAll();
+      }
+    });
+  }
+
   @override
   void dispose() {
     _draftsScrollController.removeListener(_onDraftsScroll);
@@ -159,14 +178,22 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
     }
   }
 
-  Future<void> _loadPendingData() async {
+  Future<void> _loadPrimaryInboxData() async {
     final dbService = DatabaseService.instance;
     final pending = await dbService.getPendingTransactions();
-    final accountsList = await dbService.getAllAccounts();
-    final categoriesList = await dbService.getAllCategories();
     final running = await NotificationHandler.isServiceRunning();
     final permission = await NotificationHandler.hasPermission();
     final serviceEnabled = running && permission;
+
+    final currentVersion = dbService.dashboardDataVersion.value;
+    final shouldReloadSupportingData =
+        _supportingDataVersion != currentVersion || _accounts.isEmpty || _categories.isEmpty;
+    final accountsList = shouldReloadSupportingData
+        ? await dbService.getAllAccounts()
+        : _accounts;
+    final categoriesList = shouldReloadSupportingData
+        ? await dbService.getAllCategories()
+        : _categories;
 
     if (!mounted) return;
 
@@ -181,12 +208,18 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
         currentIds.difference(pendingIds).isNotEmpty ||
         hasAccountsChanged ||
         hasCategoriesChanged ||
-        hasServiceChanged) {
+        hasServiceChanged ||
+        shouldReloadSupportingData ||
+        !_hasLoadedPrimaryData) {
       setState(() {
         _pendingTransactions = pending;
         _accounts = accountsList;
         _categories = categoriesList;
         _isServiceEnabled = serviceEnabled;
+        _hasLoadedPrimaryData = true;
+        if (shouldReloadSupportingData) {
+          _supportingDataVersion = currentVersion;
+        }
       });
     }
   }
@@ -266,19 +299,43 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
   Future<void> _refreshAll() async {
     if (!mounted) return;
 
+    if (_primaryLoad != null) return _primaryLoad!;
+
+    final load = _loadPrimaryInboxData();
+    _primaryLoad = load;
+
     try {
-      final activity = await DatabaseService.instance.hasTodayModelActivity();
-      await Future.wait([
-        _loadPendingData(),
-        _loadCapturedAlerts(),
-      ]);
-      if (mounted) {
-        setState(() {
-          _hasModelActivity = activity;
-        });
-      }
+      await load;
+      _loadSecondaryInboxData();
     } catch (e) {
       debugPrint('Refresh failed: $e');
+    } finally {
+      _primaryLoad = null;
+    }
+  }
+
+  Future<void> _loadSecondaryInboxData() async {
+    if (_secondaryLoad != null) return _secondaryLoad!;
+
+    final load = () async {
+      try {
+        final activity = await DatabaseService.instance.hasTodayModelActivity();
+        await _loadCapturedAlerts();
+        if (mounted) {
+          setState(() {
+            _hasModelActivity = activity;
+            _hasLoadedSecondaryData = true;
+          });
+        }
+      } catch (e) {
+        debugPrint('Secondary Inbox refresh failed: $e');
+      }
+    }();
+    _secondaryLoad = load;
+    try {
+      await load;
+    } finally {
+      _secondaryLoad = null;
     }
   }
 
@@ -1302,7 +1359,9 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
             ),
           ),
         ),
-        _pendingTransactions.isEmpty
+        !_hasLoadedPrimaryData
+            ? const InboxSkeleton()
+            : _pendingTransactions.isEmpty
             ? Center(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -1446,6 +1505,10 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
 
   // --- CAPTURED ALERTS TAB ---
   Widget _buildCapturedAlertsTab() {
+    if (!_hasLoadedSecondaryData) {
+      return const InboxSkeleton(cardCount: 3);
+    }
+
     if (_capturedAlerts.isEmpty) {
       return Center(
         child: Padding(
