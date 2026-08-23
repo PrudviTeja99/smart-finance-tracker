@@ -62,7 +62,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   void _onRefreshSignal() {
-    if (mounted) {
+    if (mounted && widget.isActive) {
       refreshData();
     }
   }

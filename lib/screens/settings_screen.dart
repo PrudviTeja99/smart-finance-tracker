@@ -21,7 +21,9 @@ import 'package:flutter/cupertino.dart';
 import 'developer/log_inspector_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key});
+  final bool isActive;
+
+  const SettingsScreen({super.key, required this.isActive});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -48,7 +50,15 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
+    if (state == AppLifecycleState.resumed && widget.isActive) {
+      _loadSettingsData();
+    }
+  }
+
+  @override
+  void didUpdateWidget(SettingsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActive && !oldWidget.isActive) {
       _loadSettingsData();
     }
   }
@@ -803,8 +813,6 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   @override
   Widget build(BuildContext context) {
-    _loadSettingsData(); // Lazy refresh
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings',

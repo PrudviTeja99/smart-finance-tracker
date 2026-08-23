@@ -14,7 +14,6 @@ import '../services/database_service.dart';
 import '../services/app_icon_cache_service.dart';
 import '../services/merchant_search_service.dart';
 import '../services/notification_handler.dart';
-import '../services/batch_processor_service.dart';
 import '../services/perceptron_storage_service.dart';
 import '../utils/transaction_parser.dart';
 import '../utils/app_settings.dart';
@@ -22,11 +21,16 @@ import '../utils/app_snackbar.dart';
 import '../utils/app_formatters.dart';
 
 class PendingVerificationScreen extends StatefulWidget {
+  final bool isActive;
   final VoidCallback onConfirmedOrDiscarded;
   final ValueNotifier<int>? refreshSignal;
 
-  const PendingVerificationScreen(
-      {super.key, required this.onConfirmedOrDiscarded, this.refreshSignal});
+  const PendingVerificationScreen({
+    super.key,
+    required this.isActive,
+    required this.onConfirmedOrDiscarded,
+    this.refreshSignal,
+  });
 
   @override
   State<PendingVerificationScreen> createState() =>
@@ -34,7 +38,9 @@ class PendingVerificationScreen extends StatefulWidget {
 }
 
 class _PendingVerificationScreenState extends State<PendingVerificationScreen>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
   List<TransactionModel> _pendingTransactions = [];
   List<AccountModel> _accounts = [];
   List<CategoryModel> _categories = [];
@@ -90,13 +96,19 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
 
     // Listen for foreground refresh signals (new notifications while app is open)
     widget.refreshSignal?.addListener(_onForegroundRefresh);
+  }
 
-    // Trigger foreground batch processor for raw background notifications
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      BatchProcessorService.instance.processQueue(onCompleted: () {
-        if (mounted) _refreshAll();
-      });
-    });
+  @override
+  void didUpdateWidget(PendingVerificationScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActive && !oldWidget.isActive) {
+      _refreshAll();
+    }
+
+    if (oldWidget.refreshSignal != widget.refreshSignal) {
+      oldWidget.refreshSignal?.removeListener(_onForegroundRefresh);
+      widget.refreshSignal?.addListener(_onForegroundRefresh);
+    }
   }
 
   void _onDraftsScroll() {
@@ -122,7 +134,7 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
   }
 
   void _onForegroundRefresh() {
-    if (mounted) {
+    if (mounted && widget.isActive) {
       _refreshAll();
     }
   }
@@ -913,6 +925,7 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final currentBottomInset = MediaQuery.of(context).viewInsets.bottom;
     final isKeyboardNowOpen = currentBottomInset > 0;
     if (_isKeyboardOpen && !isKeyboardNowOpen) {

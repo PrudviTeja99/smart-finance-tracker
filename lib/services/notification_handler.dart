@@ -90,6 +90,7 @@ class NotificationHandler {
     // Required for background isolates — without this, plugin channel calls
     // (like sqflite) can silently fail and the notification gets dropped.
     WidgetsFlutterBinding.ensureInitialized();
+    DartPluginRegistrant.ensureInitialized();
 
     if (event.packageName == null) return;
 

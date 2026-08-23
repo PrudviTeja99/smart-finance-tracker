@@ -15,18 +15,28 @@ class MainNavigationHolder extends StatefulWidget {
   State<MainNavigationHolder> createState() => _MainNavigationHolderState();
 }
 
-class _MainNavigationHolderState extends State<MainNavigationHolder> {
+class _MainNavigationHolderState extends State<MainNavigationHolder>
+    with WidgetsBindingObserver {
   int _selectedIndex = 0;
   final PageController _pageController = PageController();
   int _pendingCount = 0;
   bool _isInitPort = false;
+  final Set<int> _visitedTabs = {0};
   final ValueNotifier<int> _foregroundRefreshSignal = ValueNotifier<int>(0);
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _updatePendingCount();
     _initNotificationListener();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _processQueuedNotifications();
+    }
   }
 
   // Update badge count from the database
@@ -64,8 +74,12 @@ class _MainNavigationHolderState extends State<MainNavigationHolder> {
       await NotificationHandler.stopService();
     }
 
-    // Process any notifications that were queued while the app wasn't running.
-    await BatchProcessorService.instance.processQueue(
+    // Process notifications captured while the app was not running.
+    await _processQueuedNotifications();
+  }
+
+  Future<void> _processQueuedNotifications() {
+    return BatchProcessorService.instance.processQueue(
       onCompleted: () {
         if (mounted) {
           _updatePendingCount();
@@ -77,6 +91,7 @@ class _MainNavigationHolderState extends State<MainNavigationHolder> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     IsolateNameServer.removePortNameMapping(NotificationHandler.portName);
 
     _pageController.dispose();
@@ -89,6 +104,7 @@ class _MainNavigationHolderState extends State<MainNavigationHolder> {
 
     setState(() {
       _selectedIndex = index;
+      _visitedTabs.add(index);
     });
     _pageController.animateToPage(
       index,
@@ -109,23 +125,13 @@ class _MainNavigationHolderState extends State<MainNavigationHolder> {
             onPageChanged: (index) {
               setState(() {
                 _selectedIndex = index;
+                _visitedTabs.add(index);
               });
               if (index == 1) {
                 _updatePendingCount(); // Refresh count on viewing pending list
               }
             },
-            children: [
-              DashboardScreen(
-                isActive: _selectedIndex == 0,
-                onRefreshPendingCount: _updatePendingCount,
-                refreshSignal: _foregroundRefreshSignal,
-              ),
-              PendingVerificationScreen(
-                onConfirmedOrDiscarded: _updatePendingCount,
-                refreshSignal: _foregroundRefreshSignal,
-              ),
-              const SettingsScreen(),
-            ],
+            children: List.generate(3, _buildTab),
           ),
           Positioned(
             left: 0,
@@ -136,6 +142,39 @@ class _MainNavigationHolderState extends State<MainNavigationHolder> {
         ],
       ),
     );
+  }
+
+  Widget _buildTab(int index) {
+    // A placeholder prevents a hidden tab from running its initialization work
+    // until the user actually opens it. Once opened, each screen keeps its
+    // state while the user moves between tabs.
+    if (!_visitedTabs.contains(index)) {
+      return const SizedBox.shrink();
+    }
+
+    switch (index) {
+      case 0:
+        return DashboardScreen(
+          key: const PageStorageKey('dashboard-tab'),
+          isActive: _selectedIndex == 0,
+          onRefreshPendingCount: _updatePendingCount,
+          refreshSignal: _foregroundRefreshSignal,
+        );
+      case 1:
+        return PendingVerificationScreen(
+          key: const PageStorageKey('inbox-tab'),
+          isActive: _selectedIndex == 1,
+          onConfirmedOrDiscarded: _updatePendingCount,
+          refreshSignal: _foregroundRefreshSignal,
+        );
+      case 2:
+        return SettingsScreen(
+          key: const PageStorageKey('settings-tab'),
+          isActive: _selectedIndex == 2,
+        );
+      default:
+        return const SizedBox.shrink();
+    }
   }
 
   // Floating frosted-glass navigation bar ("Strap" UI)
