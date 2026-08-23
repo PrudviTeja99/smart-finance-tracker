@@ -7,6 +7,8 @@ import '../models/category_model.dart';
 import '../services/database_service.dart';
 import '../services/backup_service.dart';
 import '../services/notification_handler.dart';
+import '../services/app_language_service.dart';
+import '../l10n/app_localizations.dart';
 import '../utils/transaction_parser.dart';
 import '../utils/bio_tagger.dart';
 import '../utils/app_settings.dart';
@@ -108,6 +110,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       }
     } else {
       // Confirmation dialog before disabling
+      final strings = AppLocalizations.of(context)!;
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
@@ -116,26 +119,23 @@ class _SettingsScreenState extends State<SettingsScreen>
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           icon: const Icon(Icons.warning_amber_rounded,
               color: Color(0xFFF59E0B), size: 36),
-          title: const Text('Disable Smart Tracking?',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
-          content: const Text(
-            'The app will stop listening to incoming notifications in the background. '
-            'New transactions will not be captured automatically until you re-enable this.\n\n'
-            'Archived alerts, automation logs, and processed queue data will be cleaned up in the background. '
-            'Your confirmed transactions and learned AI model weights will be preserved.',
-            style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.5),
+          title: Text(strings.settingsDisableSmartTrackingTitle,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+          content: Text(
+            strings.settingsDisableSmartTrackingDescription,
+            style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.5),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Keep Enabled',
-                  style: TextStyle(
+              child: Text(strings.settingsKeepEnabled,
+                  style: const TextStyle(
                       color: Colors.white54, fontWeight: FontWeight.bold)),
             ),
             TextButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Disable',
-                  style: TextStyle(
+              child: Text(strings.settingsDisable,
+                  style: const TextStyle(
                       color: Color(0xFFEF4444), fontWeight: FontWeight.bold)),
             ),
           ],
@@ -164,6 +164,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   void _showExportFormatSheet() {
+    final strings = AppLocalizations.of(context)!;
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF0F172A),
@@ -188,17 +189,17 @@ class _SettingsScreenState extends State<SettingsScreen>
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
-                'Export Format',
-                style: TextStyle(
+              Text(
+                strings.settingsExportFormatTitle,
+                style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: Colors.white),
               ),
               const SizedBox(height: 4),
-              const Text(
-                'Select format for transaction export or database backup',
-                style: TextStyle(fontSize: 12, color: Colors.white54),
+              Text(
+                strings.settingsExportFormatSubtitle,
+                style: const TextStyle(fontSize: 12, color: Colors.white54),
               ),
               const SizedBox(height: 20),
               ListTile(
@@ -216,12 +217,12 @@ class _SettingsScreenState extends State<SettingsScreen>
                   child: const Icon(Icons.code_rounded,
                       color: Color(0xFF6366F1), size: 22),
                 ),
-                title: const Text('JSON Backup File (.json)',
-                    style: TextStyle(
+                title: Text(strings.settingsExportJsonTitle,
+                    style: const TextStyle(
                         fontWeight: FontWeight.bold, color: Colors.white)),
-                subtitle: const Text(
-                    'Full database backup (accounts, categories, transactions)',
-                    style: TextStyle(fontSize: 11, color: Colors.white54)),
+                subtitle: Text(
+                    strings.settingsExportJsonSubtitle,
+                    style: const TextStyle(fontSize: 11, color: Colors.white54)),
                 onTap: () {
                   Navigator.pop(context);
                   _showExportDestinationSheet(ExportFormat.json);
@@ -243,12 +244,12 @@ class _SettingsScreenState extends State<SettingsScreen>
                   child: const Icon(Icons.table_chart_rounded,
                       color: Color(0xFF10B981), size: 22),
                 ),
-                title: const Text('Excel / CSV Sheet (.csv)',
-                    style: TextStyle(
+                title: Text(strings.settingsExportCsvTitle,
+                    style: const TextStyle(
                         fontWeight: FontWeight.bold, color: Colors.white)),
-                subtitle: const Text(
-                    'Formatted transaction ledger for Excel & Google Sheets',
-                    style: TextStyle(fontSize: 11, color: Colors.white54)),
+                subtitle: Text(
+                    strings.settingsExportCsvSubtitle,
+                    style: const TextStyle(fontSize: 11, color: Colors.white54)),
                 onTap: () {
                   Navigator.pop(context);
                   _showExportDestinationSheet(ExportFormat.csv);
@@ -262,6 +263,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   void _showExportDestinationSheet(ExportFormat format) {
+    final strings = AppLocalizations.of(context)!;
     final formatName = format == ExportFormat.json ? 'JSON' : 'CSV';
 
     showModalBottomSheet(
@@ -289,16 +291,16 @@ class _SettingsScreenState extends State<SettingsScreen>
               ),
               const SizedBox(height: 16),
               Text(
-                'Export $formatName File',
+                strings.settingsExportDestinationTitle(formatName),
                 style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: Colors.white),
               ),
               const SizedBox(height: 4),
-              const Text(
-                'Choose destination for your exported file',
-                style: TextStyle(fontSize: 12, color: Colors.white54),
+              Text(
+                strings.settingsExportDestinationSubtitle,
+                style: const TextStyle(fontSize: 12, color: Colors.white54),
               ),
               const SizedBox(height: 20),
               ListTile(
@@ -316,12 +318,12 @@ class _SettingsScreenState extends State<SettingsScreen>
                   child: const Icon(Icons.save_alt_rounded,
                       color: Color(0xFF38BDF8), size: 22),
                 ),
-                title: const Text('Save Locally',
-                    style: TextStyle(
+                title: Text(strings.settingsSaveLocally,
+                    style: const TextStyle(
                         fontWeight: FontWeight.bold, color: Colors.white)),
-                subtitle: const Text(
-                    'Save directly to phone downloads or local folder',
-                    style: TextStyle(fontSize: 11, color: Colors.white54)),
+                subtitle: Text(
+                    strings.settingsSaveLocallySubtitle,
+                    style: const TextStyle(fontSize: 11, color: Colors.white54)),
                 onTap: () async {
                   Navigator.pop(context);
                   String? path;
@@ -334,10 +336,11 @@ class _SettingsScreenState extends State<SettingsScreen>
                   }
                   if (mounted) {
                     if (path != null) {
-                      AppSnackBar.show(context, 'File saved to: $path',
+                      AppSnackBar.show(context, strings.settingsFileSavedTo(path),
                           type: SnackBarType.success);
                     } else {
-                      AppSnackBar.show(context, 'Export canceled or unavailable.',
+                      AppSnackBar.show(
+                          context, strings.settingsExportCanceled,
                           type: SnackBarType.neutral);
                     }
                   }
@@ -359,12 +362,12 @@ class _SettingsScreenState extends State<SettingsScreen>
                   child: const Icon(Icons.share_rounded,
                       color: Color(0xFFEA80FC), size: 22),
                 ),
-                title: const Text('Share via Apps',
-                    style: TextStyle(
+                title: Text(strings.settingsShareViaApps,
+                    style: const TextStyle(
                         fontWeight: FontWeight.bold, color: Colors.white)),
-                subtitle: const Text(
-                    'Send via WhatsApp, Email, Google Drive, etc.',
-                    style: TextStyle(fontSize: 11, color: Colors.white54)),
+                subtitle: Text(
+                    strings.settingsShareViaAppsSubtitle,
+                    style: const TextStyle(fontSize: 11, color: Colors.white54)),
                 onTap: () async {
                   Navigator.pop(context);
                   if (format == ExportFormat.json) {
@@ -400,8 +403,9 @@ class _SettingsScreenState extends State<SettingsScreen>
 
       if (!isJson && !isCsv) {
         if (mounted) {
-          AppSnackBar.show(
-              context, 'Invalid file format. Please select a .json or .csv file.',
+          final strings = AppLocalizations.of(context)!;
+          AppSnackBar.show(context,
+              strings.settingsInvalidFileFormat,
               type: SnackBarType.warning);
         }
         return;
@@ -420,6 +424,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         builder: (context) {
+          final strings = AppLocalizations.of(context)!;
           return Padding(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
             child: Column(
@@ -437,16 +442,16 @@ class _SettingsScreenState extends State<SettingsScreen>
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text(
-                  'Import Data',
-                  style: TextStyle(
+                Text(
+                  strings.settingsImportDataTitle,
+                  style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: Colors.white),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Selected: $fileName',
+                  strings.settingsImportSelected(fileName),
                   style:
                       const TextStyle(fontSize: 12, color: Color(0xFF6366F1)),
                   maxLines: 1,
@@ -468,12 +473,12 @@ class _SettingsScreenState extends State<SettingsScreen>
                     child: const Icon(Icons.add_circle_outline_rounded,
                         color: Color(0xFF10B981), size: 22),
                   ),
-                  title: const Text('Append to Existing Data',
-                      style: TextStyle(
+                  title: Text(strings.settingsAppendToExisting,
+                      style: const TextStyle(
                           fontWeight: FontWeight.bold, color: Colors.white)),
-                  subtitle: const Text(
-                      'Safely merge new transactions without deleting current data. Duplicates auto-skipped.',
-                      style: TextStyle(fontSize: 11, color: Colors.white54)),
+                  subtitle: Text(
+                      strings.settingsAppendSubtitle,
+                      style: const TextStyle(fontSize: 11, color: Colors.white54)),
                   onTap: () {
                     Navigator.pop(context);
                     _executeImport(content,
@@ -496,13 +501,13 @@ class _SettingsScreenState extends State<SettingsScreen>
                     child: const Icon(Icons.warning_amber_rounded,
                         color: Color(0xFFEF4444), size: 22),
                   ),
-                  title: const Text('Override (Replace All)',
-                      style: TextStyle(
+                  title: Text(strings.settingsOverrideReplaceAll,
+                      style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Color(0xFFFCA5A5))),
-                  subtitle: const Text(
-                      'Wipe existing transactions and replace completely with file data.',
-                      style: TextStyle(fontSize: 11, color: Colors.white54)),
+                  subtitle: Text(
+                      strings.settingsOverrideSubtitle,
+                      style: const TextStyle(fontSize: 11, color: Colors.white54)),
                   onTap: () async {
                     Navigator.pop(context);
                     final confirm = await showDialog<bool>(
@@ -513,16 +518,16 @@ class _SettingsScreenState extends State<SettingsScreen>
                             borderRadius: BorderRadius.circular(20)),
                         icon: const Icon(Icons.warning_amber_rounded,
                             color: Color(0xFFEF4444), size: 36),
-                        title: const Text('Confirm Data Override',
-                            style: TextStyle(
+                        title: Text(strings.settingsConfirmDataOverrideTitle,
+                            style: const TextStyle(
                                 fontWeight: FontWeight.bold, fontSize: 17)),
-                        content: const Text(
-                            'Are you sure you want to replace all current database records? Existing transactions will be overwritten.'),
+                        content: Text(
+                            strings.settingsConfirmDataOverrideDescription),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(context, false),
-                            child: const Text('Cancel',
-                                style: TextStyle(color: Colors.white60)),
+                            child: Text(strings.settingsCancel,
+                                style: const TextStyle(color: Colors.white60)),
                           ),
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(
@@ -532,7 +537,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                                   borderRadius: BorderRadius.circular(10)),
                             ),
                             onPressed: () => Navigator.pop(context, true),
-                            child: const Text('Replace All'),
+                            child: Text(strings.settingsReplaceAll),
                           ),
                         ],
                       ),
@@ -540,7 +545,9 @@ class _SettingsScreenState extends State<SettingsScreen>
 
                     if (confirm == true) {
                       _executeImport(content,
-                          isJson: isJson, isCsv: isCsv, mode: ImportMode.override);
+                          isJson: isJson,
+                          isCsv: isCsv,
+                          mode: ImportMode.override);
                     }
                   },
                 ),
@@ -552,7 +559,8 @@ class _SettingsScreenState extends State<SettingsScreen>
     } catch (e) {
       debugPrint('Import file picker error: $e');
       if (mounted) {
-        AppSnackBar.show(context, 'Failed to read import file.',
+        final strings = AppLocalizations.of(context)!;
+        AppSnackBar.show(context, strings.settingsFailedToReadImportFile,
             type: SnackBarType.error);
       }
     }
@@ -572,13 +580,14 @@ class _SettingsScreenState extends State<SettingsScreen>
     }
 
     if (mounted) {
+      final strings = AppLocalizations.of(context)!;
       AppSnackBar.show(
         context,
         success
             ? (mode == ImportMode.override
-                ? 'Database replaced successfully!'
-                : 'Data imported & merged successfully!')
-            : 'Invalid or corrupted import file.',
+                ? strings.settingsDatabaseReplacedSuccess
+                : strings.settingsDataImportedSuccess)
+            : strings.settingsInvalidImportFile,
         type: success ? SnackBarType.success : SnackBarType.error,
       );
       if (success) {
@@ -612,6 +621,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       ),
       builder: (context) => StatefulBuilder(
         builder: (context, setSheetState) {
+          final strings = AppLocalizations.of(context)!;
           void onTextChanged() {
             if (isUpdatingFromWheel) return;
             isUpdatingFromText = true;
@@ -646,9 +656,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Auto-Delete Retention',
-                        style: TextStyle(
+                      Text(
+                        strings.settingsAutoDeleteRetentionTitle,
+                        style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: Colors.white),
@@ -661,9 +671,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                     ],
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    'Select or type the age of alerts to permanently remove.',
-                    style: TextStyle(fontSize: 12, color: Colors.white38),
+                  Text(
+                    strings.settingsAutoDeleteRetentionSubtitle,
+                    style: const TextStyle(fontSize: 12, color: Colors.white38),
                   ),
                   const SizedBox(height: 20),
 
@@ -798,8 +808,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                       }
                       setState(() {});
                     },
-                    child: const Text('Save Retention Period',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: Text(strings.settingsSaveRetentionPeriod,
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
                   ),
                   const SizedBox(height: 20),
                 ],
@@ -813,10 +823,11 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings',
-            style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(strings.settingsTitle,
+            style: const TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -841,15 +852,15 @@ class _SettingsScreenState extends State<SettingsScreen>
             children: [
               // 1. Preferences Card (Top)
               _buildSettingsGroup(
-                title: 'Preferences',
+                title: strings.settingsPreferences,
                 icon: Icons.tune_rounded,
                 children: [
                   ListTile(
                     leading: const Icon(Icons.account_balance_wallet_rounded,
                         color: Color(0xFF6366F1)),
-                    title: const Text('Manage Payment Accounts',
+                    title: Text(strings.settingsManageAccounts,
                         style: TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text('${_accounts.length} active accounts',
+                    subtitle: Text(strings.settingsActiveAccounts(_accounts.length),
                         style: const TextStyle(fontSize: 11)),
                     trailing: const Icon(Icons.arrow_forward_ios_rounded,
                         size: 16, color: Colors.white54),
@@ -857,11 +868,51 @@ class _SettingsScreenState extends State<SettingsScreen>
                   ),
                   const Divider(color: Colors.white10),
                   ListTile(
+                    leading: const Icon(Icons.language_rounded,
+                        color: Color(0xFF6366F1)),
+                    title: Text(strings.settingsAppLanguage,
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text(
+                      strings.settingsAppLanguageSubtitle,
+                      style: TextStyle(fontSize: 11),
+                    ),
+                    trailing: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value:
+                            AppLanguageService.instance.selectedLanguage.code,
+                        dropdownColor: const Color(0xFF1E293B),
+                        isDense: true,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF818CF8),
+                          fontSize: 13,
+                        ),
+                        items: AppLanguageService.instance.supportedLanguages
+                            .map(
+                              (language) => DropdownMenuItem(
+                                value: language.code,
+                                child: Text(language.code == 'en'
+                                    ? strings.languageEnglish
+                                    : language.nativeName),
+                              ),
+                            )
+                            .toList(growable: false),
+                        onChanged: (code) async {
+                          if (code == null) return;
+                          await AppLanguageService.instance
+                              .selectLanguage(code);
+                          if (mounted) setState(() {});
+                        },
+                      ),
+                    ),
+                  ),
+                  const Divider(color: Colors.white10),
+                  ListTile(
                     leading: const Icon(Icons.category_rounded,
                         color: Color(0xFF6366F1)),
-                    title: const Text('Manage Transaction Categories',
+                    title: Text(strings.settingsManageCategories,
                         style: TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text('${_categories.length} active categories',
+                    subtitle: Text(strings.settingsActiveCategories(_categories.length),
                         style: const TextStyle(fontSize: 11)),
                     trailing: const Icon(Icons.arrow_forward_ios_rounded,
                         size: 16, color: Colors.white54),
@@ -871,9 +922,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                   ListTile(
                     leading: const Icon(Icons.monetization_on_rounded,
                         color: Color(0xFF6366F1)),
-                    title: const Text('Currency Symbol',
+                    title: Text(strings.settingsCurrencySymbol,
                         style: TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: const Text('Display currency across the app',
+                    subtitle: Text(strings.settingsCurrencySymbolSubtitle,
                         style: TextStyle(fontSize: 11)),
                     trailing: Container(
                       padding: const EdgeInsets.symmetric(
@@ -925,11 +976,11 @@ class _SettingsScreenState extends State<SettingsScreen>
                   ),
                   const Divider(color: Colors.white10),
                   ListTile(
-                    leading: const Icon(Icons.pin_rounded,
-                        color: Color(0xFF6366F1)),
-                    title: const Text('Number Comma Format',
+                    leading:
+                        const Icon(Icons.pin_rounded, color: Color(0xFF6366F1)),
+                    title: Text(strings.settingsNumberFormat,
                         style: TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: const Text('Comma separation & number localization',
+                    subtitle: Text(strings.settingsNumberFormatSubtitle,
                         style: TextStyle(fontSize: 11)),
                     trailing: Container(
                       padding: const EdgeInsets.symmetric(
@@ -959,13 +1010,17 @@ class _SettingsScreenState extends State<SettingsScreen>
                             DropdownMenuItem(
                                 value: 'auto', child: Text('🌐 Auto (System)')),
                             DropdownMenuItem(
-                                value: 'en_IN', child: Text('🇮🇳 Indian (12,34,567)')),
+                                value: 'en_IN',
+                                child: Text('🇮🇳 Indian (12,34,567)')),
                             DropdownMenuItem(
-                                value: 'en_US', child: Text('🌍 Standard (1,234,567)')),
+                                value: 'en_US',
+                                child: Text('🌍 Standard (1,234,567)')),
                             DropdownMenuItem(
-                                value: 'de_DE', child: Text('🇪🇺 European (1.234.567)')),
+                                value: 'de_DE',
+                                child: Text('🇪🇺 European (1.234.567)')),
                             DropdownMenuItem(
-                                value: 'en_GB', child: Text('🇬🇧 UK (1,234,567)')),
+                                value: 'en_GB',
+                                child: Text('🇬🇧 UK (1,234,567)')),
                           ],
                           onChanged: (val) async {
                             if (val != null) {
@@ -980,11 +1035,10 @@ class _SettingsScreenState extends State<SettingsScreen>
                   ),
                   const Divider(color: Colors.white10),
                   SwitchListTile(
-                    title: const Text('Auto-Hide Balances on Entry',
+                    title: Text(strings.settingsAutoHideBalances,
                         style: TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 14)),
-                    subtitle: const Text(
-                        'Masks Dashboard values when app opens',
+                    subtitle: Text(strings.settingsAutoHideBalancesSubtitle,
                         style: TextStyle(fontSize: 11)),
                     value: AppSettings.autoHideEnabled,
                     activeColor: const Color(0xFF6366F1),
@@ -1010,8 +1064,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
-                            'Hide Duration',
+                          Text(
+                            strings.settingsHideDuration,
                             style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
@@ -1137,7 +1191,7 @@ class _SettingsScreenState extends State<SettingsScreen>
 
               // 2. Data & Backups (Middle)
               _buildSettingsGroup(
-                title: 'Data & Backups',
+                title: strings.settingsDataAndBackups,
                 icon: Icons.sync_rounded,
                 children: [
                   ListTile(
@@ -1150,11 +1204,11 @@ class _SettingsScreenState extends State<SettingsScreen>
                       child: const Icon(Icons.upload_rounded,
                           color: Color(0xFF6366F1), size: 20),
                     ),
-                    title: const Text('Export Data / Backup',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: const Text(
-                        'Export transactions as JSON or Excel/CSV (Save or Share)',
-                        style: TextStyle(fontSize: 11, color: Colors.white54)),
+                    title: Text(strings.settingsExportDataBackup,
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text(
+                        strings.settingsExportSubtitle,
+                        style: const TextStyle(fontSize: 11, color: Colors.white54)),
                     trailing: const Icon(Icons.chevron_right_rounded,
                         color: Colors.white38),
                     onTap: _showExportFormatSheet,
@@ -1170,11 +1224,11 @@ class _SettingsScreenState extends State<SettingsScreen>
                       child: const Icon(Icons.download_rounded,
                           color: Color(0xFF10B981), size: 20),
                     ),
-                    title: const Text('Import Data / Restore',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: const Text(
-                        'Select file (.json or .csv) to append or replace data',
-                        style: TextStyle(fontSize: 11, color: Colors.white54)),
+                    title: Text(strings.settingsImportDataRestore,
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text(
+                        strings.settingsImportSubtitle,
+                        style: const TextStyle(fontSize: 11, color: Colors.white54)),
                     trailing: const Icon(Icons.chevron_right_rounded,
                         color: Colors.white38),
                     onTap: _handleImportWorkflow,
@@ -1210,6 +1264,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setSheetState) {
+            final strings = AppLocalizations.of(context)!;
             IconData getIcon(String type) {
               switch (type) {
                 case 'bank':
@@ -1232,9 +1287,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Manage Accounts',
-                        style: TextStyle(
+                      Text(
+                        strings.settingsManageAccountsTitle,
+                        style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                             color: Colors.white),
@@ -1267,10 +1322,10 @@ class _SettingsScreenState extends State<SettingsScreen>
                   const SizedBox(height: 16),
                   Expanded(
                     child: _accounts.isEmpty
-                        ? const Center(
+                        ? Center(
                             child: Text(
-                              'No accounts yet. Tap + to add one.',
-                              style: TextStyle(color: Colors.white38),
+                              strings.settingsNoAccountsYet,
+                              style: const TextStyle(color: Colors.white38),
                             ),
                           )
                         : ListView.builder(
@@ -1515,17 +1570,18 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   Widget _buildSmartTrackingCard() {
+    final strings = AppLocalizations.of(context)!;
     return _buildSettingsGroup(
-      title: 'Smart Tracking',
+      title: strings.settingsSmartTracking,
       icon: Icons.notifications_active_rounded,
       children: [
         // Smart Tracking Toggle
         SwitchListTile(
-          title: const Text('Smart Tracking',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-          subtitle: const Text(
-              'Read incoming transaction notifications in background',
-              style: TextStyle(fontSize: 11)),
+          title: Text(strings.settingsSmartTracking,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          subtitle: Text(
+              strings.settingsSmartTrackingSubtitle,
+              style: const TextStyle(fontSize: 11)),
           activeColor: const Color(0xFF6366F1),
           value: _isServiceEnabled,
           onChanged: _toggleService,
@@ -1547,14 +1603,14 @@ class _SettingsScreenState extends State<SettingsScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Row(
+                  Row(
                     children: [
-                      Icon(Icons.shield_rounded,
+                      const Icon(Icons.shield_rounded,
                           color: Color(0xFF6366F1), size: 20),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       Text(
-                        'Reliability Recommendations',
-                        style: TextStyle(
+                        strings.settingsReliabilityRecommendations,
+                        style: const TextStyle(
                             color: Color(0xFFE2E8F0),
                             fontSize: 14,
                             fontWeight: FontWeight.bold),
@@ -1562,36 +1618,36 @@ class _SettingsScreenState extends State<SettingsScreen>
                     ],
                   ),
                   const SizedBox(height: 6),
-                  const Text(
-                    'Configure the options below to maximize Smart Tracking reliability, especially on devices with aggressive background management.',
-                    style: TextStyle(
+                  Text(
+                    strings.settingsReliabilityRecommendationsSubtitle,
+                    style: const TextStyle(
                         color: Colors.white54, fontSize: 12, height: 1.4),
                   ),
                   const SizedBox(height: 16),
                   _buildReliabilityAction(
                     icon: Icons.rocket_launch_rounded,
-                    title: 'Enable Auto Start (Highly Recommended)',
+                    title: strings.settingsEnableAutoStartTitle,
                     description:
-                        'Allows Android to automatically start Smart Finance Tracker after reboot and when notifications arrive. This improves notification capture reliability on many devices with aggressive battery management.',
-                    buttonText: 'Enable Auto Start',
+                        strings.settingsEnableAutoStartDescription,
+                    buttonText: strings.settingsEnableAutoStartBtn,
                     onTap: () => NotificationHandler.openAutoStartSettings(),
                   ),
                   const Divider(color: Colors.white10, height: 24),
                   _buildReliabilityAction(
                     icon: Icons.battery_saver_rounded,
-                    title: 'Enable Unrestricted Run',
+                    title: strings.settingsEnableUnrestrictedRunTitle,
                     description:
-                        'Prevent Android from putting Smart Finance Tracker\'s notification listener to sleep. The app only wakes for a few milliseconds when a notification arrives, so battery impact is minimal.',
-                    buttonText: 'Enable Unrestricted Run',
+                        strings.settingsEnableUnrestrictedRunDescription,
+                    buttonText: strings.settingsEnableUnrestrictedRunBtn,
                     onTap: () => NotificationHandler.requestBatteryExemption(),
                   ),
                   const Divider(color: Colors.white10, height: 24),
                   _buildReliabilityAction(
                     icon: Icons.notifications_active_rounded,
-                    title: 'Keep Notification Access Enabled',
+                    title: strings.settingsKeepNotificationAccessTitle,
                     description:
-                        'Smart Tracking requires notification access to capture incoming transaction alerts. If notification access is disabled, automatic transaction detection will stop working.',
-                    buttonText: 'Open Notification Access',
+                        strings.settingsKeepNotificationAccessDescription,
+                    buttonText: strings.settingsOpenNotificationAccessBtn,
                     onTap: () => NotificationHandler.openPermissionSettings(),
                   ),
                 ],
@@ -1611,13 +1667,13 @@ class _SettingsScreenState extends State<SettingsScreen>
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 SwitchListTile(
-                  title: const Text('Auto-Delete Archived Alerts',
+                  title: Text(strings.settingsAutoDeleteArchivedAlerts,
                       style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                          const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                   subtitle: Text(
                     _isServiceEnabled
-                        ? 'Automatically purge old ignored notification logs'
-                        : 'Requires Smart Tracking to be enabled',
+                        ? strings.settingsAutoDeleteSubtitle
+                        : strings.settingsAutoDeleteRequiresSmartTracking,
                     style: const TextStyle(fontSize: 11),
                   ),
                   value: AppSettings.autoDeleteArchive,
@@ -1634,14 +1690,12 @@ class _SettingsScreenState extends State<SettingsScreen>
                               borderRadius: BorderRadius.circular(20)),
                           icon: const Icon(Icons.auto_delete_rounded,
                               color: Color(0xFFF59E0B), size: 36),
-                          title: const Text('Disable Auto-Delete?',
-                              style: TextStyle(
+                          title: Text(strings.settingsDisableAutoDeleteTitle,
+                              style: const TextStyle(
                                   fontWeight: FontWeight.bold, fontSize: 17)),
-                          content: const Text(
-                            'Archived alerts will no longer be automatically cleaned up. '
-                            'Over time, this may increase storage usage as old notification logs accumulate.\n\n'
-                            'You can still manually delete alerts from the Archived Alerts screen.',
-                            style: TextStyle(
+                          content: Text(
+                            strings.settingsDisableAutoDeleteDescription,
+                            style: const TextStyle(
                                 color: Colors.white70,
                                 fontSize: 13,
                                 height: 1.5),
@@ -1649,15 +1703,15 @@ class _SettingsScreenState extends State<SettingsScreen>
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(context, false),
-                              child: const Text('Keep Enabled',
-                                  style: TextStyle(
+                              child: Text(strings.settingsKeepEnabled,
+                                  style: const TextStyle(
                                       color: Colors.white54,
                                       fontWeight: FontWeight.bold)),
                             ),
                             TextButton(
                               onPressed: () => Navigator.pop(context, true),
-                              child: const Text('Disable',
-                                  style: TextStyle(
+                              child: Text(strings.settingsDisable,
+                                  style: const TextStyle(
                                       color: Color(0xFFEF4444),
                                       fontWeight: FontWeight.bold)),
                             ),
@@ -1684,8 +1738,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                       tileColor: Colors.black.withOpacity(0.15),
-                      title: const Text('Delete older than',
-                          style: TextStyle(
+                      title: Text(strings.settingsDeleteOlderThan,
+                          style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               color: Colors.white70,
                               fontSize: 13)),
@@ -1733,12 +1787,12 @@ class _SettingsScreenState extends State<SettingsScreen>
             child: ListTile(
               leading:
                   const Icon(Icons.archive_rounded, color: Color(0xFF6366F1)),
-              title: const Text('View Archived Alerts',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              title: Text(strings.settingsViewArchivedAlerts,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
               subtitle: Text(
                 _isServiceEnabled
-                    ? 'View and restore ignored notifications'
-                    : 'Requires Smart Tracking to be enabled',
+                    ? strings.settingsViewArchivedAlertsSubtitle
+                    : strings.settingsAutoDeleteRequiresSmartTracking,
                 style: const TextStyle(fontSize: 11),
               ),
               trailing: const Icon(Icons.arrow_forward_ios_rounded,
@@ -1757,19 +1811,20 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   Widget _buildAdvancedSettingsCard() {
+    final strings = AppLocalizations.of(context)!;
     return _buildSettingsGroup(
-      title: 'Advanced Settings',
+      title: strings.settingsAdvancedSettings,
       icon: Icons.construction_rounded,
       children: [
         // Train Your Model
         ListTile(
           leading:
               const Icon(Icons.psychology_rounded, color: Color(0xFF818CF8)),
-          title: const Text('Train Your Model',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-          subtitle: const Text(
-              'Manually teach the AI using sample notifications',
-              style: TextStyle(fontSize: 11)),
+          title: Text(strings.settingsTrainYourModel,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          subtitle: Text(
+              strings.settingsTrainYourModelSubtitle,
+              style: const TextStyle(fontSize: 11)),
           trailing: const Icon(Icons.arrow_forward_ios_rounded,
               size: 16, color: Colors.white54),
           onTap: () {
@@ -1786,10 +1841,10 @@ class _SettingsScreenState extends State<SettingsScreen>
         // SnackBar Display Duration
         ListTile(
           leading: const Icon(Icons.timer_rounded, color: Color(0xFF6366F1)),
-          title: const Text('SnackBar Display Duration',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          title: Text(strings.settingsSnackBarDuration,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
           subtitle: Text(
-              '${(AppSettings.snackBarDurationMs / 1000).toStringAsFixed(1)} seconds',
+              strings.settingsSnackBarDurationSubtitle((AppSettings.snackBarDurationMs / 1000).toStringAsFixed(1)),
               style: const TextStyle(fontSize: 11)),
           trailing: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -1836,16 +1891,17 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   Widget _buildDeveloperOptionsCard() {
+    final strings = AppLocalizations.of(context)!;
     return _buildSettingsGroup(
-      title: 'Developer Options',
+      title: strings.settingsDeveloperOptions,
       icon: Icons.bug_report_rounded,
       children: [
         ListTile(
           leading: const Icon(Icons.terminal_rounded, color: Color(0xFF818CF8)),
-          title: const Text('Log Inspector',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-          subtitle: const Text('View live app logs in real time',
-              style: TextStyle(fontSize: 11)),
+          title: Text(strings.settingsLogInspector,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          subtitle: Text(strings.settingsLogInspectorSubtitle,
+              style: const TextStyle(fontSize: 11)),
           trailing: const Icon(Icons.arrow_forward_ios_rounded,
               size: 16, color: Colors.white54),
           onTap: () {
@@ -1857,11 +1913,13 @@ class _SettingsScreenState extends State<SettingsScreen>
           },
         ),
         ListTile(
-          leading: const Icon(Icons.playlist_add_rounded, color: Color(0xFF10B981)),
-          title: const Text('Simulate Notification',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-          subtitle: const Text('Simulate incoming notifications for testing parser/AI',
-              style: TextStyle(fontSize: 11)),
+          leading:
+              const Icon(Icons.playlist_add_rounded, color: Color(0xFF10B981)),
+          title: Text(strings.settingsSimulateNotification,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          subtitle: Text(
+              strings.settingsSimulateNotificationSubtitle,
+              style: const TextStyle(fontSize: 11)),
           trailing: const Icon(Icons.arrow_forward_ios_rounded,
               size: 16, color: Colors.white54),
           onTap: () => _showSimulateNotificationBottomSheet(),
@@ -1887,6 +1945,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
+        final strings = AppLocalizations.of(context)!;
         return Container(
           height: MediaQuery.of(context).size.height * 0.75,
           decoration: const BoxDecoration(
@@ -1910,14 +1969,14 @@ class _SettingsScreenState extends State<SettingsScreen>
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Row(
+                Row(
                   children: [
-                    Icon(Icons.auto_awesome,
+                    const Icon(Icons.auto_awesome,
                         color: Color(0xFF818CF8), size: 22),
-                    SizedBox(width: 10),
+                    const SizedBox(width: 10),
                     Text(
-                      'Model Automation Audit Log',
-                      style: TextStyle(
+                      strings.settingsModelAuditLogTitle,
+                      style: const TextStyle(
                           color: Colors.white,
                           fontSize: 18,
                           fontWeight: FontWeight.bold),
@@ -1925,9 +1984,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                   ],
                 ),
                 const SizedBox(height: 6),
-                const Text(
-                  'Full transparency into automatic actions performed by your on-device AI.',
-                  style: TextStyle(color: Colors.white54, fontSize: 12),
+                Text(
+                  strings.settingsModelAuditLogSubtitle,
+                  style: const TextStyle(color: Colors.white54, fontSize: 12),
                 ),
                 const SizedBox(height: 16),
                 Expanded(
@@ -1942,9 +2001,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                       }
                       final logs = snapshot.data!;
                       if (logs.isEmpty) {
-                        return const Center(
-                          child: Text('No automated actions logged yet today.',
-                              style: TextStyle(
+                        return Center(
+                          child: Text(strings.settingsNoAutomatedActionsYet,
+                              style: const TextStyle(
                                   color: Colors.white38, fontSize: 13)),
                         );
                       }
@@ -1992,8 +2051,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                                       ),
                                       child: Text(
                                         isDrafted
-                                            ? 'AUTO-DRAFTED'
-                                            : 'AUTO-DISMISSED',
+                                            ? strings.settingsAutoDraftedBadge
+                                            : strings.settingsAutoDismissedBadge,
                                         style: TextStyle(
                                           color: isDrafted
                                               ? const Color(0xFF34D399)
@@ -2011,7 +2070,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                                             fontWeight: FontWeight.w600)),
                                     const Spacer(),
                                     Text(
-                                      '${(confidence * 100).toInt()}% Conf.',
+                                      strings.settingsConfidencePct((confidence * 100).toInt()),
                                       style: const TextStyle(
                                           color: Colors.white38, fontSize: 11),
                                     ),
@@ -2053,8 +2112,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                                           const SizedBox(width: 4),
                                           Text(
                                             isDrafted
-                                                ? 'Undo Auto-Draft'
-                                                : 'Undo Auto-Dismiss',
+                                                ? strings.settingsUndoAutoDraft
+                                                : strings.settingsUndoAutoDismiss,
                                             style: const TextStyle(
                                                 color: Colors.white70,
                                                 fontSize: 11,
@@ -2094,7 +2153,8 @@ class _SettingsScreenState extends State<SettingsScreen>
         await dbService.updateNotificationLogStatus(logId, 'unclassified');
       }
       if (mounted) {
-        AppSnackBar.show(context, 'Restored to Captured Alerts!',
+        final strings = AppLocalizations.of(context)!;
+        AppSnackBar.show(context, strings.settingsRestoredToCapturedAlerts,
             type: SnackBarType.success);
       }
     } else if (actionType == 'auto_drafted') {
@@ -2106,8 +2166,9 @@ class _SettingsScreenState extends State<SettingsScreen>
         await PerceptronStorageService.instance.saveWeights();
       }
       if (mounted) {
+        final strings = AppLocalizations.of(context)!;
         AppSnackBar.show(context,
-            'Moved back to Captured Alerts. AI learned to ignore similar alerts.',
+            strings.settingsUndoDraftLearnedIgnore,
             type: SnackBarType.neutral);
       }
     }
@@ -2123,22 +2184,23 @@ class _SettingsScreenState extends State<SettingsScreen>
   // --- DIALOGS FOR FORMS ---
 
   Future<bool?> _showConfirmDeleteDialog(String name) {
+    final strings = AppLocalizations.of(context)!;
     return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
-        title: const Text('Delete configuration?'),
-        content: Text('Are you sure you want to delete "$name"?'),
+        title: Text(strings.settingsDeleteConfigTitle),
+        content: Text(strings.settingsDeleteConfigConfirm(name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child:
-                const Text('Cancel', style: TextStyle(color: Colors.white70)),
+                Text(strings.settingsCancel, style: const TextStyle(color: Colors.white70)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete',
-                style: TextStyle(color: Color(0xFFEF4444))),
+            child: Text(strings.settingsDelete,
+                style: const TextStyle(color: Color(0xFFEF4444))),
           ),
         ],
       ),
@@ -2146,6 +2208,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   Future<void> _openAccountFormDialog(AccountModel? editAcc) async {
+    final strings = AppLocalizations.of(context)!;
     final isEdit = editAcc != null;
     final nameController =
         TextEditingController(text: isEdit ? editAcc.name : '');
@@ -2156,14 +2219,14 @@ class _SettingsScreenState extends State<SettingsScreen>
     String type = isEdit ? editAcc.type : 'bank';
 
     final types = [
-      {'value': 'bank', 'label': 'Bank', 'icon': Icons.account_balance},
-      {'value': 'credit_card', 'label': 'Card', 'icon': Icons.credit_card},
+      {'value': 'bank', 'label': strings.settingsAccountTypeBank, 'icon': Icons.account_balance},
+      {'value': 'credit_card', 'label': strings.settingsAccountTypeCard, 'icon': Icons.credit_card},
       {
         'value': 'wallet',
-        'label': 'Wallet',
+        'label': strings.settingsAccountTypeWallet,
         'icon': Icons.account_balance_wallet
       },
-      {'value': 'cash', 'label': 'Cash', 'icon': Icons.money},
+      {'value': 'cash', 'label': strings.settingsAccountTypeCash, 'icon': Icons.money},
     ];
 
     await showModalBottomSheet(
@@ -2200,14 +2263,14 @@ class _SettingsScreenState extends State<SettingsScreen>
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      isEdit ? 'Edit Account' : 'Add Account',
+                      isEdit ? strings.settingsEditAccount : strings.settingsAddAccount,
                       style: const TextStyle(
                           fontSize: 20, fontWeight: FontWeight.bold),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 20),
-                    const Text('Account Type',
-                        style: TextStyle(fontSize: 12, color: Colors.white54)),
+                    Text(strings.settingsAccountType,
+                        style: const TextStyle(fontSize: 12, color: Colors.white54)),
                     const SizedBox(height: 8),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -2261,21 +2324,21 @@ class _SettingsScreenState extends State<SettingsScreen>
                     const SizedBox(height: 16),
                     TextField(
                       controller: nameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Account Name',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.badge_outlined),
+                      decoration: InputDecoration(
+                        labelText: strings.settingsAccountName,
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.badge_outlined),
                       ),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: kwController,
-                      decoration: const InputDecoration(
-                        labelText: 'Matching Keywords (comma separated)',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.vpn_key_outlined),
+                      decoration: InputDecoration(
+                        labelText: strings.settingsMatchingKeywords,
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.vpn_key_outlined),
                         helperText:
-                            'E.g. "5678, SBI" (used to auto-predict this account)',
+                            strings.settingsMatchingKeywordsHelper,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -2285,7 +2348,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                           const TextInputType.numberWithOptions(decimal: true),
                       decoration: InputDecoration(
                         labelText:
-                            'Starting Balance (${AppSettings.currencySymbol})',
+                            strings.settingsStartingBalance(AppSettings.currencySymbol),
                         border: const OutlineInputBorder(),
                         prefixText: '${AppSettings.currencySymbol} ',
                         prefixStyle: const TextStyle(
@@ -2303,8 +2366,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                                   borderRadius: BorderRadius.circular(12)),
                             ),
                             onPressed: () => Navigator.pop(context),
-                            child: const Text('Cancel',
-                                style: TextStyle(color: Colors.white70)),
+                            child: Text(strings.settingsCancel,
+                                style: const TextStyle(color: Colors.white70)),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -2343,7 +2406,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                               Navigator.pop(context);
                               _loadSettingsData();
                             },
-                            child: Text(isEdit ? 'Save' : 'Add',
+                            child: Text(isEdit ? strings.settingsSave : strings.settingsAdd,
                                 style: const TextStyle(
                                     fontWeight: FontWeight.bold)),
                           ),
@@ -2362,6 +2425,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   Future<void> _openCategoryFormDialog(CategoryModel? editCat) async {
+    final strings = AppLocalizations.of(context)!;
     final isEdit = editCat != null;
     final nameController =
         TextEditingController(text: isEdit ? editCat.name : '');
@@ -2425,7 +2489,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        isEdit ? 'Edit Category' : 'Add Category',
+                        isEdit ? strings.settingsEditCategory : strings.settingsAddCategory,
                         style: const TextStyle(
                             fontSize: 20, fontWeight: FontWeight.bold),
                         textAlign: TextAlign.center,
@@ -2434,16 +2498,16 @@ class _SettingsScreenState extends State<SettingsScreen>
                       TextField(
                         controller: nameController,
                         focusNode: nameFocusNode,
-                        decoration: const InputDecoration(
-                          labelText: 'Category Name',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.category_outlined),
+                        decoration: InputDecoration(
+                          labelText: strings.settingsCategoryName,
+                          border: const OutlineInputBorder(),
+                          prefixIcon: const Icon(Icons.category_outlined),
                         ),
                       ),
                       const SizedBox(height: 16),
-                      const Text('Theme Color',
+                      Text(strings.settingsThemeColor,
                           style:
-                              TextStyle(fontSize: 12, color: Colors.white54)),
+                              const TextStyle(fontSize: 12, color: Colors.white54)),
                       const SizedBox(height: 8),
                       Center(
                         child: Wrap(
@@ -2523,9 +2587,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                         ),
                       ),
                       const SizedBox(height: 20),
-                      const Text('Category Icon',
+                      Text(strings.settingsCategoryIcon,
                           style:
-                              TextStyle(fontSize: 12, color: Colors.white54)),
+                              const TextStyle(fontSize: 12, color: Colors.white54)),
                       const SizedBox(height: 10),
                       Row(
                         children: [
@@ -2547,15 +2611,15 @@ class _SettingsScreenState extends State<SettingsScreen>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Icon: "${icon.replaceAll('_', ' ')}"',
+                                  strings.settingsIconLabel(icon.replaceAll('_', ' ')),
                                   style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 14),
                                 ),
                                 const SizedBox(height: 2),
-                                const Text(
-                                  'Search from 60+ modern icons',
-                                  style: TextStyle(
+                                Text(
+                                  strings.settingsBrowseIconsSubtitle,
+                                  style: const TextStyle(
                                       fontSize: 10, color: Colors.white38),
                                 ),
                               ],
@@ -2576,8 +2640,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                             ),
                             icon: const Icon(Icons.search_rounded,
                                 size: 14, color: Color(0xFF6366F1)),
-                            label: const Text('Browse',
-                                style: TextStyle(
+                            label: Text(strings.settingsBrowse,
+                                style: const TextStyle(
                                     fontSize: 12, fontWeight: FontWeight.bold)),
                             onPressed: () {
                               nameFocusNode.unfocus();
@@ -2603,8 +2667,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                                     borderRadius: BorderRadius.circular(12)),
                               ),
                               onPressed: () => Navigator.pop(context),
-                              child: const Text('Cancel',
-                                  style: TextStyle(color: Colors.white70)),
+                              child: Text(strings.settingsCancel,
+                                  style: const TextStyle(color: Colors.white70)),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -2640,7 +2704,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                                 Navigator.pop(context);
                                 _loadSettingsData();
                               },
-                              child: Text(isEdit ? 'Save' : 'Add',
+                              child: Text(isEdit ? strings.settingsSave : strings.settingsAdd,
                                   style: const TextStyle(
                                       fontWeight: FontWeight.bold)),
                             ),
@@ -2737,6 +2801,7 @@ class _SearchableIconPickerState extends State<SearchableIconPicker> {
       maxChildSize: 0.95,
       expand: false,
       builder: (context, scrollController) {
+        final strings = AppLocalizations.of(context)!;
         return GestureDetector(
           onTap: () => FocusScope.of(context).unfocus(),
           behavior: HitTestBehavior.opaque,
@@ -2760,9 +2825,9 @@ class _SearchableIconPickerState extends State<SearchableIconPicker> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text(
-                  'Search Category Icons',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                Text(
+                  strings.settingsSearchCategoryIcons,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 12),
                 // Search field
@@ -2771,7 +2836,7 @@ class _SearchableIconPickerState extends State<SearchableIconPicker> {
                   autofocus: false,
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
-                    hintText: 'Search by keyword (e.g. food, taxi, bill...)',
+                    hintText: strings.settingsSearchIconsHint,
                     hintStyle: const TextStyle(color: Colors.white38),
                     prefixIcon: const Icon(Icons.search_rounded,
                         color: Color(0xFF6366F1)),
@@ -2795,11 +2860,11 @@ class _SearchableIconPickerState extends State<SearchableIconPicker> {
                 const SizedBox(height: 16),
                 Expanded(
                   child: filteredKeys.isEmpty
-                      ? const Center(
+                      ? Center(
                           child: Text(
-                            'No matching icons found.\nTry another keyword!',
+                            strings.settingsNoIconsFound,
                             textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.white38),
+                            style: const TextStyle(color: Colors.white38),
                           ),
                         )
                       : GridView.builder(
@@ -2892,6 +2957,7 @@ class _ColorSpectrumPickerState extends State<ColorSpectrumPicker> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     return Container(
       decoration: const BoxDecoration(
         color: Color(0xFF0F172A),
@@ -2912,9 +2978,9 @@ class _ColorSpectrumPickerState extends State<ColorSpectrumPicker> {
             ),
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Pick a Custom Color',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          Text(
+            strings.settingsPickCustomColor,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 20),
           // Color preview
@@ -2959,10 +3025,10 @@ class _ColorSpectrumPickerState extends State<ColorSpectrumPicker> {
           ),
           const SizedBox(height: 24),
           // Saturation x Lightness grid
-          const Align(
+          Align(
             alignment: Alignment.centerLeft,
-            child: Text('Shade',
-                style: TextStyle(fontSize: 11, color: Colors.white54)),
+            child: Text(strings.settingsShade,
+                style: const TextStyle(fontSize: 11, color: Colors.white54)),
           ),
           const SizedBox(height: 8),
           SizedBox(
@@ -2984,10 +3050,10 @@ class _ColorSpectrumPickerState extends State<ColorSpectrumPicker> {
           ),
           const SizedBox(height: 20),
           // Hue slider
-          const Align(
+          Align(
             alignment: Alignment.centerLeft,
-            child: Text('Hue',
-                style: TextStyle(fontSize: 11, color: Colors.white54)),
+            child: Text(strings.settingsHue,
+                style: const TextStyle(fontSize: 11, color: Colors.white54)),
           ),
           const SizedBox(height: 8),
           SizedBox(
@@ -3023,8 +3089,8 @@ class _ColorSpectrumPickerState extends State<ColorSpectrumPicker> {
                 widget.onSelected(_currentColor.value);
                 Navigator.pop(context);
               },
-              child: const Text('Select Color',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+              child: Text(strings.settingsSelectColor,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
             ),
           ),
         ],
@@ -3134,33 +3200,40 @@ class _SimulateNotificationSheet extends StatefulWidget {
   const _SimulateNotificationSheet();
 
   @override
-  State<_SimulateNotificationSheet> createState() => _SimulateNotificationSheetState();
+  State<_SimulateNotificationSheet> createState() =>
+      _SimulateNotificationSheetState();
 }
 
-class _SimulateNotificationSheetState extends State<_SimulateNotificationSheet> {
-  final _packageNameController = TextEditingController(text: 'com.android.messaging');
+class _SimulateNotificationSheetState
+    extends State<_SimulateNotificationSheet> {
+  final _packageNameController =
+      TextEditingController(text: 'com.android.messaging');
   final _titleController = TextEditingController(text: 'HDFC Bank');
   final _bodyController = TextEditingController(
-      text: 'Alert: Rs 2,500.00 spent on Debit Card XX4321 at STARBUCKS. Bal: Rs 15,432.00.');
+      text:
+          'Alert: Rs 2,500.00 spent on Debit Card XX4321 at STARBUCKS. Bal: Rs 15,432.00.');
 
   final List<Map<String, String>> _templates = [
     {
       'name': 'HDFC Debit',
       'package': 'com.android.messaging',
       'title': 'HDFC Bank',
-      'body': 'Alert: Rs 2,500.00 spent on Debit Card XX4321 at STARBUCKS. Bal: Rs 15,432.00.'
+      'body':
+          'Alert: Rs 2,500.00 spent on Debit Card XX4321 at STARBUCKS. Bal: Rs 15,432.00.'
     },
     {
       'name': 'ICICI Credit',
       'package': 'com.android.messaging',
       'title': 'ICICI Bank',
-      'body': 'Your ICICI Bank Credit Card XX9999 has been charged Rs 8,450.00 at AMAZON INDIA. Available Limit: Rs 92,300.00.'
+      'body':
+          'Your ICICI Bank Credit Card XX9999 has been charged Rs 8,450.00 at AMAZON INDIA. Available Limit: Rs 92,300.00.'
     },
     {
       'name': 'SBI UPI SMS',
       'package': 'com.android.messaging',
       'title': 'SBI UPI',
-      'body': 'Dear SBI User, Rs 1,500.00 debited from A/c XX8888 on 22-07-2026 for UPI Ref: 629381029472.'
+      'body':
+          'Dear SBI User, Rs 1,500.00 debited from A/c XX8888 on 22-07-2026 for UPI Ref: 629381029472.'
     },
     {
       'name': 'Google Pay',
@@ -3178,7 +3251,8 @@ class _SimulateNotificationSheetState extends State<_SimulateNotificationSheet> 
       'name': 'Promo (Ignore)',
       'package': 'com.zomato.android',
       'title': 'Zomato',
-      'body': 'Hungry? Grab 50% discount up to Rs 120 on your next order! Use code CRRAVE50.'
+      'body':
+          'Hungry? Grab 50% discount up to Rs 120 on your next order! Use code CRRAVE50.'
     },
   ];
 
@@ -3204,7 +3278,10 @@ class _SimulateNotificationSheetState extends State<_SimulateNotificationSheet> 
     final body = _bodyController.text.trim();
 
     if (pkg.isEmpty || body.isEmpty) {
-      AppSnackBar.show(context, 'Package name and notification body are required.', type: SnackBarType.warning);
+      final strings = AppLocalizations.of(context)!;
+      AppSnackBar.show(
+          context, strings.settingsSimulateRequiredError,
+          type: SnackBarType.warning);
       return;
     }
 
@@ -3220,17 +3297,23 @@ class _SimulateNotificationSheetState extends State<_SimulateNotificationSheet> 
     try {
       await NotificationHandler.handleNotificationEvent(mockEvent);
       if (mounted) {
-        AppSnackBar.show(context, 'Simulated notification processed successfully! Check Transaction Inbox.', type: SnackBarType.success);
+        final strings = AppLocalizations.of(context)!;
+        AppSnackBar.show(context,
+            strings.settingsSimulateSuccess,
+            type: SnackBarType.success);
       }
     } catch (e) {
       if (mounted) {
-        AppSnackBar.show(context, 'Simulation failed: $e', type: SnackBarType.error);
+        final strings = AppLocalizations.of(context)!;
+        AppSnackBar.show(context, strings.settingsSimulateFailure(e.toString()),
+            type: SnackBarType.error);
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     return Container(
       decoration: const BoxDecoration(
         color: Color(0xFF0F172A),
@@ -3260,13 +3343,14 @@ class _SimulateNotificationSheetState extends State<_SimulateNotificationSheet> 
                 ),
               ),
               const SizedBox(height: 16),
-              const Row(
+              Row(
                 children: [
-                  Icon(Icons.playlist_add_rounded, color: Color(0xFF10B981), size: 24),
-                  SizedBox(width: 10),
+                  const Icon(Icons.playlist_add_rounded,
+                      color: Color(0xFF10B981), size: 24),
+                  const SizedBox(width: 10),
                   Text(
-                    'Simulate Notification',
-                    style: TextStyle(
+                    strings.settingsSimulateNotificationTitle,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -3275,15 +3359,19 @@ class _SimulateNotificationSheetState extends State<_SimulateNotificationSheet> 
                 ],
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Select a pre-seeded template or write custom notification data to test parsing, drafts, and active ignore learning.',
-                style: TextStyle(color: Colors.white54, fontSize: 12, height: 1.4),
+              Text(
+                strings.settingsSimulateNotificationDescription,
+                style:
+                    const TextStyle(color: Colors.white54, fontSize: 12, height: 1.4),
               ),
               const SizedBox(height: 16),
               // Horizontal Templates List
-              const Text(
-                'Quick Templates',
-                style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold),
+              Text(
+                strings.settingsQuickTemplates,
+                style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               SizedBox(
@@ -3297,11 +3385,15 @@ class _SimulateNotificationSheetState extends State<_SimulateNotificationSheet> 
                       padding: const EdgeInsets.only(right: 8),
                       child: ActionChip(
                         label: Text(t['name'] ?? ''),
-                        labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white),
+                        labelStyle: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white),
                         backgroundColor: const Color(0xFF1E293B),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
-                          side: BorderSide(color: Colors.white.withOpacity(0.08)),
+                          side:
+                              BorderSide(color: Colors.white.withOpacity(0.08)),
                         ),
                         onPressed: () => _applyTemplate(t),
                       ),
@@ -3311,9 +3403,12 @@ class _SimulateNotificationSheetState extends State<_SimulateNotificationSheet> 
               ),
               const SizedBox(height: 20),
               // Package Name Input
-              const Text(
-                'App Package Name',
-                style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold),
+              Text(
+                strings.settingsAppPackageName,
+                style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 6),
               Container(
@@ -3329,15 +3424,19 @@ class _SimulateNotificationSheetState extends State<_SimulateNotificationSheet> 
                     hintText: 'e.g. com.android.messaging',
                     hintStyle: TextStyle(color: Colors.white30, fontSize: 13),
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   ),
                 ),
               ),
               const SizedBox(height: 16),
               // Title Input
-              const Text(
-                'Notification Title',
-                style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold),
+              Text(
+                strings.settingsNotificationTitleLabel,
+                style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 6),
               Container(
@@ -3353,15 +3452,19 @@ class _SimulateNotificationSheetState extends State<_SimulateNotificationSheet> 
                     hintText: 'e.g. HDFC Bank',
                     hintStyle: TextStyle(color: Colors.white30, fontSize: 13),
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   ),
                 ),
               ),
               const SizedBox(height: 16),
               // Body Input
-              const Text(
-                'Notification Body (Message Text)',
-                style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold),
+              Text(
+                strings.settingsNotificationBodyLabel,
+                style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 6),
               Container(
@@ -3374,11 +3477,12 @@ class _SimulateNotificationSheetState extends State<_SimulateNotificationSheet> 
                   controller: _bodyController,
                   maxLines: 3,
                   style: const TextStyle(color: Colors.white, fontSize: 13),
-                  decoration: const InputDecoration(
-                    hintText: 'Write transaction message alert text here...',
-                    hintStyle: TextStyle(color: Colors.white30, fontSize: 13),
+                  decoration: InputDecoration(
+                    hintText: strings.settingsNotificationBodyHint,
+                    hintStyle: const TextStyle(color: Colors.white30, fontSize: 13),
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   ),
                 ),
               ),
@@ -3397,9 +3501,9 @@ class _SimulateNotificationSheetState extends State<_SimulateNotificationSheet> 
                     elevation: 2,
                   ),
                   onPressed: _simulate,
-                  child: const Text(
-                    'Simulate & Process',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  child: Text(
+                    strings.settingsSimulateAndProcess,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                 ),
               ),

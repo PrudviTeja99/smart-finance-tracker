@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 
 class DashboardSearchBar extends StatelessWidget {
   final TextEditingController controller;
@@ -18,7 +19,7 @@ class DashboardSearchBar extends StatelessWidget {
       controller: controller,
       focusNode: focusNode,
       decoration: InputDecoration(
-        hintText: 'Search merchant or amount...',
+        hintText: AppLocalizations.of(context)!.dashboardSearchHint,
         hintStyle: const TextStyle(color: Colors.white38, fontSize: 14),
         prefixIcon: const Icon(Icons.search, color: Colors.white54),
         suffixIcon: ValueListenableBuilder<TextEditingValue>(

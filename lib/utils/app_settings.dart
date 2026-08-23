@@ -5,7 +5,9 @@ class AppSettings {
   static bool autoHideEnabled = false;
   static int autoHideSeconds = 5; // Default 5s
   static String currencySymbol = '₹'; // Default rupee
-  static String numberLocale = 'auto'; // 'auto', 'en_IN', 'en_US', 'de_DE', 'en_GB'
+  static String numberLocale =
+      'auto'; // 'auto', 'en_IN', 'en_US', 'de_DE', 'en_GB'
+  static String appLanguageCode = 'en';
   static bool autoDeleteArchive = false;
   static int autoDeleteValue = 30;
   static String autoDeleteUnit = 'days'; // 'days', 'months', 'years'
@@ -19,11 +21,13 @@ class AppSettings {
     autoHideSeconds = prefs.getInt('auto_hide_seconds') ?? 5;
     currencySymbol = prefs.getString('currency_symbol') ?? '₹';
     numberLocale = prefs.getString('number_locale') ?? 'auto';
+    appLanguageCode = prefs.getString('app_language_code') ?? 'en';
     autoDeleteArchive = prefs.getBool('auto_delete_archive') ?? false;
     autoDeleteValue = prefs.getInt('auto_delete_value') ?? 30;
     autoDeleteUnit = prefs.getString('auto_delete_unit') ?? 'days';
     smartTrackingEnabled = prefs.getBool('smart_tracking_enabled') ?? true;
-    allowedNotificationApps = prefs.getStringList('allowed_notification_apps') ?? [];
+    allowedNotificationApps =
+        prefs.getStringList('allowed_notification_apps') ?? [];
   }
 
   static Future<void> setSnackBarDuration(int ms) async {
@@ -54,6 +58,12 @@ class AppSettings {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('number_locale', locale);
     numberLocale = locale;
+  }
+
+  static Future<void> setAppLanguageCode(String languageCode) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('app_language_code', languageCode);
+    appLanguageCode = languageCode;
   }
 
   static Future<void> setAutoDeleteArchive(bool enabled) async {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../models/transaction_model.dart';
 import '../../../models/category_model.dart';
+import '../../../l10n/app_localizations.dart';
 import 'donut_chart.dart';
 import 'bar_chart.dart';
 import 'category_legend.dart';
@@ -52,11 +53,12 @@ class AnalyticsCard extends StatelessWidget {
 
     final categoryTotals = Map<int, double>.fromEntries(sortedEntries);
 
+    final strings = AppLocalizations.of(context)!;
     final String sectionTitle = typeFilter == 'credit'
-        ? 'Income Analysis'
+        ? strings.dashboardIncomeAnalysis
         : (typeFilter == 'debit'
-            ? 'Expense Analysis'
-            : (typeFilter == 'transfer' ? 'Transfer Analysis' : 'All Transactions Analysis'));
+            ? strings.dashboardExpenseAnalysis
+            : (typeFilter == 'transfer' ? strings.dashboardTransferAnalysis : strings.dashboardAllTransactionsAnalysis));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

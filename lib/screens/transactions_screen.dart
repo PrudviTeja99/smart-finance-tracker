@@ -1,3 +1,4 @@
+import 'package:finance_tracker/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/transaction_model.dart';
@@ -18,6 +19,21 @@ enum SortOption {
   final String label;
   final IconData icon;
   const SortOption(this.label, this.icon);
+}
+
+extension SortOptionL10n on SortOption {
+  String getLocalizedLabel(AppLocalizations strings) {
+    switch (this) {
+      case SortOption.dateDesc:
+        return strings.transactionsSortNewestFirst;
+      case SortOption.dateAsc:
+        return strings.transactionsSortOldestFirst;
+      case SortOption.amountDesc:
+        return strings.transactionsSortHighestAmount;
+      case SortOption.amountAsc:
+        return strings.transactionsSortLowestAmount;
+    }
+  }
 }
 
 class TransactionsScreen extends StatefulWidget {
@@ -215,6 +231,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   }
 
   void _openSortSheet() {
+    final strings = AppLocalizations.of(context)!;
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF1E293B),
@@ -229,11 +246,11 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   child: Text(
-                    'Sort Transactions By',
-                    style: TextStyle(
+                    strings.transactionsSortBy,
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -249,7 +266,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       color: isSelected ? const Color(0xFF6366F1) : Colors.white54,
                     ),
                     title: Text(
-                      opt.label,
+                      opt.getLocalizedLabel(strings),
                       style: TextStyle(
                         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                         color: isSelected ? Colors.white : Colors.white70,
@@ -278,6 +295,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   }
 
   void _showYearPickerSheet(BuildContext context, StateSetter setSheetState) {
+    final strings = AppLocalizations.of(context)!;
     final years = List.generate(11, (index) => 2020 + index);
 
     showModalBottomSheet(
@@ -294,9 +312,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Select Specific Year',
-                  style: TextStyle(
+                Text(
+                  strings.transactionsSelectSpecificYear,
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
@@ -354,6 +372,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   }
 
   void _openFilterSheet() {
+    final strings = AppLocalizations.of(context)!;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -378,9 +397,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Filter Transactions',
-                        style: TextStyle(
+                      Text(
+                        strings.transactionsFilterTitle,
+                        style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                             color: Colors.white),
@@ -397,9 +416,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                             });
                             setSheetState(() {});
                           },
-                          child: const Text(
-                            'Reset',
-                            style: TextStyle(color: Color(0xFF6366F1)),
+                          child: Text(
+                            strings.transactionsReset,
+                            style: const TextStyle(color: Color(0xFF6366F1)),
                           ),
                         ),
                     ],
@@ -407,8 +426,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                   const SizedBox(height: 16),
 
                   // Timeframe Filter
-                  const Text('Time Period',
-                      style: TextStyle(
+                  Text(strings.transactionsTimePeriod,
+                      style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
                           color: Colors.white70)),
@@ -417,7 +436,11 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     spacing: 8,
                     runSpacing: 8,
                     children: [
-                      ...['This Month', 'This Week', 'This Year'].map((tf) {
+                      ...[
+                        strings.transactionsThisMonth,
+                        strings.transactionsThisWeek,
+                        strings.transactionsThisYear
+                      ].map((tf) {
                         final isSel = _selectedTimeframe == tf;
                         return ChoiceChip(
                           label: Text(tf),
@@ -447,7 +470,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                   !_customMonthLabel.startsWith('Year ') &&
                                   _customMonthLabel.isNotEmpty
                               ? _customMonthLabel
-                              : 'Select Month...',
+                              : strings.transactionsSelectMonth,
                         ),
                         selected: _selectedTimeframe == 'Custom' &&
                             !_customMonthLabel.startsWith('Year '),
@@ -481,7 +504,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                           _selectedTimeframe == 'Custom' &&
                                   _customMonthLabel.startsWith('Year ')
                               ? _customMonthLabel
-                              : 'Select Year...',
+                              : strings.transactionsSelectYear,
                         ),
                         selected: _selectedTimeframe == 'Custom' &&
                             _customMonthLabel.startsWith('Year '),
@@ -497,7 +520,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                         },
                       ),
                       ChoiceChip(
-                        label: const Text('All Time'),
+                        label: Text(strings.transactionsAllTime),
                         selected: _selectedTimeframe == 'All Time',
                         selectedColor: const Color(0xFF6366F1),
                         backgroundColor: const Color(0xFF0F172A),
@@ -522,8 +545,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                   const SizedBox(height: 16),
 
                   // Account Filter
-                  const Text('Account',
-                      style: TextStyle(
+                  Text(strings.transactionFormAccount,
+                      style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
                           color: Colors.white70)),
@@ -533,7 +556,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     runSpacing: 8,
                     children: [
                       ChoiceChip(
-                        label: const Text('All Accounts'),
+                        label: Text(strings.transactionsAllAccounts),
                         selected: _selectedAccountId == null,
                         selectedColor: const Color(0xFF6366F1),
                         backgroundColor: const Color(0xFF0F172A),
@@ -567,8 +590,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                   const SizedBox(height: 20),
 
                   // Category Filter
-                  const Text('Category',
-                      style: TextStyle(
+                  Text(strings.transactionFormCategory,
+                      style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
                           color: Colors.white70)),
@@ -581,7 +604,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                         runSpacing: 8,
                         children: [
                           ChoiceChip(
-                            label: const Text('All Categories'),
+                            label: Text(strings.transactionsAllCategories),
                             selected: _selectedCategoryId == null,
                             selectedColor: const Color(0xFF6366F1),
                             backgroundColor: const Color(0xFF0F172A),
@@ -626,8 +649,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                             borderRadius: BorderRadius.circular(14)),
                       ),
                       onPressed: () => Navigator.pop(context),
-                      child: const Text('Apply Filters',
-                          style: TextStyle(
+                      child: Text(strings.transactionsApplyFilters,
+                          style: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.bold,
                               color: Colors.white)),
@@ -655,6 +678,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     final transactionsList = _filteredAndSortedTransactions;
 
     return Scaffold(
@@ -666,9 +690,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Transactions',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        title: Text(
+          strings.transactionsTitle,
+          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         actions: [
           IconButton(
@@ -680,7 +704,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                   ? const Color(0xFF6366F1)
                   : Colors.white70,
             ),
-            tooltip: 'Sort By',
+            tooltip: strings.transactionsSortBy,
             onPressed: _openSortSheet,
           ),
           IconButton(
@@ -691,7 +715,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               backgroundColor: const Color(0xFF6366F1),
               child: const Icon(Icons.tune_rounded, color: Colors.white70),
             ),
-            tooltip: 'Filter By',
+            tooltip: strings.transactionsFilterTitle,
             onPressed: _openFilterSheet,
           ),
           const SizedBox(width: 8),
@@ -712,7 +736,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                         focusNode: _searchFocusNode,
                         style: const TextStyle(color: Colors.white),
                         decoration: InputDecoration(
-                          hintText: 'Search description, amount...',
+                          hintText: strings.transactionsSearchHint,
                           hintStyle: const TextStyle(color: Colors.white38),
                           prefixIcon:
                               const Icon(Icons.search_rounded, color: Colors.white38),
@@ -741,13 +765,13 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                         physics: const BouncingScrollPhysics(),
                         child: Row(
                           children: [
-                            _buildTypeChip('all', 'All'),
+                            _buildTypeChip('all', strings.transactionsAllType),
                             const SizedBox(width: 8),
-                            _buildTypeChip('debit', 'Expenses', color: const Color(0xFFEF4444)),
+                            _buildTypeChip('debit', strings.transactionsExpensesType, color: const Color(0xFFEF4444)),
                             const SizedBox(width: 8),
-                            _buildTypeChip('credit', 'Income', color: const Color(0xFF10B981)),
+                            _buildTypeChip('credit', strings.transactionsIncomeType, color: const Color(0xFF10B981)),
                             const SizedBox(width: 8),
-                            _buildTypeChip('transfer', 'Transfers', color: const Color(0xFF38BDF8)),
+                            _buildTypeChip('transfer', strings.transactionsTransfersType, color: const Color(0xFF38BDF8)),
                           ],
                         ),
                       ),
@@ -766,7 +790,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       children: [
                         Expanded(
                           child: Text(
-                            'Showing ${transactionsList.length} of ${_allTransactions.length} items • ${_currentSort.label}',
+                            strings.transactionsShowingCount(transactionsList.length, _allTransactions.length, _currentSort.getLocalizedLabel(strings)),
                             style: const TextStyle(
                                 fontSize: 12, color: Colors.white54),
                             maxLines: 1,
@@ -775,9 +799,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                         ),
                         GestureDetector(
                           onTap: _clearFilters,
-                          child: const Text(
-                            'Reset All',
-                            style: TextStyle(
+                          child: Text(
+                            strings.transactionsResetAll,
+                            style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
                               color: Color(0xFF6366F1),
@@ -798,17 +822,17 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                               const Icon(Icons.search_off_rounded,
                                   size: 48, color: Colors.white24),
                               const SizedBox(height: 12),
-                              const Text(
-                                'No transactions found',
-                                style: TextStyle(
+                              Text(
+                                strings.transactionsNotFound,
+                                style: const TextStyle(
                                     color: Colors.white70,
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold),
                               ),
                               const SizedBox(height: 4),
-                              const Text(
-                                'Try adjusting your search or filters',
-                                style: TextStyle(
+                              Text(
+                                strings.transactionsNotFoundSubtitle,
+                                style: const TextStyle(
                                     color: Colors.white38, fontSize: 13),
                               ),
                               if (_hasActiveFilters) ...[
@@ -820,7 +844,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                     side: const BorderSide(
                                         color: Color(0xFF6366F1)),
                                   ),
-                                  child: const Text('Clear Filters'),
+                                  child: Text(strings.transactionsClearFilters),
                                 ),
                               ],
                             ],

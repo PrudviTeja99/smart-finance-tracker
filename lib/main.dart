@@ -5,6 +5,8 @@ import 'screens/main_navigation_holder.dart';
 import 'services/database_service.dart';
 import 'services/app_icon_cache_service.dart';
 import 'services/developer/log_service.dart';
+import 'services/app_language_service.dart';
+import 'l10n/app_localizations.dart';
 import 'utils/app_settings.dart';
 
 void main() {
@@ -25,6 +27,7 @@ void main() {
 
     // Initialize App Settings from SharedPreferences
     await AppSettings.load();
+    AppLanguageService.instance.initialize();
 
     // Initialize Two-Tier App Icon Cache
     await AppIconCacheService.instance.init();
@@ -69,39 +72,47 @@ class FinanceTrackerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Smart Finance Tracker',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.dark,
-        canvasColor: Colors
-            .transparent, // Required to make custom bottom navigation bar background transparent
-        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
+    return ValueListenableBuilder<Locale>(
+      valueListenable: AppLanguageService.instance.locale,
+      builder: (context, locale, child) => MaterialApp(
+        onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
+        debugShowCheckedModeBanner: false,
+        locale: locale,
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        theme: ThemeData(
+          useMaterial3: true,
+          brightness: Brightness.dark,
+          canvasColor: Colors
+              .transparent, // Required to make custom bottom navigation bar background transparent
+          bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+          ),
+          // Premium Dark Theme Palette
+          primaryColor: const Color(0xFF6366F1), // Vibrant Indigo
+          scaffoldBackgroundColor: const Color(0xFF0F172A), // Slate 900
+          cardColor: const Color(0xFF1E293B), // Slate 800
+          colorScheme: const ColorScheme.dark(
+            primary: Color(0xFF6366F1),
+            secondary: Color(0xFF10B981), // Emerald Green (Credits)
+            error: Color(0xFFEF4444), // Red (Debits)
+            surface: Color(0xFF1E293B),
+            background: const Color(0xFF0F172A),
+          ),
+          textTheme: const TextTheme(
+            titleLarge: TextStyle(
+                fontSize: 20.0,
+                fontWeight: FontWeight.bold,
+                color: Colors.white),
+            bodyLarge: TextStyle(
+                fontSize: 16.0, color: Color(0xFFE2E8F0)), // Slate 200
+            bodyMedium: TextStyle(
+                fontSize: 14.0, color: Color(0xFF94A3B8)), // Slate 400
+          ),
         ),
-        // Premium Dark Theme Palette
-        primaryColor: const Color(0xFF6366F1), // Vibrant Indigo
-        scaffoldBackgroundColor: const Color(0xFF0F172A), // Slate 900
-        cardColor: const Color(0xFF1E293B), // Slate 800
-        colorScheme: const ColorScheme.dark(
-          primary: Color(0xFF6366F1),
-          secondary: Color(0xFF10B981), // Emerald Green (Credits)
-          error: Color(0xFFEF4444), // Red (Debits)
-          surface: Color(0xFF1E293B),
-          background: const Color(0xFF0F172A),
-        ),
-        textTheme: const TextTheme(
-          titleLarge: TextStyle(
-              fontSize: 20.0, fontWeight: FontWeight.bold, color: Colors.white),
-          bodyLarge:
-              TextStyle(fontSize: 16.0, color: Color(0xFFE2E8F0)), // Slate 200
-          bodyMedium:
-              TextStyle(fontSize: 14.0, color: Color(0xFF94A3B8)), // Slate 400
-        ),
+        home: const MainNavigationHolder(),
       ),
-      home: const MainNavigationHolder(),
     );
   }
 }

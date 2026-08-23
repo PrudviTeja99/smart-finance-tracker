@@ -1,3 +1,4 @@
+import 'package:finance_tracker/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -76,16 +77,18 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
 
 
   Future<void> _restoreAlert(int logId) async {
+    final strings = AppLocalizations.of(context)!;
     await DatabaseService.instance.updateNotificationLogStatus(logId, 'unclassified');
     if (!mounted) return;
-    AppSnackBar.show(context, 'Alert restored to Captured Alerts.', type: SnackBarType.success);
+    AppSnackBar.show(context, strings.archivedAlertsRestoredSuccess, type: SnackBarType.success);
     _loadArchivedLogs();
   }
 
   Future<void> _deleteAlert(int logId) async {
+    final strings = AppLocalizations.of(context)!;
     await DatabaseService.instance.deleteNotificationLog(logId);
     if (!mounted) return;
-    AppSnackBar.show(context, 'Alert permanently deleted.', type: SnackBarType.success);
+    AppSnackBar.show(context, strings.archivedAlertsDeletedSuccess, type: SnackBarType.success);
     _loadArchivedLogs();
   }
 
@@ -118,22 +121,23 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
 
   Future<void> _deleteSelected() async {
     if (_selectedLogIds.isEmpty) return;
+    final strings = AppLocalizations.of(context)!;
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Delete Selected', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        content: Text('Are you sure you want to permanently delete ${_selectedLogIds.length} selected alerts?', style: const TextStyle(color: Colors.white70)),
+        title: Text(strings.archivedAlertsDeleteSelectedTitle, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: Text(strings.archivedAlertsDeleteSelectedConfirm(_selectedLogIds.length), style: const TextStyle(color: Colors.white70)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white38)),
+            child: Text(strings.inboxCancel, style: const TextStyle(color: Colors.white38)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete', style: TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.bold)),
+            child: Text(strings.archivedAlertsDelete, style: const TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -145,7 +149,7 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
         await DatabaseService.instance.deleteNotificationLog(id);
       }
       if (!mounted) return;
-      AppSnackBar.show(context, '${ids.length} alerts permanently deleted.', type: SnackBarType.success);
+      AppSnackBar.show(context, strings.archivedAlertsBatchDeletedSuccess(ids.length), type: SnackBarType.success);
       setState(() {
         _isSelectionMode = false;
         _selectedLogIds.clear();
@@ -156,13 +160,14 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
 
   Future<void> _restoreSelected() async {
     if (_selectedLogIds.isEmpty) return;
+    final strings = AppLocalizations.of(context)!;
 
     final ids = _selectedLogIds.toList();
     for (var id in ids) {
       await DatabaseService.instance.updateNotificationLogStatus(id, 'unclassified');
     }
     if (!mounted) return;
-    AppSnackBar.show(context, '${ids.length} alerts restored to Captured Alerts.', type: SnackBarType.success);
+    AppSnackBar.show(context, strings.archivedAlertsRestoredSelectedSuccess(ids.length), type: SnackBarType.success);
     setState(() {
       _isSelectionMode = false;
       _selectedLogIds.clear();
@@ -171,21 +176,22 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
   }
 
   Future<void> _clearAllArchives() async {
+    final strings = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Clear All Archives', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        content: const Text('Are you sure you want to permanently delete all archived alerts?', style: TextStyle(color: Colors.white70)),
+        title: Text(strings.archivedAlertsClearAllTitle, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: Text(strings.archivedAlertsClearAllConfirm, style: const TextStyle(color: Colors.white70)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white38)),
+            child: Text(strings.inboxCancel, style: const TextStyle(color: Colors.white38)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Clear All', style: TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.bold)),
+            child: Text(strings.inboxClearAllAlerts, style: const TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -194,7 +200,7 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
     if (confirmed == true) {
       await DatabaseService.instance.clearNotificationLogs(status: 'archived');
       if (mounted) {
-        AppSnackBar.show(context, 'All archived alerts cleared.', type: SnackBarType.success);
+        AppSnackBar.show(context, strings.archivedAlertsClearAllSuccess, type: SnackBarType.success);
       }
       _loadArchivedLogs();
     }
@@ -226,6 +232,7 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
 
   Future<void> _restoreSelectedAppCategories() async {
     if (_selectedAppPackages.isEmpty) return;
+    final strings = AppLocalizations.of(context)!;
 
     final selectedPkgs = _selectedAppPackages.toList();
     int totalCount = 0;
@@ -242,7 +249,7 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
     if (mounted) {
       AppSnackBar.show(
         context,
-        'Restored $totalCount alerts from ${selectedPkgs.length} apps back to Captured Alerts.',
+        strings.archivedAlertsRestoredAppCategoriesSuccess(totalCount, selectedPkgs.length),
         type: SnackBarType.success,
       );
       setState(() {
@@ -257,6 +264,7 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
 
   Future<void> _deleteSelectedAppCategoriesPermanently() async {
     if (_selectedAppPackages.isEmpty) return;
+    final strings = AppLocalizations.of(context)!;
 
     final selectedPkgs = _selectedAppPackages.toList();
     int totalCount = 0;
@@ -269,19 +277,19 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Delete $totalCount Archived Alerts?', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text(strings.archivedAlertsDeleteAppCategoriesTitle(totalCount), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         content: Text(
-          'Are you sure you want to permanently delete $totalCount alerts from ${selectedPkgs.length} apps? This action cannot be undone.',
+          strings.archivedAlertsDeleteAppCategoriesConfirm(totalCount, selectedPkgs.length),
           style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white38)),
+            child: Text(strings.inboxCancel, style: const TextStyle(color: Colors.white38)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete Permanently', style: TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.bold)),
+            child: Text(strings.archivedAlertsDelete, style: const TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -297,7 +305,7 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
       }
 
       if (mounted) {
-        AppSnackBar.show(context, 'Permanently deleted $totalCount alerts.', type: SnackBarType.neutral);
+        AppSnackBar.show(context, strings.archivedAlertsDeletedAppCategoriesSuccess(totalCount), type: SnackBarType.neutral);
         setState(() {
           _isAppCategorySelectionMode = false;
           _selectedAppPackages.clear();
@@ -308,6 +316,7 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
   }
 
   void _showDetailsBottomSheet(Map<String, dynamic> log, String resolvedAppName) {
+    final strings = AppLocalizations.of(context)!;
     final title = log['title'] as String? ?? '';
     final body = log['body'] as String? ?? '';
     final packageName = log['package_name'] as String? ?? '';
@@ -402,7 +411,7 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
                       await _deleteAlert(log['id'] as int);
                     },
                     icon: const Icon(Icons.delete_outline_rounded, size: 18),
-                    label: const Text('Delete', style: TextStyle(fontWeight: FontWeight.bold)),
+                    label: Text(strings.archivedAlertsDelete, style: const TextStyle(fontWeight: FontWeight.bold)),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -418,7 +427,7 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
                         _restoreAlert(log['id'] as int);
                       },
                       icon: const Icon(Icons.settings_backup_restore_rounded, size: 18),
-                      label: const Text('Restore Alert', style: TextStyle(fontWeight: FontWeight.bold)),
+                      label: Text(strings.archivedAlertsRestore, style: const TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ],
@@ -448,6 +457,7 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     final query = _searchQuery.toLowerCase().trim();
     final filteredLogs = _archivedLogs.where((log) {
       if (query.isEmpty) return true;
@@ -502,10 +512,10 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
                 leading: IconButton(
                   icon: const Icon(Icons.close_rounded, color: Colors.white70),
                   onPressed: _exitSelectionMode,
-                  tooltip: 'Exit selection mode',
+                  tooltip: strings.archivedAlertsExitSelection,
                 ),
                 title: Text(
-                  '${_selectedLogIds.length} Selected',
+                  strings.inboxSelectedCount(_selectedLogIds.length),
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
                 backgroundColor: const Color(0xFF1E293B),
@@ -514,12 +524,12 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
                   IconButton(
                     icon: const Icon(Icons.settings_backup_restore_rounded, color: Color(0xFF818CF8)),
                     onPressed: _restoreSelected,
-                    tooltip: 'Restore Selected',
+                    tooltip: strings.archivedAlertsRestoreSelected,
                   ),
                   IconButton(
                     icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4444)),
                     onPressed: _deleteSelected,
-                    tooltip: 'Delete Selected',
+                    tooltip: strings.archivedAlertsDeleteSelected,
                   ),
                   const SizedBox(width: 8),
                 ],
@@ -536,7 +546,7 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
                       },
                     ),
                     title: Text(
-                      '${_selectedAppPackages.length} ${_selectedAppPackages.length == 1 ? "App Selected" : "Apps Selected"}',
+                      strings.archivedAlertsAppsSelected(_selectedAppPackages.length),
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                     ),
                     backgroundColor: const Color(0xFF1E293B),
@@ -544,12 +554,12 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
                     actions: [
                       IconButton(
                         icon: const Icon(Icons.restore_rounded, color: Color(0xFF10B981)),
-                        tooltip: 'Restore Selected Apps',
+                        tooltip: strings.archivedAlertsRestoreSelectedApps,
                         onPressed: _restoreSelectedAppCategories,
                       ),
                       IconButton(
                         icon: const Icon(Icons.delete_forever_rounded, color: Color(0xFFEF4444)),
-                        tooltip: 'Delete Selected Apps Permanently',
+                        tooltip: strings.archivedAlertsDeleteSelectedAppsPermanently,
                         onPressed: _deleteSelectedAppCategoriesPermanently,
                       ),
                     ],
@@ -557,7 +567,7 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
                 : AppBar(
                     title: Row(
                       children: [
-                        const Text('Archived Alerts', style: TextStyle(fontWeight: FontWeight.bold)),
+                        Text(strings.archivedAlertsTitle, style: const TextStyle(fontWeight: FontWeight.bold)),
                         if (!_isLoading && _archivedLogs.isNotEmpty) ...[
                           const SizedBox(width: 8),
                           Container(
@@ -586,12 +596,12 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
                               _selectedAppPackages.clear();
                             });
                           },
-                          tooltip: 'Select Apps',
+                          tooltip: strings.archivedAlertsSelectApps,
                         ),
                         IconButton(
                           icon: const Icon(Icons.delete_sweep_rounded, color: Colors.white70),
                           onPressed: _clearAllArchives,
-                          tooltip: 'Clear All',
+                          tooltip: strings.inboxClearAllAlerts,
                         ),
                       ],
                     ],
@@ -614,7 +624,7 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
                 autofocus: false,
                 style: const TextStyle(color: Colors.white, fontSize: 14),
                 decoration: InputDecoration(
-                  hintText: 'Search archived alerts...',
+                  hintText: strings.archivedAlertsSearchHint,
                   hintStyle: const TextStyle(color: Colors.white30, fontSize: 14),
                   prefixIcon: const Icon(Icons.search, color: Colors.white30, size: 20),
                   suffixIcon: _searchQuery.isNotEmpty
@@ -714,6 +724,7 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
 }
 
   Widget _buildEmptyState() {
+    final strings = AppLocalizations.of(context)!;
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -734,14 +745,14 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
             ),
             const SizedBox(height: 24),
             Text(
-              _searchQuery.isNotEmpty ? 'No Search Results' : 'No Archived Alerts',
+              _searchQuery.isNotEmpty ? strings.archivedAlertsNoSearchResults : strings.archivedAlertsNoAlerts,
               style: const TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
             Text(
               _searchQuery.isNotEmpty
-                  ? 'Try searching for a different keyword or app name.'
-                  : 'Alerts you choose to ignore will be stored in this archive feed.',
+                  ? strings.archivedAlertsNoSearchResultsSubtitle
+                  : strings.archivedAlertsEmptyStateSubtitle,
               style: const TextStyle(fontSize: 12, color: Colors.white38, height: 1.5),
               textAlign: TextAlign.center,
             ),

@@ -1,3 +1,4 @@
+import 'package:finance_tracker/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../models/transaction_model.dart';
@@ -273,6 +274,7 @@ class __TransactionFormContentState extends State<_TransactionFormContent> {
 
   void _showCategoryPicker(
       int currentSelected, Function(int) onSelected) {
+    final strings = AppLocalizations.of(context)!;
     FocusManager.instance.primaryFocus?.unfocus();
     final double maxFraction;
     final double initialFraction;
@@ -319,9 +321,9 @@ class __TransactionFormContentState extends State<_TransactionFormContent> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Select Category',
-                        style: TextStyle(
+                      Text(
+                        strings.transactionFormSelectCategory,
+                        style: const TextStyle(
                             fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       TextButton.icon(
@@ -341,9 +343,9 @@ class __TransactionFormContentState extends State<_TransactionFormContent> {
                         },
                         icon: const Icon(Icons.tune_rounded,
                             size: 18, color: Color(0xFF6366F1)),
-                        label: const Text(
-                          'Manage',
-                          style: TextStyle(
+                        label: Text(
+                          strings.transactionFormManage,
+                          style: const TextStyle(
                               color: Color(0xFF6366F1),
                               fontWeight: FontWeight.bold,
                               fontSize: 13),
@@ -461,6 +463,7 @@ class __TransactionFormContentState extends State<_TransactionFormContent> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     final isEdit = widget.editTx != null;
     final isDraftMode = widget.isDraft || (isEdit && widget.editTx!.status == 'draft');
 
@@ -521,15 +524,15 @@ class __TransactionFormContentState extends State<_TransactionFormContent> {
                 children: [
                   Text(
                     isDraftMode
-                        ? 'Verify Draft Transaction'
-                        : (isEdit ? 'Edit Transaction' : 'Add Transaction'),
+                        ? strings.transactionFormVerifyDraft
+                        : (isEdit ? strings.transactionFormEditTitle : strings.transactionFormAddTitle),
                     style: const TextStyle(
                         fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   if (isEdit)
                     IconButton(
                       icon: const Icon(Icons.delete_outline, color: Color(0xFFEF4444)),
-                      tooltip: isDraftMode ? 'Discard Draft' : 'Delete Transaction',
+                      tooltip: isDraftMode ? strings.inboxDiscard : strings.transactionFormDelete,
                       onPressed: () async {
                         final confirm = await showDialog<bool>(
                           context: context,
@@ -538,21 +541,21 @@ class __TransactionFormContentState extends State<_TransactionFormContent> {
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(20)),
                             title: Text(isDraftMode
-                                ? 'Discard Draft?'
-                                : 'Delete Transaction?'),
+                                ? strings.transactionFormDiscardDraftTitle
+                                : strings.transactionFormDeleteConfirm),
                             content: Text(isDraftMode
-                                ? 'This will discard this transaction draft.'
-                                : 'This will permanently delete this transaction.'),
+                                ? strings.transactionFormDiscardDraftConfirm
+                                : strings.transactionFormDeleteConfirmBody),
                             actions: [
                               TextButton(
                                 onPressed: () => Navigator.pop(context, false),
-                                child: const Text('Cancel',
-                                    style: TextStyle(color: Colors.white70)),
+                                child: Text(strings.inboxCancel,
+                                    style: const TextStyle(color: Colors.white70)),
                               ),
                               TextButton(
                                 onPressed: () => Navigator.pop(context, true),
-                                child: const Text('Discard',
-                                    style: TextStyle(color: Color(0xFFEF4444))),
+                                child: Text(strings.inboxDiscard,
+                                    style: const TextStyle(color: Color(0xFFEF4444))),
                               ),
                             ],
                           ),
@@ -630,7 +633,7 @@ class __TransactionFormContentState extends State<_TransactionFormContent> {
               Row(
                 children: [
                   _buildFormTypePill(
-                    label: 'Expense',
+                    label: strings.transactionFormExpense,
                     isActive: _type == 'debit',
                     onTap: () => setState(() {
                       _type = 'debit';
@@ -639,7 +642,7 @@ class __TransactionFormContentState extends State<_TransactionFormContent> {
                   ),
                   const SizedBox(width: 8),
                   _buildFormTypePill(
-                    label: 'Income',
+                    label: strings.transactionFormIncome,
                     isActive: _type == 'credit',
                     onTap: () => setState(() {
                       _type = 'credit';
@@ -648,7 +651,7 @@ class __TransactionFormContentState extends State<_TransactionFormContent> {
                   ),
                   const SizedBox(width: 8),
                   _buildFormTypePill(
-                    label: 'Transfer',
+                    label: strings.transactionFormTransfer,
                     isActive: _type == 'transfer',
                     onTap: () => setState(() {
                       _type = 'transfer';
@@ -670,7 +673,7 @@ class __TransactionFormContentState extends State<_TransactionFormContent> {
                     const TextInputType.numberWithOptions(decimal: true),
                 style: const TextStyle(color: Colors.white, fontSize: 16),
                 decoration: InputDecoration(
-                  labelText: 'Amount (${AppSettings.currencySymbol})',
+                  labelText: '${strings.transactionFormAmount} (${AppSettings.currencySymbol})',
                   labelStyle:
                       const TextStyle(color: Colors.white54, fontSize: 13),
                   filled: true,
@@ -697,14 +700,14 @@ class __TransactionFormContentState extends State<_TransactionFormContent> {
 
               // Account select field
               CustomSelectField(
-                label: _type == 'transfer' ? 'From Account' : 'Account',
+                label: _type == 'transfer' ? strings.transactionFormFromAccount : strings.transactionFormAccount,
                 value: selectedAcc.name,
                 icon: _getAccountIcon(selectedAcc.type),
                 onTap: () {
                   _showAccountPicker(
                     _type == 'transfer'
-                        ? 'Select Source Account'
-                        : 'Select Account',
+                        ? strings.transactionFormSelectSourceAccount
+                        : strings.inboxSelectAccount,
                     _accountId,
                     (selectedId) => setState(() {
                       _accountId = selectedId;
@@ -719,12 +722,12 @@ class __TransactionFormContentState extends State<_TransactionFormContent> {
               ),
               if (_type == 'transfer' && selectedToAcc != null) ...[
                 CustomSelectField(
-                  label: 'To Account',
+                  label: strings.transactionFormToAccount,
                   value: selectedToAcc.name,
                   icon: _getAccountIcon(selectedToAcc.type),
                   onTap: () {
                     _showAccountPicker(
-                      'Select Destination Account',
+                      strings.transactionFormSelectDestinationAccount,
                       _toAccountId ?? _accountId,
                       (selectedId) =>
                           setState(() => _toAccountId = selectedId),
@@ -735,7 +738,7 @@ class __TransactionFormContentState extends State<_TransactionFormContent> {
 
               // Category select field
               CustomSelectField(
-                label: 'Category',
+                label: strings.transactionFormCategory,
                 value: selectedCat.name,
                 icon: IconHelper.getIcon(selectedCat.icon),
                 iconColor: Color(selectedCat.color),
@@ -750,8 +753,8 @@ class __TransactionFormContentState extends State<_TransactionFormContent> {
 
               // AI Category Suggestions (If in draft mode)
               if (isDraftMode && widget.suggestions.isNotEmpty) ...[
-                const Text('AI Category Suggestions:',
-                    style: TextStyle(fontSize: 11, color: Colors.white54)),
+                Text(strings.transactionFormAiCategorySuggestions,
+                    style: const TextStyle(fontSize: 11, color: Colors.white54)),
                 const SizedBox(height: 6),
                 Wrap(
                   spacing: 6,
@@ -782,7 +785,7 @@ class __TransactionFormContentState extends State<_TransactionFormContent> {
                 controller: _descController,
                 style: const TextStyle(color: Colors.white, fontSize: 14),
                 decoration: InputDecoration(
-                  labelText: 'Description / Remarks',
+                  labelText: strings.transactionFormDescription,
                   labelStyle:
                       const TextStyle(color: Colors.white54, fontSize: 13),
                   filled: true,
@@ -851,9 +854,9 @@ class __TransactionFormContentState extends State<_TransactionFormContent> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Date & Time',
-                              style: TextStyle(
+                            Text(
+                              strings.transactionFormDateTime,
+                              style: const TextStyle(
                                   fontSize: 10, color: Colors.white54),
                             ),
                             const SizedBox(height: 2),
@@ -889,7 +892,7 @@ class __TransactionFormContentState extends State<_TransactionFormContent> {
                 onPressed: () async {
                   final amt = double.tryParse(_amountController.text) ?? 0.0;
                   if (amt <= 0) {
-                    AppSnackBar.show(context, 'Please enter a valid amount',
+                    AppSnackBar.show(context, strings.transactionFormEnterValidAmount,
                         type: SnackBarType.warning);
                     return;
                   }
@@ -940,8 +943,8 @@ class __TransactionFormContentState extends State<_TransactionFormContent> {
                     ],
                     Text(
                       isDraftMode
-                          ? 'Confirm & Verify'
-                          : (isEdit ? 'Save Changes' : 'Confirm Transaction'),
+                          ? strings.transactionFormConfirmAndVerify
+                          : (isEdit ? strings.transactionFormSaveChanges : strings.transactionFormConfirmTransaction),
                       style: const TextStyle(
                           fontSize: 16, fontWeight: FontWeight.bold),
                     ),

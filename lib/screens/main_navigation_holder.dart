@@ -7,6 +7,7 @@ import '../services/database_service.dart';
 import '../services/notification_handler.dart';
 import '../services/batch_processor_service.dart';
 import '../utils/app_settings.dart';
+import '../l10n/app_localizations.dart';
 
 class MainNavigationHolder extends StatefulWidget {
   const MainNavigationHolder({super.key});
@@ -100,7 +101,8 @@ class _MainNavigationHolderState extends State<MainNavigationHolder>
   }
 
   void _onTabSelected(int index) {
-    FocusManager.instance.primaryFocus?.unfocus(disposition: UnfocusDisposition.scope);
+    FocusManager.instance.primaryFocus
+        ?.unfocus(disposition: UnfocusDisposition.scope);
 
     setState(() {
       _selectedIndex = index;
@@ -180,6 +182,7 @@ class _MainNavigationHolderState extends State<MainNavigationHolder>
   // Floating frosted-glass navigation bar ("Strap" UI)
   Widget _buildBottomNavigationStrap() {
     final theme = Theme.of(context);
+    final strings = AppLocalizations.of(context)!;
 
     return Theme(
       data: theme.copyWith(canvasColor: Colors.transparent),
@@ -207,20 +210,20 @@ class _MainNavigationHolderState extends State<MainNavigationHolder>
                       index: 0,
                       icon: Icons.dashboard_outlined,
                       activeIcon: Icons.dashboard,
-                      label: 'Dashboard',
+                      label: strings.navigationDashboard,
                     ),
                     _buildStrapItem(
                       index: 1,
                       icon: Icons.mark_email_unread_outlined,
                       activeIcon: Icons.mark_email_unread,
-                      label: 'Inbox',
+                      label: strings.navigationInbox,
                       badgeCount: _pendingCount,
                     ),
                     _buildStrapItem(
                       index: 2,
                       icon: Icons.settings_outlined,
                       activeIcon: Icons.settings,
-                      label: 'Settings',
+                      label: strings.navigationSettings,
                     ),
                   ],
                 ),

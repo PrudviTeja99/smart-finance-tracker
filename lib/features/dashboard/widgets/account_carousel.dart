@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../models/account_model.dart';
 import '../../../utils/app_settings.dart';
 import '../../../utils/app_formatters.dart';
+import '../../../l10n/app_localizations.dart';
 
 class AccountCarousel extends StatelessWidget {
   final List<AccountModel> accounts;
@@ -34,6 +35,7 @@ class AccountCarousel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     if (accounts.isEmpty) return const SizedBox.shrink();
 
     final totalBalance = accounts.fold(0.0, (sum, a) => sum + a.balance);
@@ -51,13 +53,13 @@ class AccountCarousel extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Accounts',
+                  Text(
+                    strings.dashboardAccounts,
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Total Balance: $formattedTotal',
+                    strings.dashboardTotalBalance(formattedTotal),
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -69,8 +71,8 @@ class AccountCarousel extends StatelessWidget {
               if (selectedAccountId != null && onClearAccountFilter != null)
                 TextButton(
                   onPressed: onClearAccountFilter,
-                  child: const Text(
-                    'Clear Filter',
+                  child: Text(
+                    strings.dashboardClearFilter,
                     style: TextStyle(
                       color: Color(0xFF6366F1),
                       fontSize: 12,

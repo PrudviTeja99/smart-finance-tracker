@@ -1,7 +1,9 @@
 import 'package:finance_tracker/features/inbox/widgets/captured_alert_action_bottom_sheet.dart';
 import 'package:finance_tracker/features/inbox/widgets/captured_alert_card.dart';
 import 'captured_alerts_bottom_sheet.dart';
+import 'package:finance_tracker/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class CapturedAppGroupTile extends StatefulWidget {
   final String pkg;
@@ -34,26 +36,20 @@ class CapturedAppGroupTile extends StatefulWidget {
 class _CapturedAppGroupTileState extends State<CapturedAppGroupTile> {
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     return Container(
-        margin: const EdgeInsets.only(bottom: 12),
+        margin: const EdgeInsets.only(bottom: 8),
         decoration: BoxDecoration(
           color: widget.isSelected
-              ? const Color(0xFF6366F1).withValues(alpha: 0.12)
+              ? const Color(0xFF6366F1).withValues(alpha: 0.15)
               : const Color(0xFF1E293B),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: widget.isSelected
                 ? const Color(0xFF6366F1)
-                : const Color(0xFF334155),
+                : Colors.white.withValues(alpha: 0.05),
             width: widget.isSelected ? 1.5 : 1.0,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
         ),
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
@@ -84,7 +80,8 @@ class _CapturedAppGroupTileState extends State<CapturedAppGroupTile> {
                 widget.isSelectionMode
                     ? AnimatedContainer(
                         duration: const Duration(milliseconds: 150),
-                        padding: const EdgeInsets.all(2),
+                        width: 24,
+                        height: 24,
                         decoration: BoxDecoration(
                           color: widget.isSelected
                               ? const Color(0xFF6366F1)
@@ -97,23 +94,19 @@ class _CapturedAppGroupTileState extends State<CapturedAppGroupTile> {
                             width: 1.5,
                           ),
                         ),
-                        child: Icon(
-                          Icons.check_rounded,
-                          size: 14,
-                          color: widget.isSelected
-                              ? Colors.white
-                              : Colors.transparent,
-                        ),
+                        child: widget.isSelected
+                            ? const Icon(Icons.check_rounded,
+                                size: 16, color: Colors.white)
+                            : null,
                       )
                     : widget.leadingWidget,
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     widget.fallbackAppName,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Colors.white,
-                      fontWeight:
-                          widget.isSelected ? FontWeight.w800 : FontWeight.bold,
+                      fontWeight: FontWeight.bold,
                       fontSize: 14,
                     ),
                   ),
@@ -129,7 +122,7 @@ class _CapturedAppGroupTileState extends State<CapturedAppGroupTile> {
                     ),
                   ),
                   child: Text(
-                    '${widget.alertsList.length} ${widget.alertsList.length == 1 ? "Alert" : "Alerts"}',
+                    strings.inboxAlertCount(widget.alertsList.length),
                     style: const TextStyle(
                       color: Color(0xFFFBBF24),
                       fontSize: 11,

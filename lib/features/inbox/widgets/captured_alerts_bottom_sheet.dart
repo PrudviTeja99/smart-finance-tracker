@@ -1,5 +1,6 @@
 import 'package:finance_tracker/features/inbox/widgets/captured_alert_action_bottom_sheet.dart';
 import 'package:finance_tracker/features/inbox/widgets/captured_alert_card.dart';
+import 'package:finance_tracker/l10n/app_localizations.dart';
 import 'package:finance_tracker/services/database_service.dart';
 import 'package:finance_tracker/utils/transaction_parser.dart';
 import 'package:finance_tracker/utils/app_snackbar.dart';
@@ -43,15 +44,16 @@ class _CapturedAlertsBottomSheetState extends State<CapturedAlertsBottomSheet> {
     if (_selectedAlertIds.isEmpty) return;
 
     final count = _selectedAlertIds.length;
+    final strings = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Clear Selected Alerts?',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text(strings.inboxClearSelectedAlertsTitle,
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         content: Text(
-          'Are you sure you want to clear $count selected alerts? They will be moved to your Archived Alerts feed.',
+          strings.inboxClearSelectedAlertsConfirm(count),
           style:
               const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
         ),
@@ -59,12 +61,12 @@ class _CapturedAlertsBottomSheetState extends State<CapturedAlertsBottomSheet> {
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child:
-                const Text('Cancel', style: TextStyle(color: Colors.white38)),
+                Text(strings.inboxCancel, style: const TextStyle(color: Colors.white38)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Clear',
-                style: TextStyle(
+            child: Text(strings.inboxClear,
+                style: const TextStyle(
                     color: Color(0xFF6366F1), fontWeight: FontWeight.bold)),
           ),
         ],
@@ -116,15 +118,16 @@ class _CapturedAlertsBottomSheetState extends State<CapturedAlertsBottomSheet> {
     if (_selectedAlertIds.isEmpty) return;
 
     final count = _selectedAlertIds.length;
+    final strings = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Review Selected Alerts?',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text(strings.inboxReviewSelectedAlertsTitle,
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         content: Text(
-          'Are you sure you want to promote $count selected alerts into draft transactions?',
+          strings.inboxReviewSelectedAlertsConfirm(count),
           style:
               const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
         ),
@@ -132,12 +135,12 @@ class _CapturedAlertsBottomSheetState extends State<CapturedAlertsBottomSheet> {
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child:
-                const Text('Cancel', style: TextStyle(color: Colors.white38)),
+                Text(strings.inboxCancel, style: const TextStyle(color: Colors.white38)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Review',
-                style: TextStyle(
+            child: Text(strings.inboxReview,
+                style: const TextStyle(
                     color: Color(0xFF818CF8), fontWeight: FontWeight.bold)),
           ),
         ],
@@ -169,6 +172,7 @@ class _CapturedAlertsBottomSheetState extends State<CapturedAlertsBottomSheet> {
     }
 
     if (mounted) {
+      final strings = AppLocalizations.of(context)!;
       setState(() {
         _localAlerts
             .removeWhere((item) => alertsToReview.contains(item['id']));
@@ -178,7 +182,7 @@ class _CapturedAlertsBottomSheetState extends State<CapturedAlertsBottomSheet> {
 
       AppSnackBar.show(
         context,
-        'Promoted $createdCount alerts to draft transactions!',
+        strings.inboxPromotedAlertsSuccess(createdCount),
         type: SnackBarType.success,
       );
 
@@ -192,15 +196,16 @@ class _CapturedAlertsBottomSheetState extends State<CapturedAlertsBottomSheet> {
     if (_localAlerts.isEmpty) return;
 
     final count = _localAlerts.length;
+    final strings = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Clear All Alerts?',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text(strings.inboxClearAllAlertsTitle,
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         content: Text(
-          'Are you sure you want to clear all $count alerts for "${widget.appName}"? They will be moved to your Archived Alerts feed.',
+          strings.inboxClearAllAppAlertsConfirm(count, widget.appName),
           style:
               const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
         ),
@@ -208,12 +213,12 @@ class _CapturedAlertsBottomSheetState extends State<CapturedAlertsBottomSheet> {
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child:
-                const Text('Cancel', style: TextStyle(color: Colors.white38)),
+                Text(strings.inboxCancel, style: const TextStyle(color: Colors.white38)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Clear All',
-                style: TextStyle(
+            child: Text(strings.inboxClearAll,
+                style: const TextStyle(
                     color: Color(0xFF6366F1), fontWeight: FontWeight.bold)),
           ),
         ],
@@ -258,6 +263,7 @@ class _CapturedAlertsBottomSheetState extends State<CapturedAlertsBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     return PopScope(
       canPop: !_isSelectionMode,
       onPopInvokedWithResult: (didPop, result) {
@@ -315,7 +321,7 @@ class _CapturedAlertsBottomSheetState extends State<CapturedAlertsBottomSheet> {
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              '${_selectedAlertIds.length} Selected',
+                              strings.inboxSelectedCount(_selectedAlertIds.length),
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 18,
@@ -326,13 +332,13 @@ class _CapturedAlertsBottomSheetState extends State<CapturedAlertsBottomSheet> {
                             IconButton(
                               icon: const Icon(Icons.edit_note_rounded,
                                   color: Color(0xFF818CF8)),
-                              tooltip: 'Promote Selected to Drafts',
+                              tooltip: strings.inboxReviewTransaction,
                               onPressed: _reviewSelectedAlertsAsTransactions,
                             ),
                             IconButton(
                               icon: const Icon(Icons.delete_sweep_outlined,
                                   color: Color(0xFFEF4444)),
-                              tooltip: 'Clear Selected Alerts',
+                              tooltip: strings.inboxClearAllAlerts,
                               onPressed: _archiveSelectedAlerts,
                             ),
                           ],
@@ -371,7 +377,7 @@ class _CapturedAlertsBottomSheetState extends State<CapturedAlertsBottomSheet> {
                                       ),
                                     ),
                                     child: Text(
-                                      '${_localAlerts.length} ${_localAlerts.length == 1 ? "Alert" : "Alerts"}',
+                                      strings.inboxAlertCount(_localAlerts.length),
                                       style: const TextStyle(
                                         color: Color(0xFFFBBF24),
                                         fontSize: 11,
@@ -385,7 +391,7 @@ class _CapturedAlertsBottomSheetState extends State<CapturedAlertsBottomSheet> {
                             IconButton(
                               icon: const Icon(Icons.checklist_rounded,
                                   color: Colors.white70),
-                              tooltip: 'Select Alerts to Clear',
+                              tooltip: strings.inboxSelect,
                               onPressed: () {
                                 setState(() {
                                   _isSelectionMode = true;
@@ -396,7 +402,7 @@ class _CapturedAlertsBottomSheetState extends State<CapturedAlertsBottomSheet> {
                             IconButton(
                               icon: const Icon(Icons.delete_outline,
                                   color: Colors.red),
-                              tooltip: 'Clear All Alerts',
+                              tooltip: strings.inboxClearAllAlerts,
                               onPressed: _archiveAllAlerts,
                             ),
                           ],

@@ -1,3 +1,4 @@
+import 'package:finance_tracker/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -13,6 +14,7 @@ class CapturedAlertActionBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     final logId = alert['id'] as int;
     final appName = alert['app_name'] as String? ?? 'Unknown';
     final title = alert['title'] as String? ?? '';
@@ -137,7 +139,7 @@ class CapturedAlertActionBottomSheet extends StatelessWidget {
                   Expanded(
                     child: ElevatedButton.icon(
                       icon: const Icon(Icons.add_chart_rounded),
-                      label: const Text("Review Transaction"),
+                      label: Text(strings.inboxReviewTransaction),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF10B981),
                         foregroundColor: Colors.white,
@@ -164,7 +166,7 @@ class CapturedAlertActionBottomSheet extends StatelessWidget {
                   Expanded(
                     child: OutlinedButton.icon(
                       icon: const Icon(Icons.block_rounded),
-                      label: const Text("Ignore"),
+                      label: Text(strings.inboxIgnoreAlert),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.white70,
                         side: const BorderSide(color: Colors.white24),

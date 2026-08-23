@@ -1,3 +1,4 @@
+import 'package:finance_tracker/l10n/app_localizations.dart';
 import 'package:finance_tracker/services/batch_processor_service.dart';
 import 'package:flutter/material.dart';
 
@@ -6,6 +7,7 @@ class BatchProgressBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     return ValueListenableBuilder<BatchProgressState>(
       valueListenable: BatchProcessorService.instance.progressNotifier,
       builder: (context, state, child) {
@@ -40,7 +42,7 @@ class BatchProgressBanner extends StatelessWidget {
                       ),
                       const SizedBox(width: 10),
                       Text(
-                        '⚡ Processing ${state.totalCount} incoming alerts...',
+                        '⚡ ${strings.inboxProcessingBatch(state.totalCount)}',
                         style: const TextStyle(
                             color: Colors.white,
                             fontSize: 12,

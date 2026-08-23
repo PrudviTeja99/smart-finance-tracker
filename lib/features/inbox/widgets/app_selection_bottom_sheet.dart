@@ -1,3 +1,4 @@
+import 'package:finance_tracker/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:installed_apps/installed_apps.dart';
 import 'package:installed_apps/app_info.dart';
@@ -92,10 +93,11 @@ class _AppSelectionBottomSheetState extends State<AppSelectionBottomSheet> {
   Future<void> _saveSelection() async {
     await AppSettings.setAllowedNotificationApps(_selectedPackages.toList());
     if (mounted) {
+      final strings = AppLocalizations.of(context)!;
       Navigator.pop(context);
       AppSnackBar.show(
         context,
-        'Notification tracking preferences saved successfully.',
+        strings.inboxTrackingSettingsSaved,
         type: SnackBarType.success,
       );
     }
@@ -103,6 +105,7 @@ class _AppSelectionBottomSheetState extends State<AppSelectionBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     return Container(
       height: MediaQuery.of(context).size.height * 0.8,
       decoration: const BoxDecoration(
@@ -131,10 +134,10 @@ class _AppSelectionBottomSheetState extends State<AppSelectionBottomSheet> {
                 children: [
                   const Icon(Icons.settings_suggest_rounded, color: Color(0xFF818CF8), size: 24),
                   const SizedBox(width: 10),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'Track App Notifications',
-                      style: TextStyle(
+                      strings.inboxTrackAppNotificationsTitle,
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -154,17 +157,17 @@ class _AppSelectionBottomSheetState extends State<AppSelectionBottomSheet> {
                           _selectedPackages.clear();
                         });
                       },
-                      child: const Text('Clear All', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      child: Text(strings.inboxClearAll, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                     ),
                 ],
               ),
             ),
             const SizedBox(height: 8),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Text(
-                'Select which apps should be tracked for auto-drafting and transaction capture.',
-                style: TextStyle(color: Colors.white54, fontSize: 12),
+                strings.inboxTrackAppNotificationsSubtitle,
+                style: const TextStyle(color: Colors.white54, fontSize: 12),
               ),
             ),
             const SizedBox(height: 16),
@@ -182,7 +185,7 @@ class _AppSelectionBottomSheetState extends State<AppSelectionBottomSheet> {
                   onChanged: _filterApps,
                   style: const TextStyle(color: Colors.white, fontSize: 14),
                   decoration: InputDecoration(
-                    hintText: 'Search installed apps...',
+                    hintText: strings.inboxSearchInstalledApps,
                     hintStyle: const TextStyle(color: Colors.white30, fontSize: 14),
                     prefixIcon: const Icon(Icons.search_rounded, color: Colors.white30, size: 20),
                     suffixIcon: _searchQuery.isNotEmpty
@@ -210,10 +213,10 @@ class _AppSelectionBottomSheetState extends State<AppSelectionBottomSheet> {
                       ),
                     )
                   : _filteredApps.isEmpty
-                      ? const Center(
+                      ? Center(
                           child: Text(
-                            'No matching applications found',
-                            style: TextStyle(color: Colors.white38, fontSize: 13),
+                            strings.inboxNoMatchingApps,
+                            style: const TextStyle(color: Colors.white38, fontSize: 13),
                           ),
                         )
                       : GridView.builder(
@@ -322,9 +325,9 @@ class _AppSelectionBottomSheetState extends State<AppSelectionBottomSheet> {
                     elevation: 4,
                   ),
                   onPressed: _saveSelection,
-                  child: const Text(
-                    'Save Tracking Settings',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  child: Text(
+                    strings.inboxSaveTrackingSettings,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                 ),
               ),

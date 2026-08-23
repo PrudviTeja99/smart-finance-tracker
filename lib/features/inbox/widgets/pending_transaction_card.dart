@@ -1,7 +1,6 @@
 import 'package:finance_tracker/models/account_model.dart';
 import 'package:finance_tracker/models/category_model.dart';
 import 'package:finance_tracker/models/transaction_model.dart';
-import 'package:finance_tracker/utils/app_settings.dart';
 import 'package:finance_tracker/utils/app_formatters.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';

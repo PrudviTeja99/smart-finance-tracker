@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../utils/app_settings.dart';
 import '../../../utils/app_formatters.dart';
+import '../../../l10n/app_localizations.dart';
 
 class HeroCard extends StatelessWidget {
   final double netBalance;
@@ -22,6 +23,7 @@ class HeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     final isPositive = netBalance >= 0;
     final badgeColor = isPositive ? const Color(0xFF10B981) : const Color(0xFFEF4444);
     final badgeLabel = isPositive
@@ -110,7 +112,7 @@ class HeroCard extends StatelessWidget {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Income',
+                          Text(strings.dashboardIncome,
                               style:
                                   TextStyle(fontSize: 11, color: Colors.white54)),
                           const SizedBox(height: 2),
@@ -148,7 +150,7 @@ class HeroCard extends StatelessWidget {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Expenses',
+                          Text(strings.dashboardExpenses,
                               style:
                                   TextStyle(fontSize: 11, color: Colors.white54)),
                           const SizedBox(height: 2),

@@ -1,3 +1,4 @@
+import 'package:finance_tracker/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 class DraftEditorBottomSheet extends StatelessWidget {
@@ -10,6 +11,7 @@ class DraftEditorBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.only(
@@ -38,9 +40,9 @@ class DraftEditorBottomSheet extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
-                "Edit Transaction",
-                style: TextStyle(
+              Text(
+                strings.inboxEditTransactionDraft,
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),

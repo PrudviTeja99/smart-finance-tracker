@@ -19,6 +19,7 @@ import '../services/perceptron_storage_service.dart';
 import '../utils/transaction_parser.dart';
 import '../utils/app_snackbar.dart';
 import '../utils/app_formatters.dart';
+import '../l10n/app_localizations.dart';
 
 class PendingVerificationScreen extends StatefulWidget {
   final bool isActive;
@@ -187,7 +188,9 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
 
     final currentVersion = dbService.dashboardDataVersion.value;
     final shouldReloadSupportingData =
-        _supportingDataVersion != currentVersion || _accounts.isEmpty || _categories.isEmpty;
+        _supportingDataVersion != currentVersion ||
+            _accounts.isEmpty ||
+            _categories.isEmpty;
     final accountsList = shouldReloadSupportingData
         ? await dbService.getAllAccounts()
         : _accounts;
@@ -248,7 +251,8 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
       if (confirmedTx.notificationLogId != null) {
         await dbService.deleteNotificationLog(confirmedTx.notificationLogId!);
       }
-      if (confirmedTx.body.isNotEmpty && confirmedTx.body != 'Manual transaction entry') {
+      if (confirmedTx.body.isNotEmpty &&
+          confirmedTx.body != 'Manual transaction entry') {
         await dbService.deleteNotificationLogByBody(confirmedTx.body);
       }
     }
@@ -339,8 +343,6 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
     }
   }
 
-
-
   // --- BATCH CLEARING & SELECTIVE APP CATEGORY MANAGEMENT ---
 
   void _toggleDraftSelection(int id) {
@@ -418,7 +420,11 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
           (_accounts.isNotEmpty
               ? _accounts.first
               : AccountModel(
-                  id: 1, name: 'Bank Account', type: 'bank', keywords: '', balance: 0.0));
+                  id: 1,
+                  name: 'Bank Account',
+                  type: 'bank',
+                  keywords: '',
+                  balance: 0.0));
 
       await _parser.trainConfirm(
         body: tx.body,
@@ -470,6 +476,7 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) {
+        final strings = AppLocalizations.of(context)!;
         return StatefulBuilder(
           builder: (context, setSheetState) {
             return Padding(
@@ -500,9 +507,9 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Confirm Drafts',
-                            style: TextStyle(
+                          Text(
+                            strings.inboxConfirmDrafts,
+                            style: const TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
@@ -510,7 +517,7 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            '${selectedTxs.length} ${selectedTxs.length == 1 ? "transaction" : "transactions"} • Total ${AppFormatters.formatAmount(totalSum)}',
+                            '${selectedTxs.length} ${selectedTxs.length == 1 ? strings.inboxTransactionSingle : strings.inboxTransactionPlural} • Total ${AppFormatters.formatAmount(totalSum)}',
                             style: const TextStyle(
                                 fontSize: 12, color: Color(0xFF10B981)),
                           ),
@@ -519,7 +526,7 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF10B981).withOpacity(0.15),
+                          color: const Color(0xFF10B981).withValues(alpha: 0.15),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(Icons.check_circle_rounded,
@@ -528,9 +535,9 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
                     ],
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    'Bulk Category Assignment (Optional)',
-                    style: TextStyle(
+                  Text(
+                    strings.inboxBulkCategoryAssignment,
+                    style: const TextStyle(
                         fontSize: 11,
                         color: Colors.white54,
                         fontWeight: FontWeight.bold),
@@ -541,7 +548,7 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
                     child: Row(
                       children: [
                         ChoiceChip(
-                          label: const Text('Keep AI/Individual'),
+                          label: Text(strings.inboxKeepAiIndividual),
                           selected: selectedBulkCatId == null,
                           selectedColor: const Color(0xFF6366F1),
                           backgroundColor: const Color(0xFF1E293B),
@@ -658,7 +665,7 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
                       ),
                       icon: const Icon(Icons.check_circle_rounded, size: 20),
                       label: Text(
-                        'Confirm ${selectedTxs.length} ${selectedTxs.length == 1 ? "Draft" : "Drafts"}',
+                        '${strings.inboxConfirm} ${selectedTxs.length} ${selectedTxs.length == 1 ? strings.inboxDraftSingle : strings.inboxDraftPlural}',
                         style: const TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 15),
                       ),
@@ -681,15 +688,16 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
     if (_selectedDraftIds.isEmpty) return;
 
     final count = _selectedDraftIds.length;
+    final strings = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Discard Selected Drafts?',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text(strings.inboxDiscardSelectedDraftsTitle,
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         content: Text(
-          'Are you sure you want to discard $count selected draft transactions? They will be removed from your inbox.',
+          strings.inboxDiscardSelectedDraftsConfirm(count),
           style:
               const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
         ),
@@ -697,12 +705,12 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child:
-                const Text('Cancel', style: TextStyle(color: Colors.white38)),
+                Text(strings.inboxCancel, style: const TextStyle(color: Colors.white38)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Discard',
-                style: TextStyle(
+            child: Text(strings.inboxDiscard,
+                style: const TextStyle(
                     color: Color(0xFFEF4444), fontWeight: FontWeight.bold)),
           ),
         ],
@@ -720,7 +728,8 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
       await PerceptronStorageService.instance.saveWeights();
 
       if (mounted) {
-        AppSnackBar.show(context, '$count draft transactions discarded.',
+        final strings = AppLocalizations.of(context)!;
+        AppSnackBar.show(context, strings.inboxDiscardedBatchSuccess(count),
             type: SnackBarType.neutral);
         setState(() {
           _isDraftSelectionMode = false;
@@ -736,15 +745,16 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
     if (_pendingTransactions.isEmpty) return;
 
     final count = _pendingTransactions.length;
+    final strings = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Discard All Drafts?',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text(strings.inboxDiscardAllDraftsTitle,
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         content: Text(
-          'Are you sure you want to discard all $count pending draft transactions? Unconfirmed drafts will be removed.',
+          strings.inboxDiscardAllDraftsConfirm(count),
           style:
               const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
         ),
@@ -752,12 +762,12 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child:
-                const Text('Cancel', style: TextStyle(color: Colors.white38)),
+                Text(strings.inboxCancel, style: const TextStyle(color: Colors.white38)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Discard All',
-                style: TextStyle(
+            child: Text(strings.inboxDiscardAll,
+                style: const TextStyle(
                     color: Color(0xFFEF4444), fontWeight: FontWeight.bold)),
           ),
         ],
@@ -771,7 +781,8 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
         }
       }
       if (mounted) {
-        AppSnackBar.show(context, '$count draft transactions discarded.',
+        final strings = AppLocalizations.of(context)!;
+        AppSnackBar.show(context, strings.inboxDiscardedBatchSuccess(count),
             type: SnackBarType.neutral);
       }
       widget.onConfirmedOrDiscarded();
@@ -783,15 +794,16 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
     if (_capturedAlerts.isEmpty) return;
 
     final count = _capturedAlerts.length;
+    final strings = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Clear All Alerts?',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text(strings.inboxClearAllAlertsTitle,
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         content: Text(
-          'Are you sure you want to clear all $count captured alerts? They will be moved to your Archived Alerts feed.',
+          strings.inboxClearAllAlertsConfirm(count),
           style:
               const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
         ),
@@ -799,12 +811,12 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child:
-                const Text('Cancel', style: TextStyle(color: Colors.white38)),
+                Text(strings.inboxCancel, style: const TextStyle(color: Colors.white38)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Clear All',
-                style: TextStyle(
+            child: Text(strings.inboxClearAll,
+                style: const TextStyle(
                     color: Color(0xFF6366F1), fontWeight: FontWeight.bold)),
           ),
         ],
@@ -820,7 +832,8 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
         await _parser.trainType(body, 'ignore');
       }
       if (mounted) {
-        AppSnackBar.show(context, '$count captured alerts archived.',
+        final strings = AppLocalizations.of(context)!;
+        AppSnackBar.show(context, strings.inboxClearedAlertsSuccess(count),
             type: SnackBarType.neutral);
       }
       _refreshAll();
@@ -880,8 +893,6 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
 
     _refreshAll();
   }
-
-
 
   Future<void> _handleFeedback(int logId, String appName, String title,
       String body, bool isFinancial, bool isRelevant) async {
@@ -983,6 +994,7 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final strings = AppLocalizations.of(context)!;
     final currentBottomInset = MediaQuery.of(context).viewInsets.bottom;
     final isKeyboardNowOpen = currentBottomInset > 0;
     if (_isKeyboardOpen && !isKeyboardNowOpen) {
@@ -992,7 +1004,8 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
     }
     _isKeyboardOpen = isKeyboardNowOpen;
 
-    final bool isSelecting = _isDraftSelectionMode || _isAppCategorySelectionMode;
+    final bool isSelecting =
+        _isDraftSelectionMode || _isAppCategorySelectionMode;
 
     return PopScope(
       canPop: !isSelecting,
@@ -1032,7 +1045,7 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
                 ? '${_selectedDraftIds.length} ${_selectedDraftIds.length == 1 ? "Draft Selected" : "Drafts Selected"}'
                 : (_isAppCategorySelectionMode
                     ? '${_selectedAppPackages.length} ${_selectedAppPackages.length == 1 ? "App Selected" : "Apps Selected"}'
-                    : 'Transaction Inbox'),
+                    : strings.inboxTitle),
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
           ),
           actions: _isDraftSelectionMode
@@ -1191,11 +1204,11 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
                           Row(
                             children: [
                               _buildTabItem(0, Icons.edit_note_rounded,
-                                  'Drafts', _pendingTransactions.length, value),
+                                  strings.inboxDrafts, _pendingTransactions.length, value),
                               _buildTabItem(
                                   1,
                                   Icons.receipt_long_rounded,
-                                  'Captured Alerts',
+                                  strings.inboxCapturedAlerts,
                                   _capturedAlerts.length,
                                   value),
                             ],
@@ -1344,6 +1357,7 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
 
   // --- DRAFTS TAB ---
   Widget _buildDraftsTab() {
+    final strings = AppLocalizations.of(context)!;
     return Stack(
       children: [
         // Background soft design circle
@@ -1362,149 +1376,156 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
         !_hasLoadedPrimaryData
             ? const InboxSkeleton()
             : _pendingTransactions.isEmpty
-            ? Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (_isServiceEnabled) ...[
-                        const Icon(Icons.mark_email_read_outlined,
-                            size: 64, color: Colors.white24),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'All caught up!',
-                          style: TextStyle(
-                              fontSize: 18,
-                              color: Colors.white70,
-                              fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 6),
-                        const Text(
-                          'Your transaction inbox is empty.',
-                          style: TextStyle(fontSize: 13, color: Colors.white38),
-                          textAlign: TextAlign.center,
-                        ),
-                      ] else ...[
-                        Container(
-                          padding: const EdgeInsets.all(24),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF6366F1).withOpacity(0.08),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.receipt_long_rounded,
-                            size: 56,
-                            color: Color(0xFFEA80FC),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        const Text(
-                          'Smart Tracking Disabled',
-                          style: TextStyle(
-                              fontSize: 20,
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 10),
-                        const Text(
-                          'Enable Smart Tracking to automatically detect, parse, and review transaction notifications here.',
-                          style: TextStyle(
-                              fontSize: 13, color: Colors.white54, height: 1.5),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 24),
-                        ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF6366F1),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 24, vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 32),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (_isServiceEnabled) ...[
+                            const Icon(Icons.mark_email_read_outlined,
+                                size: 64, color: Colors.white24),
+                            const SizedBox(height: 16),
+                        Text(
+                          strings.inboxAllCaughtUp,
+                              style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.white70,
+                                  fontWeight: FontWeight.bold),
                             ),
-                            elevation: 4,
-                          ),
-                          onPressed: _enableService,
-                          icon: const Icon(Icons.bolt_rounded, size: 20),
-                          label: const Text(
-                            'Enable Smart Tracking',
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 14),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              )
-            : ListView.builder(
-                controller: _draftsScrollController,
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 90),
-                itemCount: (_pendingTransactions.length < _draftsMaxDisplay
-                        ? _pendingTransactions.length
-                        : _draftsMaxDisplay) +
-                    (_pendingTransactions.length > _draftsMaxDisplay ? 1 : 0),
-                itemBuilder: (context, index) {
-                  final visibleCount =
-                      _pendingTransactions.length < _draftsMaxDisplay
-                          ? _pendingTransactions.length
-                          : _draftsMaxDisplay;
-
-                  if (index == visibleCount) {
-                    return const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                      child: Center(
-                        child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Color(0xFF6366F1),
-                          ),
-                        ),
+                            const SizedBox(height: 6),
+                        Text(
+                          strings.inboxEmpty,
+                              style: TextStyle(
+                                  fontSize: 13, color: Colors.white38),
+                              textAlign: TextAlign.center,
+                            ),
+                          ] else ...[
+                            Container(
+                              padding: const EdgeInsets.all(24),
+                              decoration: BoxDecoration(
+                                color:
+                                    const Color(0xFF6366F1).withOpacity(0.08),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.receipt_long_rounded,
+                                size: 56,
+                                color: Color(0xFFEA80FC),
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                        Text(
+                          strings.inboxTrackingDisabled,
+                              style: TextStyle(
+                                  fontSize: 20,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 10),
+                        Text(
+                          strings.inboxTrackingDisabledDescription,
+                              style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.white54,
+                                  height: 1.5),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 24),
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF6366F1),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 24, vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                elevation: 4,
+                              ),
+                              onPressed: _enableService,
+                              icon: const Icon(Icons.bolt_rounded, size: 20),
+                          label: Text(
+                            strings.inboxEnableTracking,
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold, fontSize: 14),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
-                    );
-                  }
+                    ),
+                  )
+                : ListView.builder(
+                    controller: _draftsScrollController,
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 90),
+                    itemCount: (_pendingTransactions.length < _draftsMaxDisplay
+                            ? _pendingTransactions.length
+                            : _draftsMaxDisplay) +
+                        (_pendingTransactions.length > _draftsMaxDisplay
+                            ? 1
+                            : 0),
+                    itemBuilder: (context, index) {
+                      final visibleCount =
+                          _pendingTransactions.length < _draftsMaxDisplay
+                              ? _pendingTransactions.length
+                              : _draftsMaxDisplay;
 
-                  final tx = _pendingTransactions[index];
-                  return PendingTransactionCard(
-                    key: ValueKey(tx.id),
-                    tx: tx,
-                    accounts: _accounts,
-                    categories: _categories,
-                    onConfirm: _confirmTransaction,
-                    onDiscard: _discardTransaction,
-                    onOnlineLookup: _triggerOnlineCategoryLookup,
-                    isLookupLoading: _lookupLoading[tx.id] ?? false,
-                    suggestions: _categorySuggestions[tx.id] ?? [],
-                    isSelectionMode: _isDraftSelectionMode,
-                    isSelected: _selectedDraftIds.contains(tx.id),
-                    onTap: () {
-                      if (_isDraftSelectionMode && tx.id != null) {
-                        _toggleDraftSelection(tx.id!);
-                        return;
+                      if (index == visibleCount) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          child: Center(
+                            child: SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Color(0xFF6366F1),
+                              ),
+                            ),
+                          ),
+                        );
                       }
-                      _showDraftEditor(tx);
+
+                      final tx = _pendingTransactions[index];
+                      return PendingTransactionCard(
+                        key: ValueKey(tx.id),
+                        tx: tx,
+                        accounts: _accounts,
+                        categories: _categories,
+                        onConfirm: _confirmTransaction,
+                        onDiscard: _discardTransaction,
+                        onOnlineLookup: _triggerOnlineCategoryLookup,
+                        isLookupLoading: _lookupLoading[tx.id] ?? false,
+                        suggestions: _categorySuggestions[tx.id] ?? [],
+                        isSelectionMode: _isDraftSelectionMode,
+                        isSelected: _selectedDraftIds.contains(tx.id),
+                        onTap: () {
+                          if (_isDraftSelectionMode && tx.id != null) {
+                            _toggleDraftSelection(tx.id!);
+                            return;
+                          }
+                          _showDraftEditor(tx);
+                        },
+                        onLongPress: () {
+                          if (tx.id != null) {
+                            if (!_isDraftSelectionMode) {
+                              _enterDraftSelectionMode(tx.id!);
+                            } else {
+                              _toggleDraftSelection(tx.id!);
+                            }
+                          }
+                        },
+                      );
                     },
-                    onLongPress: () {
-                      if (tx.id != null) {
-                        if (!_isDraftSelectionMode) {
-                          _enterDraftSelectionMode(tx.id!);
-                        } else {
-                          _toggleDraftSelection(tx.id!);
-                        }
-                      }
-                    },
-                  );
-                },
-              ),
+                  ),
       ],
     );
   }
 
   // --- CAPTURED ALERTS TAB ---
   Widget _buildCapturedAlertsTab() {
+    final strings = AppLocalizations.of(context)!;
     if (!_hasLoadedSecondaryData) {
       return const InboxSkeleton(cardCount: 3);
     }
@@ -1529,8 +1550,8 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
                 ),
               ),
               const SizedBox(height: 24),
-              const Text(
-                'No Captured Alerts',
+              Text(
+                strings.inboxNoCapturedAlerts,
                 style: TextStyle(
                     fontSize: 20,
                     color: Colors.white,
@@ -1539,8 +1560,8 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
               const SizedBox(height: 10),
               Text(
                 _isServiceEnabled
-                    ? 'Notifications that aren\'t auto-classified will appear here for your review.'
-                    : 'Enable Smart Tracking to capture and classify notifications.',
+                    ? strings.inboxCapturedAlertsEnabledDescription
+                    : strings.inboxCapturedAlertsDisabledDescription,
                 style: const TextStyle(
                     fontSize: 13, color: Colors.white54, height: 1.5),
                 textAlign: TextAlign.center,
