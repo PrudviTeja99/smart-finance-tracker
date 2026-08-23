@@ -591,38 +591,42 @@ class _DashboardBarChartState extends State<DashboardBarChart> {
     required bool shouldHideAmounts,
     required bool isYearlyGrouping,
   }) {
+    const double tiltAngle = -0.6; // ~-34 degrees tilt
     final double fontSize = isYearlyGrouping ? 7.0 : 7.5;
 
     if (typeFilter == 'all') {
       if (income == 0 && expense == 0) return const SizedBox.shrink();
 
-      return FittedBox(
-        fit: BoxFit.scaleDown,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            if (income > 0)
-              Text(
-                AppFormatters.formatAmount(income, shouldHide: shouldHideAmounts),
-                style: TextStyle(
-                  fontSize: fontSize,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF34D399),
-                  height: 1.1,
+      return Transform.rotate(
+        angle: tiltAngle,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              if (income > 0)
+                Text(
+                  AppFormatters.formatAmount(income, shouldHide: shouldHideAmounts),
+                  style: TextStyle(
+                    fontSize: fontSize,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF34D399),
+                    height: 1.1,
+                  ),
                 ),
-              ),
-            if (expense > 0)
-              Text(
-                AppFormatters.formatAmount(expense, shouldHide: shouldHideAmounts),
-                style: TextStyle(
-                  fontSize: fontSize,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFFF87171),
-                  height: 1.1,
+              if (expense > 0)
+                Text(
+                  AppFormatters.formatAmount(expense, shouldHide: shouldHideAmounts),
+                  style: TextStyle(
+                    fontSize: fontSize,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFFF87171),
+                    height: 1.1,
+                  ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       );
     }
@@ -636,15 +640,18 @@ class _DashboardBarChartState extends State<DashboardBarChart> {
         ? const Color(0xFFF87171)
         : (typeFilter == 'credit' ? const Color(0xFF34D399) : const Color(0xFF7DD3FC));
 
-    return FittedBox(
-      fit: BoxFit.scaleDown,
-      child: Text(
-        AppFormatters.formatAmount(amount, shouldHide: shouldHideAmounts),
-        style: TextStyle(
-          fontSize: fontSize,
-          fontWeight: FontWeight.bold,
-          color: textColor,
-          height: 1.1,
+    return Transform.rotate(
+      angle: tiltAngle,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(
+          AppFormatters.formatAmount(amount, shouldHide: shouldHideAmounts),
+          style: TextStyle(
+            fontSize: fontSize,
+            fontWeight: FontWeight.bold,
+            color: textColor,
+            height: 1.1,
+          ),
         ),
       ),
     );
