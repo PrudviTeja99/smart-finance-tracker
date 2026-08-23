@@ -25,6 +25,9 @@ class AppSettings {
     autoDeleteArchive = prefs.getBool('auto_delete_archive') ?? false;
     autoDeleteValue = prefs.getInt('auto_delete_value') ?? 30;
     autoDeleteUnit = prefs.getString('auto_delete_unit') ?? 'days';
+    if (autoDeleteUnit == 'years') {
+      autoDeleteUnit = 'months';
+    }
     smartTrackingEnabled = prefs.getBool('smart_tracking_enabled') ?? true;
     allowedNotificationApps =
         prefs.getStringList('allowed_notification_apps') ?? [];

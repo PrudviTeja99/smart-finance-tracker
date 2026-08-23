@@ -598,10 +598,10 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   void _showDurationPickerSheet() {
     int tempValue = AppSettings.autoDeleteValue;
-    String tempUnit = AppSettings.autoDeleteUnit;
+    String tempUnit = AppSettings.autoDeleteUnit == 'years' ? 'months' : AppSettings.autoDeleteUnit;
 
-    final units = ['days', 'months', 'years'];
-    final unitIndex = units.indexOf(tempUnit).clamp(0, 2);
+    final units = ['days', 'months'];
+    final unitIndex = units.indexOf(tempUnit).clamp(0, 1);
 
     final valueScrollController =
         FixedExtentScrollController(initialItem: tempValue - 1);
@@ -856,347 +856,193 @@ class _SettingsScreenState extends State<SettingsScreen>
                 icon: Icons.tune_rounded,
                 children: [
                   ListTile(
-                    leading: const Icon(Icons.account_balance_wallet_rounded,
-                        color: Color(0xFF6366F1)),
+                    leading: _buildLeadingIcon(Icons.account_balance_wallet_rounded, color: const Color(0xFF3B82F6)),
                     title: Text(strings.settingsManageAccounts,
-                        style: TextStyle(fontWeight: FontWeight.bold)),
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
                     subtitle: Text(strings.settingsActiveAccounts(_accounts.length),
                         style: const TextStyle(fontSize: 11)),
                     trailing: const Icon(Icons.arrow_forward_ios_rounded,
                         size: 16, color: Colors.white54),
                     onTap: _showManageAccountsSheet,
                   ),
-                  const Divider(color: Colors.white10),
+                  Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
                   ListTile(
-                    leading: const Icon(Icons.category_rounded,
-                        color: Color(0xFF6366F1)),
+                    leading: _buildLeadingIcon(Icons.category_rounded, color: const Color(0xFFA855F7)),
                     title: Text(strings.settingsManageCategories,
-                        style: TextStyle(fontWeight: FontWeight.bold)),
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
                     subtitle: Text(strings.settingsActiveCategories(_categories.length),
                         style: const TextStyle(fontSize: 11)),
                     trailing: const Icon(Icons.arrow_forward_ios_rounded,
                         size: 16, color: Colors.white54),
                     onTap: _showManageCategoriesSheet,
                   ),
-                  const Divider(color: Colors.white10),
+                  Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
                   ListTile(
-                    leading: const Icon(Icons.language_rounded,
-                        color: Color(0xFF6366F1)),
+                    leading: _buildLeadingIcon(Icons.language_rounded, color: const Color(0xFF14B8A6)),
                     title: Text(strings.settingsAppLanguage,
                         style: const TextStyle(fontWeight: FontWeight.bold)),
                     subtitle: Text(
                       strings.settingsAppLanguageSubtitle,
                       style: const TextStyle(fontSize: 11),
                     ),
-                    trailing: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF6366F1).withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                            color: const Color(0xFF6366F1).withValues(alpha: 0.25)),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: AppLanguageService.instance.selectedLanguage.code,
-                          dropdownColor: const Color(0xFF1E293B),
-                          isDense: true,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF6366F1),
-                            fontSize: 13,
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF6366F1).withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.25)),
                           ),
-                          icon: const Padding(
-                            padding: EdgeInsets.only(left: 4),
-                            child: Icon(Icons.arrow_drop_down,
-                                color: Color(0xFF6366F1), size: 18),
+                          child: Text(
+                            AppLanguageService.instance.selectedLanguage.code == 'te'
+                                ? strings.languageTelugu
+                                : strings.languageEnglish,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF818CF8),
+                              fontSize: 12,
+                            ),
                           ),
-                          items: AppLanguageService.instance.supportedLanguages
-                              .map(
-                                (language) => DropdownMenuItem(
-                                  value: language.code,
-                                  child: Text(language.code == 'te'
-                                      ? strings.languageTelugu
-                                      : (language.code == 'en'
-                                          ? strings.languageEnglish
-                                          : language.nativeName)),
-                                ),
-                              )
-                              .toList(growable: false),
-                          onChanged: (code) async {
-                            if (code == null) return;
-                            await AppLanguageService.instance
-                                .selectLanguage(code);
-                            if (mounted) setState(() {});
-                          },
                         ),
-                      ),
+                        const SizedBox(width: 6),
+                        const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.white38),
+                      ],
                     ),
+                    onTap: _showLanguageSelectionSheet,
                   ),
-                  const Divider(color: Colors.white10),
+                  Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
                   ListTile(
-                    leading: const Icon(Icons.monetization_on_rounded,
-                        color: Color(0xFF6366F1)),
+                    leading: _buildLeadingIcon(Icons.monetization_on_rounded, color: const Color(0xFF10B981)),
                     title: Text(strings.settingsCurrencySymbol,
-                        style: TextStyle(fontWeight: FontWeight.bold)),
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
                     subtitle: Text(strings.settingsCurrencySymbolSubtitle,
-                        style: TextStyle(fontSize: 11)),
-                    trailing: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF6366F1).withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                            color: const Color(0xFF6366F1).withOpacity(0.25)),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: AppSettings.currencySymbol,
-                          dropdownColor: const Color(0xFF1E293B),
-                          isDense: true,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF6366F1),
-                            fontSize: 13,
+                        style: const TextStyle(fontSize: 11)),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF6366F1).withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.25)),
                           ),
-                          icon: const Padding(
-                            padding: EdgeInsets.only(left: 4),
-                            child: Icon(Icons.arrow_drop_down,
-                                color: Color(0xFF6366F1), size: 18),
+                          child: Text(
+                            AppSettings.currencySymbol == '₹'
+                                ? 'INR (₹)'
+                                : (AppSettings.currencySymbol == '\$'
+                                    ? 'USD (\$)'
+                                    : (AppSettings.currencySymbol == '€'
+                                        ? 'EUR (€)'
+                                        : (AppSettings.currencySymbol == '£'
+                                            ? 'GBP (£)'
+                                            : (AppSettings.currencySymbol == '¥'
+                                                ? 'JPY/CNY (¥)'
+                                                : 'KRW (₩)')))),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF818CF8),
+                              fontSize: 12,
+                            ),
                           ),
-                          items: const [
-                            DropdownMenuItem(
-                                value: '₹', child: Text('INR (₹)')),
-                            DropdownMenuItem(
-                                value: '\$', child: Text('USD (\$)')),
-                            DropdownMenuItem(
-                                value: '€', child: Text('EUR (€)')),
-                            DropdownMenuItem(
-                                value: '£', child: Text('GBP (£)')),
-                            DropdownMenuItem(
-                                value: '¥', child: Text('JPY/CNY (¥)')),
-                            DropdownMenuItem(
-                                value: '₩', child: Text('KRW (₩)')),
-                          ],
-                          onChanged: (val) async {
-                            if (val != null) {
-                              await AppSettings.setCurrencySymbol(val);
-                              setState(() {});
-                            }
-                          },
                         ),
-                      ),
+                        const SizedBox(width: 6),
+                        const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.white38),
+                      ],
                     ),
+                    onTap: _showCurrencySelectionSheet,
                   ),
-                  const Divider(color: Colors.white10),
+                  Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
                   ListTile(
-                    leading:
-                        const Icon(Icons.pin_rounded, color: Color(0xFF6366F1)),
+                    leading: _buildLeadingIcon(Icons.pin_rounded, color: const Color(0xFFF59E0B)),
                     title: Text(strings.settingsNumberFormat,
-                        style: TextStyle(fontWeight: FontWeight.bold)),
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
                     subtitle: Text(strings.settingsNumberFormatSubtitle,
-                        style: TextStyle(fontSize: 11)),
-                    trailing: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF6366F1).withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                            color: const Color(0xFF6366F1).withOpacity(0.25)),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: AppSettings.numberLocale,
-                          dropdownColor: const Color(0xFF1E293B),
-                          isDense: true,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF6366F1),
-                            fontSize: 13,
+                        style: const TextStyle(fontSize: 11)),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF6366F1).withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.25)),
                           ),
-                          icon: const Padding(
-                            padding: EdgeInsets.only(left: 4),
-                            child: Icon(Icons.arrow_drop_down,
-                                color: Color(0xFF6366F1), size: 18),
+                          child: Text(
+                            AppSettings.numberLocale == 'en_IN'
+                                ? 'Indian (12,34,567)'
+                                : (AppSettings.numberLocale == 'en_US'
+                                    ? 'Standard (1,234,567)'
+                                    : (AppSettings.numberLocale == 'de_DE'
+                                        ? 'European (1.234.567)'
+                                        : (AppSettings.numberLocale == 'en_GB'
+                                            ? 'UK (1,234,567)'
+                                            : 'Auto (System)'))),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF818CF8),
+                              fontSize: 12,
+                            ),
                           ),
-                          items: const [
-                            DropdownMenuItem(
-                                value: 'auto', child: Text('🌐 Auto (System)')),
-                            DropdownMenuItem(
-                                value: 'en_IN',
-                                child: Text('🇮🇳 Indian (12,34,567)')),
-                            DropdownMenuItem(
-                                value: 'en_US',
-                                child: Text('🌍 Standard (1,234,567)')),
-                            DropdownMenuItem(
-                                value: 'de_DE',
-                                child: Text('🇪🇺 European (1.234.567)')),
-                            DropdownMenuItem(
-                                value: 'en_GB',
-                                child: Text('🇬🇧 UK (1,234,567)')),
-                          ],
-                          onChanged: (val) async {
-                            if (val != null) {
-                              await AppSettings.setNumberLocale(val);
-                              AppFormatters.clearCache();
-                              setState(() {});
-                            }
-                          },
                         ),
-                      ),
+                        const SizedBox(width: 6),
+                        const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.white38),
+                      ],
                     ),
+                    onTap: _showNumberFormatSelectionSheet,
                   ),
-                  const Divider(color: Colors.white10),
+                  Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
                   SwitchListTile(
                     title: Text(strings.settingsAutoHideBalances,
-                        style: TextStyle(
+                        style: const TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 14)),
                     subtitle: Text(strings.settingsAutoHideBalancesSubtitle,
-                        style: TextStyle(fontSize: 11)),
+                        style: const TextStyle(fontSize: 11)),
                     value: AppSettings.autoHideEnabled,
                     activeColor: const Color(0xFF6366F1),
-                    secondary: const Icon(Icons.visibility_off_rounded,
-                        color: Color(0xFF6366F1)),
+                    secondary: _buildLeadingIcon(Icons.visibility_off_rounded, color: const Color(0xFFF43F5E)),
                     onChanged: (val) async {
                       await AppSettings.setAutoHideEnabled(val);
                       setState(() {});
                     },
                   ),
-                  if (AppSettings.autoHideEnabled)
-                    Container(
-                      margin: const EdgeInsets.only(
-                          left: 56, right: 16, bottom: 12),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(12),
-                        border:
-                            Border.all(color: Colors.white.withOpacity(0.02)),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  if (AppSettings.autoHideEnabled) ...[
+                    Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
+                    ListTile(
+                      leading: _buildLeadingIcon(Icons.timer_rounded, color: const Color(0xFF6366F1)),
+                      title: Text(strings.settingsHideDuration,
+                          style: const TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: Text(strings.settingsAutoHideBalancesSubtitle,
+                          style: const TextStyle(fontSize: 11)),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(
-                            strings.settingsHideDuration,
-                            style: TextStyle(
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF6366F1).withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.25)),
+                            ),
+                            child: Text(
+                              '${AppSettings.autoHideSeconds} ${AppSettings.autoHideSeconds == 1 ? "second" : "seconds"}',
+                              style: const TextStyle(
                                 fontWeight: FontWeight.bold,
-                                fontSize: 13,
-                                color: Colors.white70),
+                                color: Color(0xFF818CF8),
+                                fontSize: 12,
+                              ),
+                            ),
                           ),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: Icon(
-                                  Icons.remove_circle_outline,
-                                  color: AppSettings.autoHideSeconds > 1
-                                      ? Colors.white60
-                                      : Colors.white24,
-                                  size: 22,
-                                ),
-                                onPressed: AppSettings.autoHideSeconds > 1
-                                    ? () async {
-                                        await AppSettings.setAutoHideSeconds(
-                                            AppSettings.autoHideSeconds - 1);
-                                        setState(() {});
-                                      }
-                                    : null,
-                              ),
-                              const SizedBox(width: 4),
-                              Container(
-                                width: 56,
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  color:
-                                      const Color(0xFF6366F1).withOpacity(0.12),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                      color: const Color(0xFF6366F1)
-                                          .withOpacity(0.25)),
-                                ),
-                                child: DropdownButtonHideUnderline(
-                                  child: DropdownButton<int>(
-                                    value: AppSettings.autoHideSeconds,
-                                    dropdownColor: const Color(0xFF1E293B),
-                                    icon: const SizedBox.shrink(),
-                                    alignment: Alignment.center,
-                                    isDense: true,
-                                    padding:
-                                        const EdgeInsets.symmetric(vertical: 8),
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF6366F1),
-                                      fontSize: 13,
-                                    ),
-                                    items: (() {
-                                      final presets = [
-                                        1,
-                                        2,
-                                        3,
-                                        5,
-                                        10,
-                                        15,
-                                        30,
-                                        45,
-                                        60
-                                      ];
-                                      final currentVal =
-                                          AppSettings.autoHideSeconds;
-                                      final itemsList =
-                                          presets.contains(currentVal)
-                                              ? presets
-                                              : (List<int>.from(presets)
-                                                ..add(currentVal)
-                                                ..sort());
-                                      return itemsList.map((val) {
-                                        return DropdownMenuItem<int>(
-                                          value: val,
-                                          child: Center(
-                                            child: Text(
-                                              '${val}s',
-                                              style: const TextStyle(
-                                                  fontWeight: FontWeight.bold),
-                                            ),
-                                          ),
-                                        );
-                                      }).toList();
-                                    })(),
-                                    onChanged: (val) async {
-                                      if (val != null) {
-                                        await AppSettings.setAutoHideSeconds(
-                                            val);
-                                        setState(() {});
-                                      }
-                                    },
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              IconButton(
-                                icon: Icon(
-                                  Icons.add_circle_outline,
-                                  color: AppSettings.autoHideSeconds < 60
-                                      ? Colors.white60
-                                      : Colors.white24,
-                                  size: 22,
-                                ),
-                                onPressed: AppSettings.autoHideSeconds < 60
-                                    ? () async {
-                                        await AppSettings.setAutoHideSeconds(
-                                            AppSettings.autoHideSeconds + 1);
-                                        setState(() {});
-                                      }
-                                    : null,
-                              ),
-                            ],
-                          ),
+                          const SizedBox(width: 6),
+                          const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.white38),
                         ],
                       ),
+                      onTap: _showHideDurationSelectionSheet,
                     ),
+                  ],
                 ],
               ),
               const SizedBox(height: 16),
@@ -1211,42 +1057,26 @@ class _SettingsScreenState extends State<SettingsScreen>
                 icon: Icons.sync_rounded,
                 children: [
                   ListTile(
-                    leading: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF6366F1).withOpacity(0.15),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.upload_rounded,
-                          color: Color(0xFF6366F1), size: 20),
-                    ),
+                    leading: _buildLeadingIcon(Icons.upload_rounded, color: const Color(0xFF0EA5E9)),
                     title: Text(strings.settingsExportDataBackup,
                         style: const TextStyle(fontWeight: FontWeight.bold)),
                     subtitle: Text(
                         strings.settingsExportSubtitle,
                         style: const TextStyle(fontSize: 11, color: Colors.white54)),
-                    trailing: const Icon(Icons.chevron_right_rounded,
-                        color: Colors.white38),
+                    trailing: const Icon(Icons.arrow_forward_ios_rounded,
+                        size: 16, color: Colors.white54),
                     onTap: _showExportFormatSheet,
                   ),
-                  const Divider(color: Colors.white10),
+                  Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
                   ListTile(
-                    leading: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF10B981).withOpacity(0.15),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.download_rounded,
-                          color: Color(0xFF10B981), size: 20),
-                    ),
+                    leading: _buildLeadingIcon(Icons.download_rounded, color: const Color(0xFF10B981)),
                     title: Text(strings.settingsImportDataRestore,
                         style: const TextStyle(fontWeight: FontWeight.bold)),
                     subtitle: Text(
                         strings.settingsImportSubtitle,
                         style: const TextStyle(fontSize: 11, color: Colors.white54)),
-                    trailing: const Icon(Icons.chevron_right_rounded,
-                        color: Colors.white38),
+                    trailing: const Icon(Icons.arrow_forward_ios_rounded,
+                        size: 16, color: Colors.white54),
                     onTap: _handleImportWorkflow,
                   ),
                 ],
@@ -1474,6 +1304,17 @@ class _SettingsScreenState extends State<SettingsScreen>
     );
   }
 
+  Widget _buildLeadingIcon(IconData icon, {Color color = const Color(0xFF818CF8), Color? bg}) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: bg ?? color.withValues(alpha: 0.12),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(icon, color: color, size: 20),
+    );
+  }
+
   Widget _buildSettingsGroup({
     required String title,
     required IconData icon,
@@ -1486,28 +1327,33 @@ class _SettingsScreenState extends State<SettingsScreen>
           padding: const EdgeInsets.only(left: 8, top: 20, bottom: 8),
           child: Row(
             children: [
-              Icon(icon, color: const Color(0xFF6366F1), size: 16),
+              Icon(icon, color: const Color(0xFF818CF8), size: 16),
               const SizedBox(width: 8),
               Text(
                 title.toUpperCase(),
                 style: const TextStyle(
                   fontWeight: FontWeight.w700,
                   fontSize: 11,
-                  color: Color(0xFF64748B), // Slate 500
+                  color: Color(0xFF94A3B8), // Slate 400
                   letterSpacing: 1.5,
                 ),
               ),
             ],
           ),
         ),
-        Card(
+        Material(
           color: const Color(0xFF1E293B),
-          margin: EdgeInsets.zero,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Column(children: children),
+          borderRadius: BorderRadius.circular(20),
+          clipBehavior: Clip.antiAlias,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFF334155).withValues(alpha: 0.5)),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Column(children: children),
+            ),
           ),
         ),
       ],
@@ -1527,7 +1373,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       children: [
         Row(
           children: [
-            Icon(icon, color: const Color(0xFF6366F1), size: 20),
+            _buildLeadingIcon(icon, color: const Color(0xFF818CF8)),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
@@ -1557,10 +1403,10 @@ class _SettingsScreenState extends State<SettingsScreen>
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
-              color: const Color(0xFF6366F1).withOpacity(0.1),
+              color: const Color(0xFF6366F1).withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: const Color(0xFF6366F1).withOpacity(0.3),
+                color: const Color(0xFF6366F1).withValues(alpha: 0.3),
               ),
             ),
             child: Row(
@@ -1601,8 +1447,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           activeColor: const Color(0xFF6366F1),
           value: _isServiceEnabled,
           onChanged: _toggleService,
-          secondary:
-              const Icon(Icons.receipt_long_rounded, color: Color(0xFF6366F1)),
+          secondary: _buildLeadingIcon(Icons.receipt_long_rounded, color: const Color(0xFF0EA5E9)),
         ),
 
         // Reliability Recommendations - always shown when toggle is present
@@ -1612,18 +1457,17 @@ class _SettingsScreenState extends State<SettingsScreen>
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFF1E293B),
+                color: const Color(0xFF0F172A),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFF334155)),
+                border: Border.all(color: const Color(0xFF334155).withValues(alpha: 0.5)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.shield_rounded,
-                          color: Color(0xFF6366F1), size: 20),
-                      const SizedBox(width: 8),
+                      _buildLeadingIcon(Icons.shield_rounded, color: const Color(0xFF818CF8)),
+                      const SizedBox(width: 10),
                       Text(
                         strings.settingsReliabilityRecommendations,
                         style: const TextStyle(
@@ -1648,7 +1492,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     buttonText: strings.settingsEnableAutoStartBtn,
                     onTap: () => NotificationHandler.openAutoStartSettings(),
                   ),
-                  const Divider(color: Colors.white10, height: 24),
+                  Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 24),
                   _buildReliabilityAction(
                     icon: Icons.battery_saver_rounded,
                     title: strings.settingsEnableUnrestrictedRunTitle,
@@ -1657,7 +1501,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     buttonText: strings.settingsEnableUnrestrictedRunBtn,
                     onTap: () => NotificationHandler.requestBatteryExemption(),
                   ),
-                  const Divider(color: Colors.white10, height: 24),
+                  Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 24),
                   _buildReliabilityAction(
                     icon: Icons.notifications_active_rounded,
                     title: strings.settingsKeepNotificationAccessTitle,
@@ -1670,9 +1514,9 @@ class _SettingsScreenState extends State<SettingsScreen>
               ),
             ),
           ),
-          const Divider(color: Colors.white10),
+          Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
         ] else
-          const Divider(color: Colors.white10),
+          Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
 
         // Auto-Delete Archived Alerts
         Opacity(
@@ -1694,8 +1538,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   ),
                   value: AppSettings.autoDeleteArchive,
                   activeColor: const Color(0xFF6366F1),
-                  secondary: const Icon(Icons.auto_delete_rounded,
-                      color: Color(0xFF6366F1)),
+                  secondary: _buildLeadingIcon(Icons.auto_delete_rounded, color: const Color(0xFFF97316)),
                   onChanged: (val) async {
                     if (!val) {
                       final confirmed = await showDialog<bool>(
@@ -1793,7 +1636,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           ),
         ),
 
-        const Divider(color: Colors.white10),
+        Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
 
         // View Archived Alerts
         Opacity(
@@ -1801,8 +1644,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           child: AbsorbPointer(
             absorbing: !_isServiceEnabled,
             child: ListTile(
-              leading:
-                  const Icon(Icons.archive_rounded, color: Color(0xFF6366F1)),
+              leading: _buildLeadingIcon(Icons.archive_rounded, color: const Color(0xFFF59E0B)),
               title: Text(strings.settingsViewArchivedAlerts,
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
               subtitle: Text(
@@ -1834,8 +1676,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       children: [
         // Train Your Model
         ListTile(
-          leading:
-              const Icon(Icons.psychology_rounded, color: Color(0xFF818CF8)),
+          leading: _buildLeadingIcon(Icons.psychology_rounded, color: const Color(0xFF8B5CF6)),
           title: Text(strings.settingsTrainYourModel,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
           subtitle: Text(
@@ -1852,55 +1693,40 @@ class _SettingsScreenState extends State<SettingsScreen>
           },
         ),
 
-        const Divider(color: Colors.white10),
+        Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
 
         // SnackBar Display Duration
         ListTile(
-          leading: const Icon(Icons.timer_rounded, color: Color(0xFF6366F1)),
+          leading: _buildLeadingIcon(Icons.timer_rounded, color: const Color(0xFFF59E0B)),
           title: Text(strings.settingsSnackBarDuration,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
           subtitle: Text(
               strings.settingsSnackBarDurationSubtitle((AppSettings.snackBarDurationMs / 1000).toStringAsFixed(1)),
               style: const TextStyle(fontSize: 11)),
-          trailing: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: const Color(0xFF6366F1).withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                  color: const Color(0xFF6366F1).withValues(alpha: 0.25)),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<int>(
-                value: AppSettings.snackBarDurationMs,
-                dropdownColor: const Color(0xFF1E293B),
-                isDense: true,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF6366F1),
-                  fontSize: 13,
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF6366F1).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.25)),
                 ),
-                icon: const Padding(
-                  padding: EdgeInsets.only(left: 4),
-                  child: Icon(Icons.arrow_drop_down,
-                      color: Color(0xFF6366F1), size: 18),
+                child: Text(
+                  '${(AppSettings.snackBarDurationMs / 1000).toStringAsFixed(1)}s',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF818CF8),
+                    fontSize: 12,
+                  ),
                 ),
-                items: const [
-                  DropdownMenuItem(value: 1000, child: Text('1.0s')),
-                  DropdownMenuItem(value: 1500, child: Text('1.5s')),
-                  DropdownMenuItem(value: 2000, child: Text('2.0s')),
-                  DropdownMenuItem(value: 3000, child: Text('3.0s')),
-                  DropdownMenuItem(value: 4000, child: Text('4.0s')),
-                ],
-                onChanged: (val) async {
-                  if (val != null) {
-                    await AppSettings.setSnackBarDuration(val);
-                    setState(() {});
-                  }
-                },
               ),
-            ),
+              const SizedBox(width: 6),
+              const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.white38),
+            ],
           ),
+          onTap: _showSnackBarDurationSelectionSheet,
         ),
       ],
     );
@@ -1913,7 +1739,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       icon: Icons.bug_report_rounded,
       children: [
         ListTile(
-          leading: const Icon(Icons.terminal_rounded, color: Color(0xFF818CF8)),
+          leading: _buildLeadingIcon(Icons.terminal_rounded, color: const Color(0xFF06B6D4)),
           title: Text(strings.settingsLogInspector,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
           subtitle: Text(strings.settingsLogInspectorSubtitle,
@@ -1928,9 +1754,9 @@ class _SettingsScreenState extends State<SettingsScreen>
             );
           },
         ),
+        Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
         ListTile(
-          leading:
-              const Icon(Icons.playlist_add_rounded, color: Color(0xFF10B981)),
+          leading: _buildLeadingIcon(Icons.playlist_add_rounded, color: const Color(0xFFEC4899)),
           title: Text(strings.settingsSimulateNotification,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
           subtitle: Text(
@@ -2435,6 +2261,634 @@ class _SettingsScreenState extends State<SettingsScreen>
               ),
             );
           },
+        );
+      },
+    );
+  }
+
+  void _showLanguageSelectionSheet() {
+    final strings = AppLocalizations.of(context)!;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF0F172A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.white24,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    strings.settingsAppLanguage,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    strings.settingsAppLanguageSubtitle,
+                    style: const TextStyle(color: Colors.white54, fontSize: 12),
+                  ),
+                  const SizedBox(height: 16),
+                  ...AppLanguageService.instance.supportedLanguages.map((lang) {
+                    final isSelected =
+                        AppLanguageService.instance.selectedLanguage.code ==
+                            lang.code;
+                    final label = lang.code == 'te'
+                        ? strings.languageTelugu
+                        : strings.languageEnglish;
+
+                    return InkWell(
+                      onTap: () async {
+                        Navigator.pop(context);
+                        await AppLanguageService.instance
+                            .selectLanguage(lang.code);
+                        if (mounted) setState(() {});
+                      },
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 14),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? const Color(0xFF6366F1).withValues(alpha: 0.15)
+                              : const Color(0xFF1E293B),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isSelected
+                                ? const Color(0xFF6366F1)
+                                : const Color(0xFF334155),
+                            width: isSelected ? 1.5 : 1.0,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  lang.code == 'te' ? '🇮🇳' : '🇬🇧',
+                                  style: const TextStyle(fontSize: 20),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  label,
+                                  style: TextStyle(
+                                    color: isSelected
+                                        ? Colors.white
+                                        : Colors.white70,
+                                    fontSize: 15,
+                                    fontWeight: isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Icon(
+                              isSelected
+                                  ? Icons.check_circle_rounded
+                                  : Icons.radio_button_unchecked_rounded,
+                              color: isSelected
+                                  ? const Color(0xFF6366F1)
+                                  : Colors.white24,
+                              size: 22,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showCurrencySelectionSheet() {
+    final strings = AppLocalizations.of(context)!;
+    final options = [
+      {'code': '₹', 'label': 'INR (₹)', 'sub': 'Indian Rupee'},
+      {'code': '\$', 'label': 'USD (\$)', 'sub': 'US Dollar'},
+      {'code': '€', 'label': 'EUR (€)', 'sub': 'Euro'},
+      {'code': '£', 'label': 'GBP (£)', 'sub': 'British Pound'},
+      {'code': '¥', 'label': 'JPY/CNY (¥)', 'sub': 'Yen / Yuan'},
+      {'code': '₩', 'label': 'KRW (₩)', 'sub': 'Korean Won'},
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF0F172A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.white24,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    strings.settingsCurrencySymbol,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    strings.settingsCurrencySymbolSubtitle,
+                    style: const TextStyle(color: Colors.white54, fontSize: 12),
+                  ),
+                  const SizedBox(height: 16),
+                  ...options.map((opt) {
+                    final isSelected = AppSettings.currencySymbol == opt['code'];
+
+                    return InkWell(
+                      onTap: () async {
+                        Navigator.pop(context);
+                        await AppSettings.setCurrencySymbol(opt['code']!);
+                        if (mounted) setState(() {});
+                      },
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? const Color(0xFF6366F1).withValues(alpha: 0.15)
+                              : const Color(0xFF1E293B),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isSelected
+                                ? const Color(0xFF6366F1)
+                                : const Color(0xFF334155),
+                            width: isSelected ? 1.5 : 1.0,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  width: 36,
+                                  height: 36,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF6366F1).withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    opt['code']!,
+                                    style: const TextStyle(
+                                      color: Color(0xFF818CF8),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 14),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      opt['label']!,
+                                      style: TextStyle(
+                                        color: isSelected
+                                            ? Colors.white
+                                            : Colors.white70,
+                                        fontSize: 14,
+                                        fontWeight: isSelected
+                                            ? FontWeight.bold
+                                            : FontWeight.normal,
+                                      ),
+                                    ),
+                                    Text(
+                                      opt['sub']!,
+                                      style: const TextStyle(
+                                          color: Colors.white38, fontSize: 11),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            Icon(
+                              isSelected
+                                  ? Icons.check_circle_rounded
+                                  : Icons.radio_button_unchecked_rounded,
+                              color: isSelected
+                                  ? const Color(0xFF6366F1)
+                                  : Colors.white24,
+                              size: 22,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showNumberFormatSelectionSheet() {
+    final strings = AppLocalizations.of(context)!;
+    final options = [
+      {'code': 'auto', 'label': '🌐 Auto (System Default)', 'preview': 'Follows system locale'},
+      {'code': 'en_IN', 'label': '🇮🇳 Indian Format', 'preview': '12,34,567'},
+      {'code': 'en_US', 'label': '🌍 Standard Format', 'preview': '1,234,567'},
+      {'code': 'de_DE', 'label': '🇪🇺 European Format', 'preview': '1.234.567'},
+      {'code': 'en_GB', 'label': '🇬🇧 UK Format', 'preview': '1,234,567'},
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF0F172A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.white24,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    strings.settingsNumberFormat,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    strings.settingsNumberFormatSubtitle,
+                    style: const TextStyle(color: Colors.white54, fontSize: 12),
+                  ),
+                  const SizedBox(height: 16),
+                  ...options.map((opt) {
+                    final isSelected = AppSettings.numberLocale == opt['code'];
+
+                    return InkWell(
+                      onTap: () async {
+                        Navigator.pop(context);
+                        await AppSettings.setNumberLocale(opt['code']!);
+                        AppFormatters.clearCache();
+                        if (mounted) setState(() {});
+                      },
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? const Color(0xFF6366F1).withValues(alpha: 0.15)
+                              : const Color(0xFF1E293B),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isSelected
+                                ? const Color(0xFF6366F1)
+                                : const Color(0xFF334155),
+                            width: isSelected ? 1.5 : 1.0,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  opt['label']!,
+                                  style: TextStyle(
+                                    color: isSelected
+                                        ? Colors.white
+                                        : Colors.white70,
+                                    fontSize: 14,
+                                    fontWeight: isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                  ),
+                                ),
+                                Text(
+                                  opt['preview']!,
+                                  style: const TextStyle(
+                                      color: Colors.white38, fontSize: 11),
+                                ),
+                              ],
+                            ),
+                            Icon(
+                              isSelected
+                                  ? Icons.check_circle_rounded
+                                  : Icons.radio_button_unchecked_rounded,
+                              color: isSelected
+                                  ? const Color(0xFF6366F1)
+                                  : Colors.white24,
+                              size: 22,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showHideDurationSelectionSheet() {
+    final strings = AppLocalizations.of(context)!;
+    final options = [1, 2, 3, 5, 10, 15, 30];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF0F172A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.white24,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    strings.settingsHideDuration,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    strings.settingsAutoHideBalancesSubtitle,
+                    style: const TextStyle(color: Colors.white54, fontSize: 12),
+                  ),
+                  const SizedBox(height: 16),
+                  ...options.map((sec) {
+                    final isSelected = AppSettings.autoHideSeconds == sec;
+
+                    return InkWell(
+                      onTap: () async {
+                        Navigator.pop(context);
+                        await AppSettings.setAutoHideSeconds(sec);
+                        if (mounted) setState(() {});
+                      },
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? const Color(0xFF6366F1).withValues(alpha: 0.15)
+                              : const Color(0xFF1E293B),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isSelected
+                                ? const Color(0xFF6366F1)
+                                : const Color(0xFF334155),
+                            width: isSelected ? 1.5 : 1.0,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '$sec ${sec == 1 ? "second" : "seconds"}',
+                              style: TextStyle(
+                                color: isSelected ? Colors.white : Colors.white70,
+                                fontSize: 14,
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                              ),
+                            ),
+                            Icon(
+                              isSelected
+                                  ? Icons.check_circle_rounded
+                                  : Icons.radio_button_unchecked_rounded,
+                              color: isSelected
+                                  ? const Color(0xFF6366F1)
+                                  : Colors.white24,
+                              size: 22,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showSnackBarDurationSelectionSheet() {
+    final strings = AppLocalizations.of(context)!;
+    final options = [
+      {'ms': 1000, 'label': '1.0 second', 'sub': 'Fast toast dismiss'},
+      {'ms': 1500, 'label': '1.5 seconds', 'sub': 'Quick summary view'},
+      {'ms': 2000, 'label': '2.0 seconds', 'sub': 'Standard duration (Recommended)'},
+      {'ms': 3000, 'label': '3.0 seconds', 'sub': 'Comfortable reading time'},
+      {'ms': 4000, 'label': '4.0 seconds', 'sub': 'Extended reading time'},
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF0F172A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.white24,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    strings.settingsSnackBarDuration,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    strings.settingsSnackBarDurationSubtitle((AppSettings.snackBarDurationMs / 1000).toStringAsFixed(1)),
+                    style: const TextStyle(color: Colors.white54, fontSize: 12),
+                  ),
+                  const SizedBox(height: 16),
+                  ...options.map((opt) {
+                    final isSelected = AppSettings.snackBarDurationMs == opt['ms'];
+
+                    return InkWell(
+                      onTap: () async {
+                        Navigator.pop(context);
+                        await AppSettings.setSnackBarDuration(opt['ms'] as int);
+                        if (mounted) setState(() {});
+                      },
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? const Color(0xFF6366F1).withValues(alpha: 0.15)
+                              : const Color(0xFF1E293B),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isSelected
+                                ? const Color(0xFF6366F1)
+                                : const Color(0xFF334155),
+                            width: isSelected ? 1.5 : 1.0,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  opt['label'] as String,
+                                  style: TextStyle(
+                                    color: isSelected
+                                        ? Colors.white
+                                        : Colors.white70,
+                                    fontSize: 14,
+                                    fontWeight: isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                  ),
+                                ),
+                                Text(
+                                  opt['sub'] as String,
+                                  style: const TextStyle(
+                                      color: Colors.white38, fontSize: 11),
+                                ),
+                              ],
+                            ),
+                            Icon(
+                              isSelected
+                                  ? Icons.check_circle_rounded
+                                  : Icons.radio_button_unchecked_rounded,
+                              color: isSelected
+                                  ? const Color(0xFF6366F1)
+                                  : Colors.white24,
+                              size: 22,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ),
         );
       },
     );
