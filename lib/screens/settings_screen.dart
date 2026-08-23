@@ -1047,6 +1047,50 @@ class _SettingsScreenState extends State<SettingsScreen>
               ),
               const SizedBox(height: 16),
 
+              // Chart Trend Lines Preferences
+              _buildSettingsGroup(
+                title: 'Chart Trend Lines',
+                icon: Icons.show_chart_rounded,
+                children: [
+                  SwitchListTile(
+                    secondary: _buildLeadingIcon(Icons.trending_down_rounded, color: const Color(0xFFEF4444)),
+                    title: const Text('Expense Trend Line', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    subtitle: const Text('Show curved line connecting expense bar tops', style: TextStyle(fontSize: 11)),
+                    value: AppSettings.showExpenseTrendLine,
+                    activeColor: const Color(0xFFEF4444),
+                    onChanged: (val) async {
+                      await AppSettings.setShowExpenseTrendLine(val);
+                      setState(() {});
+                    },
+                  ),
+                  Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
+                  SwitchListTile(
+                    secondary: _buildLeadingIcon(Icons.trending_up_rounded, color: const Color(0xFF10B981)),
+                    title: const Text('Income Trend Line', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    subtitle: const Text('Show curved line connecting income bar tops', style: TextStyle(fontSize: 11)),
+                    value: AppSettings.showIncomeTrendLine,
+                    activeColor: const Color(0xFF10B981),
+                    onChanged: (val) async {
+                      await AppSettings.setShowIncomeTrendLine(val);
+                      setState(() {});
+                    },
+                  ),
+                  Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
+                  SwitchListTile(
+                    secondary: _buildLeadingIcon(Icons.swap_horiz_rounded, color: const Color(0xFF38BDF8)),
+                    title: const Text('Transfer Trend Line', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    subtitle: const Text('Show curved line connecting transfer bar tops', style: TextStyle(fontSize: 11)),
+                    value: AppSettings.showTransferTrendLine,
+                    activeColor: const Color(0xFF38BDF8),
+                    onChanged: (val) async {
+                      await AppSettings.setShowTransferTrendLine(val);
+                      setState(() {});
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
               // Smart Tracking
               _buildSmartTrackingCard(),
               const SizedBox(height: 16),

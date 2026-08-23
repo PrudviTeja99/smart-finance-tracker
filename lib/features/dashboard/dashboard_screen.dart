@@ -6,7 +6,6 @@ import 'widgets/summary_header.dart';
 import 'widgets/hero_card.dart';
 import 'widgets/account_carousel.dart';
 import 'widgets/month_switcher.dart';
-import 'widgets/type_filter_chips.dart';
 import 'widgets/analytics_card.dart';
 import 'widgets/ledger_list.dart';
 import '../../screens/transactions_screen.dart';
@@ -204,13 +203,12 @@ class _DashboardScreenState extends State<DashboardScreen>
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 6),
                       child: Container(
-                        clipBehavior: Clip.antiAlias,
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF0F172A),
-                          borderRadius: BorderRadius.circular(24),
+                          color: const Color(0xFF1E293B),
+                          borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.05)),
+                              color: const Color(0xFF334155).withValues(alpha: 0.5)),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -234,21 +232,17 @@ class _DashboardScreenState extends State<DashboardScreen>
                               shouldHideAmounts: privacyController.obscureAmounts,
                               timeframeDisplay: getTimeframeDisplay(context),
                             ),
-                            const SizedBox(height: 12),
-                            TypeFilterChips(
-                              selectedType: selectedTypeFilter,
+                             const SizedBox(height: 14),
+                            AnalyticsCard(
+                              transactions: filteredTransactions,
+                              categories: categories,
+                              typeFilter: selectedTypeFilter,
                               onTypeChanged: (type) {
                                 setState(() {
                                   selectedTypeFilter = type;
                                 });
                                 applyFilters();
                               },
-                            ),
-                            const SizedBox(height: 10),
-                            AnalyticsCard(
-                              transactions: filteredTransactions,
-                              categories: categories,
-                              typeFilter: selectedTypeFilter,
                               timeframe: timeframe,
                               chartView: chartView,
                               onToggleChartView: (v) {
@@ -273,34 +267,18 @@ class _DashboardScreenState extends State<DashboardScreen>
                   // Accounts Group Panel
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(6, 10, 6, 0),
+                      padding: const EdgeInsets.fromLTRB(6, 12, 6, 0),
                       child: Container(
                         clipBehavior: Clip.antiAlias,
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF0F172A),
-                          borderRadius: BorderRadius.circular(24),
+                          color: const Color(0xFF1E293B),
+                          borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.05)),
+                              color: const Color(0xFF334155).withValues(alpha: 0.5)),
                         ),
                         child: AccountCarousel(
                           accounts: accounts,
-                          selectedAccountId: selectedAccountFilterId,
-                          onAccountTapped: (acc) {
-                            setState(() {
-                              selectedAccountFilterId =
-                                  selectedAccountFilterId == acc.id
-                                      ? null
-                                      : acc.id;
-                            });
-                            applyFilters();
-                          },
-                          onClearAccountFilter: () {
-                            setState(() {
-                              selectedAccountFilterId = null;
-                            });
-                            applyFilters();
-                          },
                           shouldHideAmounts: privacyController.obscureAmounts,
                         ),
                       ),
@@ -310,15 +288,15 @@ class _DashboardScreenState extends State<DashboardScreen>
                   // Latest Transactions Group Panel
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(6, 10, 6, 0),
+                      padding: const EdgeInsets.fromLTRB(6, 12, 6, 0),
                       child: Container(
                         clipBehavior: Clip.antiAlias,
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF0F172A),
-                          borderRadius: BorderRadius.circular(24),
+                          color: const Color(0xFF1E293B),
+                          borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.05)),
+                              color: const Color(0xFF334155).withValues(alpha: 0.5)),
                         ),
                         child: Builder(
                           builder: (context) {

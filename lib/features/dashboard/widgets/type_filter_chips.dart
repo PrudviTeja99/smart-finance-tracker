@@ -43,7 +43,7 @@ class TypeFilterChips extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: isSelected
                       ? activeColor.withValues(alpha: 0.2)
-                      : const Color(0xFF1E293B),
+                      : const Color(0xFF0F172A),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: isSelected ? activeColor : const Color(0xFF334155),

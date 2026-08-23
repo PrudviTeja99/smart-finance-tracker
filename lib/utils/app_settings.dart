@@ -14,6 +14,11 @@ class AppSettings {
   static bool smartTrackingEnabled = true;
   static List<String> allowedNotificationApps = [];
 
+  // Chart Trend Line Preferences (Default: Expense ON, Income OFF, Transfer OFF)
+  static bool showExpenseTrendLine = true;
+  static bool showIncomeTrendLine = false;
+  static bool showTransferTrendLine = false;
+
   static Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
     snackBarDurationMs = prefs.getInt('snackbar_duration_ms') ?? 1500;
@@ -31,6 +36,10 @@ class AppSettings {
     smartTrackingEnabled = prefs.getBool('smart_tracking_enabled') ?? true;
     allowedNotificationApps =
         prefs.getStringList('allowed_notification_apps') ?? [];
+
+    showExpenseTrendLine = prefs.getBool('show_expense_trend_line') ?? true;
+    showIncomeTrendLine = prefs.getBool('show_income_trend_line') ?? false;
+    showTransferTrendLine = prefs.getBool('show_transfer_trend_line') ?? false;
   }
 
   static Future<void> setSnackBarDuration(int ms) async {
@@ -97,5 +106,23 @@ class AppSettings {
     final prefs = await SharedPreferences.getInstance();
     allowedNotificationApps = List.from(packages);
     await prefs.setStringList('allowed_notification_apps', packages);
+  }
+
+  static Future<void> setShowExpenseTrendLine(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('show_expense_trend_line', enabled);
+    showExpenseTrendLine = enabled;
+  }
+
+  static Future<void> setShowIncomeTrendLine(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('show_income_trend_line', enabled);
+    showIncomeTrendLine = enabled;
+  }
+
+  static Future<void> setShowTransferTrendLine(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('show_transfer_trend_line', enabled);
+    showTransferTrendLine = enabled;
   }
 }

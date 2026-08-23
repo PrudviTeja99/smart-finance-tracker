@@ -19,6 +19,21 @@ class CategoryLegend extends StatelessWidget {
     required this.shouldHideAmounts,
   });
 
+  /// Formats percentage with up to 2 decimal places, stripping trailing zeros.
+  /// e.g. 65.0 → "65", 0.50 → "0.5", 1.25 → "1.25"
+  static String _formatPct(double pct) {
+    if (pct == pct.roundToDouble() && pct == pct.round().toDouble()) {
+      return pct.toStringAsFixed(0);
+    }
+    final s = pct.toStringAsFixed(2);
+    // Remove trailing zeros after decimal point
+    if (s.contains('.')) {
+      final trimmed = s.replaceAll(RegExp(r'0+$'), '').replaceAll(RegExp(r'\.$'), '');
+      return trimmed;
+    }
+    return s;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (categoryTotals.isEmpty) return const SizedBox.shrink();
@@ -80,7 +95,7 @@ class CategoryLegend extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  '${category.getLocalizedName(context)} (${percentage.toStringAsFixed(0)}%)',
+                  '${category.getLocalizedName(context)} (${_formatPct(percentage)}%)',
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
