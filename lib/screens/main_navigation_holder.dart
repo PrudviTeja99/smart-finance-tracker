@@ -178,53 +178,57 @@ class _MainNavigationHolderState extends State<MainNavigationHolder>
     }
   }
 
-  // Floating frosted-glass navigation bar ("Strap" UI)
+  // Floating frosted-glass navigation bar ("Strap" UI with touch-interception zone)
   Widget _buildBottomNavigationStrap() {
     final theme = Theme.of(context);
     final strings = AppLocalizations.of(context)!;
 
-    return Theme(
-      data: theme.copyWith(canvasColor: Colors.transparent),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(24.0),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-              child: Container(
-                height: 64,
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.4),
-                  borderRadius: BorderRadius.circular(24.0),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.1),
-                    width: 1.0,
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {}, // Intercepts taps around and under the strap so pages behind are not clicked
+      child: Theme(
+        data: theme.copyWith(canvasColor: Colors.transparent),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 4),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24.0),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                child: Container(
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.4),
+                    borderRadius: BorderRadius.circular(24.0),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.1),
+                      width: 1.0,
+                    ),
                   ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildStrapItem(
-                      index: 0,
-                      icon: Icons.dashboard_outlined,
-                      activeIcon: Icons.dashboard,
-                      label: strings.navigationDashboard,
-                    ),
-                    _buildStrapItem(
-                      index: 1,
-                      icon: Icons.mark_email_unread_outlined,
-                      activeIcon: Icons.mark_email_unread,
-                      label: strings.navigationInbox,
-                      badgeCount: _pendingCount,
-                    ),
-                    _buildStrapItem(
-                      index: 2,
-                      icon: Icons.settings_outlined,
-                      activeIcon: Icons.settings,
-                      label: strings.navigationSettings,
-                    ),
-                  ],
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildStrapItem(
+                        index: 0,
+                        icon: Icons.dashboard_outlined,
+                        activeIcon: Icons.dashboard,
+                        label: strings.navigationDashboard,
+                      ),
+                      _buildStrapItem(
+                        index: 1,
+                        icon: Icons.mark_email_unread_outlined,
+                        activeIcon: Icons.mark_email_unread,
+                        label: strings.navigationInbox,
+                        badgeCount: _pendingCount,
+                      ),
+                      _buildStrapItem(
+                        index: 2,
+                        icon: Icons.settings_outlined,
+                        activeIcon: Icons.settings,
+                        label: strings.navigationSettings,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -244,7 +248,7 @@ class _MainNavigationHolderState extends State<MainNavigationHolder>
     final isSelected = _selectedIndex == index;
     final theme = Theme.of(context);
     final activeColor = theme.primaryColor;
-    final inactiveColor = Colors.white.withOpacity(0.5);
+    final inactiveColor = Colors.white.withValues(alpha: 0.5);
 
     return InkWell(
       onTap: () => _onTabSelected(index),
