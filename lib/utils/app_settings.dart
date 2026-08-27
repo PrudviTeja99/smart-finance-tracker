@@ -27,13 +27,23 @@ class AppSettings {
     currencySymbol = prefs.getString('currency_symbol') ?? '₹';
     numberLocale = prefs.getString('number_locale') ?? 'auto';
     appLanguageCode = prefs.getString('app_language_code') ?? 'en';
-    autoDeleteArchive = prefs.getBool('auto_delete_archive') ?? false;
-    autoDeleteValue = prefs.getInt('auto_delete_value') ?? 30;
-    autoDeleteUnit = prefs.getString('auto_delete_unit') ?? 'days';
+    smartTrackingEnabled = prefs.getBool('smart_tracking_enabled') ?? true;
+    final hasSetAutoDelete = prefs.containsKey('auto_delete_archive');
+    if (!hasSetAutoDelete && smartTrackingEnabled) {
+      autoDeleteArchive = true;
+      autoDeleteValue = prefs.getInt('auto_delete_value') ?? 1;
+      autoDeleteUnit = prefs.getString('auto_delete_unit') ?? 'months';
+      await prefs.setBool('auto_delete_archive', true);
+      await prefs.setInt('auto_delete_value', autoDeleteValue);
+      await prefs.setString('auto_delete_unit', autoDeleteUnit);
+    } else {
+      autoDeleteArchive = prefs.getBool('auto_delete_archive') ?? false;
+      autoDeleteValue = prefs.getInt('auto_delete_value') ?? 30;
+      autoDeleteUnit = prefs.getString('auto_delete_unit') ?? 'days';
+    }
     if (autoDeleteUnit == 'years') {
       autoDeleteUnit = 'months';
     }
-    smartTrackingEnabled = prefs.getBool('smart_tracking_enabled') ?? true;
     allowedNotificationApps =
         prefs.getStringList('allowed_notification_apps') ?? [];
 
@@ -100,6 +110,20 @@ class AppSettings {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('smart_tracking_enabled', enabled);
     smartTrackingEnabled = enabled;
+
+    if (enabled) {
+      if (!prefs.containsKey('auto_delete_archive')) {
+        await prefs.setBool('auto_delete_archive', true);
+        await prefs.setInt('auto_delete_value', 1);
+        await prefs.setString('auto_delete_unit', 'months');
+        autoDeleteArchive = true;
+        autoDeleteValue = 1;
+        autoDeleteUnit = 'months';
+      }
+    } else {
+      await prefs.setBool('auto_delete_archive', false);
+      autoDeleteArchive = false;
+    }
   }
 
   static Future<void> setAllowedNotificationApps(List<String> packages) async {

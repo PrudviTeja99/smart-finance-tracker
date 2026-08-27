@@ -114,13 +114,6 @@ class _SettingsScreenState extends State<SettingsScreen>
       } else {
         await NotificationHandler.startService();
       }
-
-      // Auto-enable Auto-Delete with a default of 1 month
-      if (!AppSettings.autoDeleteArchive) {
-        await AppSettings.setAutoDeleteArchive(true);
-        await AppSettings.setAutoDeleteValue(1);
-        await AppSettings.setAutoDeleteUnit('months');
-      }
     } else {
       // Confirmation dialog before disabling
       final strings = AppLocalizations.of(context)!;
@@ -160,7 +153,6 @@ class _SettingsScreenState extends State<SettingsScreen>
         return;
       }
       await NotificationHandler.stopService();
-      await AppSettings.setAutoDeleteArchive(false);
 
       // Asynchronous background cleanup — doesn't block the UI
       final dbService = DatabaseService.instance;
@@ -173,7 +165,12 @@ class _SettingsScreenState extends State<SettingsScreen>
             '🧹 Background cleanup complete: archived alerts, audit logs, and processed queue cleared.');
       });
     }
-    _loadSettingsData();
+
+    if (mounted) {
+      setState(() {
+        _isServiceEnabled = value;
+      });
+    }
   }
 
   void _showExportFormatSheet() {
