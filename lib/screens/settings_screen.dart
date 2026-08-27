@@ -90,11 +90,7 @@ class _SettingsScreenState extends State<SettingsScreen>
 
     final serviceEnabled = permission && AppSettings.smartTrackingEnabled;
 
-    final hasAccountsChanged = _accounts.length != accountsList.length;
-    final hasCategoriesChanged = _categories.length != categoriesList.length;
-    final hasServiceChanged = _isServiceEnabled != serviceEnabled;
-
-    if (mounted && (hasAccountsChanged || hasCategoriesChanged || hasServiceChanged || _accounts.isEmpty)) {
+    if (mounted) {
       setState(() {
         _accounts = accountsList;
         _categories = categoriesList;

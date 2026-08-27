@@ -149,7 +149,7 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
       // Let the navigation transition complete before database and platform
       // work competes with the first Inbox frame.
       await Future<void>.delayed(const Duration(milliseconds: 300));
-      if (mounted && widget.isActive && !_hasLoadedPrimaryData) {
+      if (mounted && widget.isActive) {
         await _refreshAll();
       }
     });

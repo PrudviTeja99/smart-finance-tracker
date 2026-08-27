@@ -28,8 +28,8 @@ class AppSettings {
     numberLocale = prefs.getString('number_locale') ?? 'auto';
     appLanguageCode = prefs.getString('app_language_code') ?? 'en';
     smartTrackingEnabled = prefs.getBool('smart_tracking_enabled') ?? true;
-    final hasSetAutoDelete = prefs.containsKey('auto_delete_archive');
-    if (!hasSetAutoDelete && smartTrackingEnabled) {
+    final userDisabledAutoDelete = prefs.getBool('auto_delete_user_disabled') ?? false;
+    if (smartTrackingEnabled && !userDisabledAutoDelete) {
       autoDeleteArchive = true;
       autoDeleteValue = prefs.getInt('auto_delete_value') ?? 1;
       autoDeleteUnit = prefs.getString('auto_delete_unit') ?? 'months';
@@ -38,8 +38,8 @@ class AppSettings {
       await prefs.setString('auto_delete_unit', autoDeleteUnit);
     } else {
       autoDeleteArchive = prefs.getBool('auto_delete_archive') ?? false;
-      autoDeleteValue = prefs.getInt('auto_delete_value') ?? 30;
-      autoDeleteUnit = prefs.getString('auto_delete_unit') ?? 'days';
+      autoDeleteValue = prefs.getInt('auto_delete_value') ?? 1;
+      autoDeleteUnit = prefs.getString('auto_delete_unit') ?? 'months';
     }
     if (autoDeleteUnit == 'years') {
       autoDeleteUnit = 'months';
@@ -91,6 +91,7 @@ class AppSettings {
   static Future<void> setAutoDeleteArchive(bool enabled) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('auto_delete_archive', enabled);
+    await prefs.setBool('auto_delete_user_disabled', !enabled);
     autoDeleteArchive = enabled;
   }
 
@@ -111,8 +112,10 @@ class AppSettings {
     await prefs.setBool('smart_tracking_enabled', enabled);
     smartTrackingEnabled = enabled;
 
+    final userDisabledAutoDelete = prefs.getBool('auto_delete_user_disabled') ?? false;
+
     if (enabled) {
-      if (!prefs.containsKey('auto_delete_archive')) {
+      if (!userDisabledAutoDelete) {
         await prefs.setBool('auto_delete_archive', true);
         await prefs.setInt('auto_delete_value', 1);
         await prefs.setString('auto_delete_unit', 'months');
