@@ -75,6 +75,16 @@ class NotificationHandler {
     }
   }
 
+  static Future<bool> isIgnoringBatteryOptimizations() async {
+    try {
+      return await const MethodChannel('bpt.studiohq.smart_finance_tracker/app_info')
+              .invokeMethod<bool>('isIgnoringBatteryOptimizations') ??
+          false;
+    } catch (e) {
+      return false;
+    }
+  }
+
   static Future<void> requestBatteryExemption() async {
     try {
       await const MethodChannel('bpt.studiohq.smart_finance_tracker/app_info')

@@ -211,6 +211,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsOpenNotificationAccessBtn => 'Open Notification Access';
 
   @override
+  String get settingsStatusEnabled => 'ENABLED';
+
+  @override
+  String get settingsStatusDisabled => 'DISABLED';
+
+  @override
+  String get settingsReliabilitySetupComplete => 'Reliability Setup Complete ✓';
+
+  @override
+  String get settingsReliabilitySetupCompleteSubtitle =>
+      'All background permissions enabled for maximum reliability.';
+
+  @override
+  String get settingsConfirmAutoStartTitle => 'Confirm Auto-Start Setting';
+
+  @override
+  String get settingsConfirmAutoStartDescription =>
+      'Did you turn ON Auto-Start for Smart Finance Tracker in your device settings?';
+
+  @override
+  String get settingsNotYet => 'Not Yet';
+
+  @override
+  String get settingsYesEnabled => 'Yes, Enabled';
+
+  @override
   String get settingsAutoDeleteArchivedAlerts => 'Auto-Delete Archived Alerts';
 
   @override

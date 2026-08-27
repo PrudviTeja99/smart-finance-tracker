@@ -212,6 +212,34 @@ class AppLocalizationsTe extends AppLocalizations {
       'నోటిఫికేషన్ యాక్సెస్ తెరవండి';
 
   @override
+  String get settingsStatusEnabled => 'ప్రారంభించబడింది';
+
+  @override
+  String get settingsStatusDisabled => 'నిలిపివేయబడింది';
+
+  @override
+  String get settingsReliabilitySetupComplete =>
+      'విశ్వసనీయత సెటప్ పూర్తయింది ✓';
+
+  @override
+  String get settingsReliabilitySetupCompleteSubtitle =>
+      'గరిష్ట విశ్వసనీయత కోసం అన్ని బ్యాక్‌గ్రౌండ్ అనుమతులు ప్రారంభించబడ్డాయి.';
+
+  @override
+  String get settingsConfirmAutoStartTitle =>
+      'ఆటో-స్టార్ట్ సెట్టింగ్‌ను నిర్ధారించండి';
+
+  @override
+  String get settingsConfirmAutoStartDescription =>
+      'మీ పరికర సెట్టింగ్‌లలో స్మార్ట్ ఫైనాన్స్ ట్రాకర్ కోసం ఆటో-స్టార్ట్‌ను ఆన్ చేశారా?';
+
+  @override
+  String get settingsNotYet => 'ఇంకా లేదు';
+
+  @override
+  String get settingsYesEnabled => 'అవును, ప్రారంభించబడింది';
+
+  @override
   String get settingsAutoDeleteArchivedAlerts =>
       'ఆర్కైవ్ చేసిన అలర్ట్‌లను ఆటో-డిలీట్ చేయండి';
 

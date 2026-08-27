@@ -12,6 +12,8 @@ class AppSettings {
   static int autoDeleteValue = 30;
   static String autoDeleteUnit = 'days'; // 'days', 'months', 'years'
   static bool smartTrackingEnabled = true;
+  static bool autoStartEnabled = false;
+  static bool batteryExemptionEnabled = false;
   static List<String> allowedNotificationApps = [];
 
   // Chart Trend Line Preferences (Default: Expense ON, Income OFF, Transfer OFF)
@@ -28,6 +30,8 @@ class AppSettings {
     numberLocale = prefs.getString('number_locale') ?? 'auto';
     appLanguageCode = prefs.getString('app_language_code') ?? 'en';
     smartTrackingEnabled = prefs.getBool('smart_tracking_enabled') ?? true;
+    autoStartEnabled = prefs.getBool('auto_start_enabled') ?? false;
+    batteryExemptionEnabled = prefs.getBool('battery_exemption_enabled') ?? false;
     final userDisabledAutoDelete = prefs.getBool('auto_delete_user_disabled') ?? false;
     if (smartTrackingEnabled && !userDisabledAutoDelete) {
       autoDeleteArchive = true;
@@ -105,6 +109,18 @@ class AppSettings {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('auto_delete_unit', unit);
     autoDeleteUnit = unit;
+  }
+
+  static Future<void> setAutoStartEnabled(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('auto_start_enabled', enabled);
+    autoStartEnabled = enabled;
+  }
+
+  static Future<void> setBatteryExemptionEnabled(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('battery_exemption_enabled', enabled);
+    batteryExemptionEnabled = enabled;
   }
 
   static Future<void> setSmartTrackingEnabled(bool enabled) async {
