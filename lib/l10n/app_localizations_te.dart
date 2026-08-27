@@ -135,16 +135,16 @@ class AppLocalizationsTe extends AppLocalizations {
   String get dashboardClearFilter => 'ఫిల్టర్ తొలగించు';
 
   @override
-  String get dashboardIncomeAnalysis => 'ఆదాయ విశ్లేషణ';
+  String get dashboardIncomeAnalysis => 'ఆదాయాల వివరాలు';
 
   @override
-  String get dashboardExpenseAnalysis => 'ఖర్చుల విశ్లేషణ';
+  String get dashboardExpenseAnalysis => 'ఖర్చుల వివరాలు';
 
   @override
-  String get dashboardTransferAnalysis => 'బదిలీల విశ్లేషణ';
+  String get dashboardTransferAnalysis => 'బదిలీల వివరాలు';
 
   @override
-  String get dashboardAllTransactionsAnalysis => 'అన్ని లావాదేవీల విశ్లేషణ';
+  String get dashboardAllTransactionsAnalysis => 'లావాదేవీల వివరాలు';
 
   @override
   String get settingsSmartTracking => 'స్మార్ట్ ట్రాకింగ్';
@@ -1517,4 +1517,37 @@ class AppLocalizationsTe extends AppLocalizations {
   @override
   String get inboxRestoredToCapturedAlerts =>
       'క్యాప్చర్ చేసిన అలర్ట్‌లకు పునరుద్ధరించబడింది!';
+
+  @override
+  String get barChartNoData => 'ఈ వ్యవధికి విశ్లేషణ సమాచారం అందుబాటులో లేదు.';
+
+  @override
+  String barChartAvg(String amount) {
+    return 'సగటు: $amount';
+  }
+
+  @override
+  String barChartPeak(String period) {
+    return 'అత్యధికం: $period';
+  }
+
+  @override
+  String get barChartTapToClose => '(మూసివేయడానికి నొక్కండి)';
+
+  @override
+  String get barChartTapForDays => '(రోజుల వివరాలకు వారం బార్‌పై నొక్కండి)';
+
+  @override
+  String get barChartTapMonthForWeeks =>
+      '(వారాల వివరాలకు నెల బార్‌పై నొక్కండి)';
+
+  @override
+  String barChartMonthBreakdown(String monthName) {
+    return '$monthName వివరాలు';
+  }
+
+  @override
+  String barChartWeekBreakdown(int weekNum, String dateRange) {
+    return 'వారం $weekNum వివరాలు ($dateRange)';
+  }
 }

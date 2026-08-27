@@ -45,10 +45,10 @@
   "dashboardTotalBalance": "మొత్తం బ్యాలెన్స్: {amount}",
   "@dashboardTotalBalance": { "placeholders": { "amount": {} } },
   "dashboardClearFilter": "ఫిల్టర్ తొలగించు",
-  "dashboardIncomeAnalysis": "ఆదాయ విశ్లేషణ",
-  "dashboardExpenseAnalysis": "ఖర్చుల విశ్లేషణ",
-  "dashboardTransferAnalysis": "బదిలీల విశ్లేషణ",
-  "dashboardAllTransactionsAnalysis": "అన్ని లావాదేవీల విశ్లేషణ",
+  "dashboardIncomeAnalysis": "ఆదాయాల వివరాలు",
+  "dashboardExpenseAnalysis": "ఖర్చుల వివరాలు",
+  "dashboardTransferAnalysis": "బదిలీల వివరాలు",
+  "dashboardAllTransactionsAnalysis": "లావాదేవీల వివరాలు",
 
   "settingsSmartTracking": "స్మార్ట్ ట్రాకింగ్",
   "settingsSmartTrackingSubtitle": "బ్యాక్‌గ్రౌండ్‌లో వచ్చే లావాదేవీ నోటిఫికేషన్‌లను చదవండి",
@@ -528,5 +528,27 @@
   "archivedAlertsRestoreAlert": "అలర్ట్‌ను పునరుద్ధరించు",
   "archivedAlertsDeleteAlert": "అలర్ట్‌ను తొలగించు",
   "inboxPromotedAlertToDrafts": "అలర్ట్ డ్రాఫ్ట్‌లకు మార్చబడింది!",
-  "inboxRestoredToCapturedAlerts": "క్యాప్చర్ చేసిన అలర్ట్‌లకు పునరుద్ధరించబడింది!"
+  "inboxRestoredToCapturedAlerts": "క్యాప్చర్ చేసిన అలర్ట్‌లకు పునరుద్ధరించబడింది!",
+
+  "barChartNoData": "ఈ వ్యవధికి విశ్లేషణ సమాచారం అందుబాటులో లేదు.",
+  "barChartAvg": "సగటు: {amount}",
+  "@barChartAvg": { "placeholders": { "amount": { "type": "String" } } },
+  "barChartPeak": "అత్యధికం: {period}",
+  "@barChartPeak": { "placeholders": { "period": { "type": "String" } } },
+  "barChartTapToClose": "(మూసివేయడానికి నొక్కండి)",
+  "barChartTapForDays": "(రోజుల వివరాలకు వారం బార్‌పై నొక్కండి)",
+  "barChartTapMonthForWeeks": "(వారాల వివరాలకు నెల బార్‌పై నొక్కండి)",
+  "barChartMonthBreakdown": "{monthName} వివరాలు",
+  "@barChartMonthBreakdown": {
+    "placeholders": {
+      "monthName": { "type": "String" }
+    }
+  },
+  "barChartWeekBreakdown": "వారం {weekNum} వివరాలు ({dateRange})",
+  "@barChartWeekBreakdown": {
+    "placeholders": {
+      "weekNum": { "type": "int" },
+      "dateRange": { "type": "String" }
+    }
+  }
 }

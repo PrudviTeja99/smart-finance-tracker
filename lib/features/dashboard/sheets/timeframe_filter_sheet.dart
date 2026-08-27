@@ -26,7 +26,6 @@ Future<void> showTimeframeFilterSheet({
           final isCustom = timeframe == 'Custom';
           bool isSpecificDate = false;
           bool isSpecificMonth = false;
-          bool isDateRange = false;
 
           if (isCustom && startDate != null && endDate != null) {
             if (startDate.year == endDate.year &&
@@ -39,8 +38,6 @@ Future<void> showTimeframeFilterSheet({
                 startDate.month == endDate.month &&
                 startDate.year == endDate.year) {
               isSpecificMonth = true;
-            } else {
-              isDateRange = true;
             }
           }
 
@@ -50,9 +47,6 @@ Future<void> showTimeframeFilterSheet({
               isSpecificDate ? DateFormat('dd MMM yyyy', locale).format(startDate!) : '';
           final monthLabel =
               isSpecificMonth ? DateFormat('MMMM yyyy', locale).format(startDate!) : '';
-          final rangeLabel = isDateRange
-              ? '${DateFormat('dd MMM', locale).format(startDate!)} - ${DateFormat('dd MMM', locale).format(endDate!)}'
-              : '';
 
           Widget buildRadioOption(String value) {
             final now = DateTime.now();
@@ -237,42 +231,6 @@ Future<void> showTimeframeFilterSheet({
                     onTap: () async {
                       Navigator.pop(context);
                       onOpenMonthYearPicker();
-                    },
-                  ),
-                  buildCustomRadioOption(
-                    title: strings.timeframeCustomRange,
-                    isSelected: isDateRange,
-                    subLabel: rangeLabel,
-                    onTap: () async {
-                      final range = await showDateRangePicker(
-                        context: context,
-                        firstDate: DateTime(2020),
-                        lastDate: DateTime(2030),
-                        initialDateRange: startDate != null &&
-                                endDate != null &&
-                                isDateRange
-                            ? DateTimeRange(start: startDate, end: endDate)
-                            : null,
-                        builder: (context, child) {
-                          return Theme(
-                            data: Theme.of(context).copyWith(
-                              colorScheme: const ColorScheme.dark(
-                                primary: Color(0xFF6366F1),
-                                onPrimary: Colors.white,
-                                surface: Color(0xFF1E293B),
-                                onSurface: Colors.white,
-                              ),
-                            ),
-                            child: child!,
-                          );
-                        },
-                      );
-                      if (range != null) {
-                        final s = DateTime(range.start.year, range.start.month, range.start.day);
-                        final e = DateTime(range.end.year, range.end.month, range.end.day, 23, 59, 59);
-                        onSelectTimeframe('Custom', s, e);
-                        if (context.mounted) Navigator.pop(context);
-                      }
                     },
                   ),
                 ],

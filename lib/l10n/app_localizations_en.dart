@@ -137,16 +137,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashboardClearFilter => 'Clear Filter';
 
   @override
-  String get dashboardIncomeAnalysis => 'Income Analysis';
+  String get dashboardIncomeAnalysis => 'Income Breakdown';
 
   @override
-  String get dashboardExpenseAnalysis => 'Expense Analysis';
+  String get dashboardExpenseAnalysis => 'Expenses Breakdown';
 
   @override
-  String get dashboardTransferAnalysis => 'Transfer Analysis';
+  String get dashboardTransferAnalysis => 'Transfers Breakdown';
 
   @override
-  String get dashboardAllTransactionsAnalysis => 'All Transactions Analysis';
+  String get dashboardAllTransactionsAnalysis => 'Transactions Breakdown';
 
   @override
   String get settingsSmartTracking => 'Smart Tracking';
@@ -1507,4 +1507,37 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inboxRestoredToCapturedAlerts => 'Restored to Captured Alerts!';
+
+  @override
+  String get barChartNoData =>
+      'No transaction trend data available for this period.';
+
+  @override
+  String barChartAvg(String amount) {
+    return 'Avg: $amount';
+  }
+
+  @override
+  String barChartPeak(String period) {
+    return 'Peak: $period';
+  }
+
+  @override
+  String get barChartTapToClose => '(Tap bar to close)';
+
+  @override
+  String get barChartTapForDays => '(Tap a week bar for days)';
+
+  @override
+  String get barChartTapMonthForWeeks => '(Tap a month bar for weeks)';
+
+  @override
+  String barChartMonthBreakdown(String monthName) {
+    return '$monthName Breakdown';
+  }
+
+  @override
+  String barChartWeekBreakdown(int weekNum, String dateRange) {
+    return 'Week $weekNum Breakdown ($dateRange)';
+  }
 }

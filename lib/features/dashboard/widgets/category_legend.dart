@@ -58,7 +58,6 @@ class CategoryLegend extends StatelessWidget {
         );
         final value = entry.value;
         final percentage = totalSum > 0 ? (value / totalSum) * 100 : 0.0;
-        final count = categoryCounts?[entry.key] ?? 0;
         final catColor = Color(category.color);
 
         return GestureDetector(
@@ -95,7 +94,7 @@ class CategoryLegend extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  '${category.getLocalizedName(context)} (${_formatPct(percentage)}%)',
+                  '${category.name} (${_formatPct(percentage)}%)',
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,

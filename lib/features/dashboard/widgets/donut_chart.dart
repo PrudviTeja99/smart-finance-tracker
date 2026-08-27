@@ -99,7 +99,7 @@ class DonutChart extends StatelessWidget {
       final percentage = (catAmount / totalSum) * 100;
       final catTxCount = categoryCounts?[selectedEntry.key] ?? 0;
 
-      centerTitle = cat.getLocalizedName(strings).toUpperCase();
+      centerTitle = cat.name.toUpperCase();
       centerTitleColor = Color(cat.color);
       centerAmountText = AppFormatters.formatAmount(catAmount, shouldHide: shouldHideAmounts);
       

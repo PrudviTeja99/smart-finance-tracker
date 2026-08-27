@@ -45,10 +45,10 @@
   "dashboardTotalBalance": "Total Balance: {amount}",
   "@dashboardTotalBalance": { "placeholders": { "amount": {} } },
   "dashboardClearFilter": "Clear Filter",
-  "dashboardIncomeAnalysis": "Income Analysis",
-  "dashboardExpenseAnalysis": "Expense Analysis",
-  "dashboardTransferAnalysis": "Transfer Analysis",
-  "dashboardAllTransactionsAnalysis": "All Transactions Analysis",
+  "dashboardIncomeAnalysis": "Income Breakdown",
+  "dashboardExpenseAnalysis": "Expenses Breakdown",
+  "dashboardTransferAnalysis": "Transfers Breakdown",
+  "dashboardAllTransactionsAnalysis": "Transactions Breakdown",
 
   "settingsSmartTracking": "Smart Tracking",
   "settingsSmartTrackingSubtitle": "Read incoming transaction notifications in background",
@@ -528,5 +528,27 @@
   "archivedAlertsRestoreAlert": "Restore Alert",
   "archivedAlertsDeleteAlert": "Delete Alert",
   "inboxPromotedAlertToDrafts": "Promoted alert to Transaction Drafts!",
-  "inboxRestoredToCapturedAlerts": "Restored to Captured Alerts!"
+  "inboxRestoredToCapturedAlerts": "Restored to Captured Alerts!",
+
+  "barChartNoData": "No transaction trend data available for this period.",
+  "barChartAvg": "Avg: {amount}",
+  "@barChartAvg": { "placeholders": { "amount": { "type": "String" } } },
+  "barChartPeak": "Peak: {period}",
+  "@barChartPeak": { "placeholders": { "period": { "type": "String" } } },
+  "barChartTapToClose": "(Tap bar to close)",
+  "barChartTapForDays": "(Tap a week bar for days)",
+  "barChartTapMonthForWeeks": "(Tap a month bar for weeks)",
+  "barChartMonthBreakdown": "{monthName} Breakdown",
+  "@barChartMonthBreakdown": {
+    "placeholders": {
+      "monthName": { "type": "String" }
+    }
+  },
+  "barChartWeekBreakdown": "Week {weekNum} Breakdown ({dateRange})",
+  "@barChartWeekBreakdown": {
+    "placeholders": {
+      "weekNum": { "type": "int" },
+      "dateRange": { "type": "String" }
+    }
+  }
 }

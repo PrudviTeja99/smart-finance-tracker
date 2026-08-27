@@ -18,6 +18,24 @@ Future<void> showMonthYearPickerSheet({
   int tempSelectedMonth = now.month;
   int tempSelectedYear = now.year;
 
+  // Calculate initial scroll offset to center selected item in ~300px viewport
+  const double itemHeight = 44.0;
+  const double centerOffsetMargin = 128.0;
+
+  final double initialMonthOffset =
+      ((tempSelectedMonth - 1) * itemHeight - centerOffsetMargin)
+          .clamp(0.0, 1000.0);
+  final int initialYearIndex = years.indexOf(tempSelectedYear);
+  final double initialYearOffset =
+      ((initialYearIndex >= 0 ? initialYearIndex : 0) * itemHeight -
+              centerOffsetMargin)
+          .clamp(0.0, 1000.0);
+
+  final monthScrollController =
+      ScrollController(initialScrollOffset: initialMonthOffset);
+  final yearScrollController =
+      ScrollController(initialScrollOffset: initialYearOffset);
+
   return showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -89,6 +107,7 @@ Future<void> showMonthYearPickerSheet({
                         // Month List
                         Expanded(
                           child: ListView.builder(
+                            controller: monthScrollController,
                             itemCount: months.length,
                             itemBuilder: (context, index) {
                               final monthNum = index + 1;
@@ -131,6 +150,7 @@ Future<void> showMonthYearPickerSheet({
                         // Year List
                         Expanded(
                           child: ListView.builder(
+                            controller: yearScrollController,
                             itemCount: years.length,
                             itemBuilder: (context, index) {
                               final yearNum = years[index];

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../models/transaction_model.dart';
 import '../../../utils/app_settings.dart';
 import '../../../utils/app_formatters.dart';
+import '../../../l10n/app_localizations.dart';
 
 class DashboardBarChart extends StatefulWidget {
   final List<TransactionModel> transactions;
@@ -24,22 +25,27 @@ class DashboardBarChart extends StatefulWidget {
 }
 
 class _DashboardBarChartState extends State<DashboardBarChart> {
+  int? _selectedMonthIndex; // 0 = Jan, 1 = Feb, ... 11 = Dec
   int? _selectedWeekIndex; // 0 = W1, 1 = W2, 2 = W3, 3 = W4, 4 = W5
+  int? _selectedSubWeekIndex; // 0 = W1..W5 selected inside month sub-chart
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).toString();
+
     if (widget.transactions.isEmpty) {
       return Container(
         height: 180,
         alignment: Alignment.center,
-        child: const Column(
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.bar_chart_rounded, color: Colors.white24, size: 36),
-            SizedBox(height: 12),
+            const Icon(Icons.bar_chart_rounded, color: Colors.white24, size: 36),
+            const SizedBox(height: 12),
             Text(
-              'No transaction trend data available for this period.',
-              style: TextStyle(fontSize: 12, color: Colors.white38),
+              strings.barChartNoData,
+              style: const TextStyle(fontSize: 12, color: Colors.white38),
             ),
           ],
         ),
@@ -47,20 +53,21 @@ class _DashboardBarChartState extends State<DashboardBarChart> {
     }
 
     final bool isYearlyGrouping = widget.timeframe == 'This Year';
-    final bool isMonthlyGrouping = widget.timeframe == 'This Month';
+    final bool isMonthlyGrouping =
+        widget.timeframe == 'This Month' || widget.timeframe == 'Custom';
     final Map<String, _PeriodBarData> periodMap = {};
 
     if (isYearlyGrouping) {
-      final months = [
-        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-      ];
+      final sampleYear = widget.transactions.isNotEmpty ? widget.transactions.first.date.year : DateTime.now().year;
+      final months = List.generate(12, (index) {
+        return DateFormat('MMM', locale).format(DateTime(sampleYear, index + 1, 1));
+      });
       for (var m in months) {
         periodMap[m] = _PeriodBarData(label: m);
       }
 
       for (var tx in widget.transactions) {
-        final monthName = DateFormat('MMM', 'en_US').format(tx.date);
+        final monthName = DateFormat('MMM', locale).format(tx.date);
         if (periodMap.containsKey(monthName)) {
           if (tx.type == 'credit') {
             periodMap[monthName]!.income += tx.amount;
@@ -73,7 +80,7 @@ class _DashboardBarChartState extends State<DashboardBarChart> {
       }
     } else if (isMonthlyGrouping) {
       final sampleDate = widget.transactions.isNotEmpty ? widget.transactions.first.date : DateTime.now();
-      final monthName = DateFormat('MMM').format(sampleDate);
+      final monthName = DateFormat('MMM', locale).format(sampleDate);
       final daysInMonth = DateUtils.getDaysInMonth(sampleDate.year, sampleDate.month);
 
       for (int i = 1; i <= 5; i++) {
@@ -100,13 +107,17 @@ class _DashboardBarChartState extends State<DashboardBarChart> {
         }
       }
     } else {
-      final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      final now = DateTime.now();
+      final monday = now.subtract(Duration(days: now.weekday - 1));
+      final days = List.generate(7, (index) {
+        return DateFormat('E', locale).format(monday.add(Duration(days: index)));
+      });
       for (var d in days) {
         periodMap[d] = _PeriodBarData(label: d);
       }
 
       for (var tx in widget.transactions) {
-        final dayName = DateFormat('E', 'en_US').format(tx.date);
+        final dayName = DateFormat('E', locale).format(tx.date);
         if (periodMap.containsKey(dayName)) {
           if (tx.type == 'credit') {
             periodMap[dayName]!.income += tx.amount;
@@ -125,11 +136,14 @@ class _DashboardBarChartState extends State<DashboardBarChart> {
     String peakPeriod = '';
 
     for (var p in periodList) {
+      final double periodMaxVal = (p.expense > p.income)
+          ? (p.expense > p.transfer ? p.expense : p.transfer)
+          : (p.income > p.transfer ? p.income : p.transfer);
       final periodMaxRod = widget.typeFilter == 'credit'
           ? p.income
           : (widget.typeFilter == 'debit'
               ? p.expense
-              : (widget.typeFilter == 'transfer' ? p.transfer : (p.expense > p.income ? p.expense : p.income)));
+              : (widget.typeFilter == 'transfer' ? p.transfer : periodMaxVal));
       if (periodMaxRod > maxVal) {
         maxVal = periodMaxRod;
         peakPeriod = p.label;
@@ -138,7 +152,7 @@ class _DashboardBarChartState extends State<DashboardBarChart> {
           ? p.income
           : (widget.typeFilter == 'debit'
               ? p.expense
-              : (widget.typeFilter == 'transfer' ? p.transfer : (p.expense + p.income)));
+              : (widget.typeFilter == 'transfer' ? p.transfer : (p.expense + p.income + p.transfer)));
     }
 
     final avgVal = periodList.isNotEmpty ? totalVal / periodList.length : 0.0;
@@ -146,12 +160,13 @@ class _DashboardBarChartState extends State<DashboardBarChart> {
     final ceilingMaxY = maxVal * 1.02;
 
     final isGroupedAll = widget.typeFilter == 'all';
-    final double rodWidth = isYearlyGrouping ? (isGroupedAll ? 5.0 : 7.0) : (isGroupedAll ? 8.0 : 12.0);
+    final double rodWidth = isYearlyGrouping ? (isGroupedAll ? 4.0 : 5.0) : (isGroupedAll ? 5.5 : 7.0);
     final double mainBottomReserved = isMonthlyGrouping ? 34.0 : 28.0;
 
     final barGroups = List.generate(periodList.length, (i) {
       final p = periodList[i];
-      final isSelectedWeek = isMonthlyGrouping && _selectedWeekIndex == i;
+      final isSelectedGroup = (isMonthlyGrouping && _selectedWeekIndex == i) ||
+          (isYearlyGrouping && _selectedMonthIndex == i);
 
       if (isGroupedAll) {
         return BarChartGroupData(
@@ -159,11 +174,11 @@ class _DashboardBarChartState extends State<DashboardBarChart> {
           barRods: [
             BarChartRodData(
               toY: p.expense,
-              color: isSelectedWeek ? const Color(0xFFF87171) : const Color(0xFFEF4444),
+              color: isSelectedGroup ? const Color(0xFFF87171) : const Color(0xFFEF4444),
               width: rodWidth,
               borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
               gradient: LinearGradient(
-                colors: isSelectedWeek
+                colors: isSelectedGroup
                     ? [const Color(0xFFFCA5A5), const Color(0xFFEF4444)]
                     : [const Color(0xFFF87171), const Color(0xFFEF4444)],
                 begin: Alignment.topCenter,
@@ -172,18 +187,18 @@ class _DashboardBarChartState extends State<DashboardBarChart> {
               backDrawRodData: BackgroundBarChartRodData(
                 show: true,
                 toY: ceilingMaxY,
-                color: isSelectedWeek
+                color: isSelectedGroup
                     ? const Color(0xFF6366F1).withValues(alpha: 0.25)
                     : const Color(0xFF1E293B).withValues(alpha: 0.3),
               ),
             ),
             BarChartRodData(
               toY: p.income,
-              color: isSelectedWeek ? const Color(0xFF34D399) : const Color(0xFF10B981),
+              color: isSelectedGroup ? const Color(0xFF34D399) : const Color(0xFF10B981),
               width: rodWidth,
               borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
               gradient: LinearGradient(
-                colors: isSelectedWeek
+                colors: isSelectedGroup
                     ? [const Color(0xFF6EE7B7), const Color(0xFF10B981)]
                     : [const Color(0xFF34D399), const Color(0xFF10B981)],
                 begin: Alignment.topCenter,
@@ -192,7 +207,27 @@ class _DashboardBarChartState extends State<DashboardBarChart> {
               backDrawRodData: BackgroundBarChartRodData(
                 show: true,
                 toY: ceilingMaxY,
-                color: isSelectedWeek
+                color: isSelectedGroup
+                    ? const Color(0xFF6366F1).withValues(alpha: 0.25)
+                    : const Color(0xFF1E293B).withValues(alpha: 0.3),
+              ),
+            ),
+            BarChartRodData(
+              toY: p.transfer,
+              color: isSelectedGroup ? const Color(0xFF7DD3FC) : const Color(0xFF38BDF8),
+              width: rodWidth,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+              gradient: LinearGradient(
+                colors: isSelectedGroup
+                    ? [const Color(0xFFBAE6FD), const Color(0xFF38BDF8)]
+                    : [const Color(0xFF7DD3FC), const Color(0xFF0284C7)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+              backDrawRodData: BackgroundBarChartRodData(
+                show: true,
+                toY: ceilingMaxY,
+                color: isSelectedGroup
                     ? const Color(0xFF6366F1).withValues(alpha: 0.25)
                     : const Color(0xFF1E293B).withValues(alpha: 0.3),
               ),
@@ -231,7 +266,7 @@ class _DashboardBarChartState extends State<DashboardBarChart> {
             backDrawRodData: BackgroundBarChartRodData(
               show: true,
               toY: ceilingMaxY,
-              color: isSelectedWeek
+              color: isSelectedGroup
                   ? const Color(0xFF6366F1).withValues(alpha: 0.3)
                   : const Color(0xFF1E293B).withValues(alpha: 0.3),
             ),
@@ -250,7 +285,7 @@ class _DashboardBarChartState extends State<DashboardBarChart> {
               return Listener(
                 behavior: HitTestBehavior.opaque,
                 onPointerUp: (event) {
-                  if (isMonthlyGrouping && periodList.isNotEmpty) {
+                  if ((isMonthlyGrouping || isYearlyGrouping) && periodList.isNotEmpty) {
                     final chartWidth = constraints.maxWidth;
                     if (chartWidth > 0) {
                       final groupWidth = chartWidth / periodList.length;
@@ -258,10 +293,11 @@ class _DashboardBarChartState extends State<DashboardBarChart> {
                           .floor()
                           .clamp(0, periodList.length - 1);
                       setState(() {
-                        if (_selectedWeekIndex == touchedGroup) {
-                          _selectedWeekIndex = null;
-                        } else {
-                          _selectedWeekIndex = touchedGroup;
+                        if (isMonthlyGrouping) {
+                          _selectedWeekIndex = (_selectedWeekIndex == touchedGroup) ? null : touchedGroup;
+                        } else if (isYearlyGrouping) {
+                          _selectedMonthIndex = (_selectedMonthIndex == touchedGroup) ? null : touchedGroup;
+                          _selectedSubWeekIndex = null;
                         }
                       });
                     }
@@ -321,19 +357,19 @@ class _DashboardBarChartState extends State<DashboardBarChart> {
                               getTitlesWidget: (value, meta) {
                                 final idx = value.toInt();
                                 if (idx >= 0 && idx < periodList.length) {
-                                  final isSelectedWeek = isMonthlyGrouping && _selectedWeekIndex == idx;
+                                  final isSelectedGroup = (isMonthlyGrouping && _selectedWeekIndex == idx) ||
+                                      (isYearlyGrouping && _selectedMonthIndex == idx);
                                   return GestureDetector(
                                     behavior: HitTestBehavior.opaque,
                                     onTap: () {
-                                      if (isMonthlyGrouping) {
-                                        setState(() {
-                                          if (_selectedWeekIndex == idx) {
-                                            _selectedWeekIndex = null;
-                                          } else {
-                                            _selectedWeekIndex = idx;
-                                          }
-                                        });
-                                      }
+                                      setState(() {
+                                        if (isMonthlyGrouping) {
+                                          _selectedWeekIndex = (_selectedWeekIndex == idx) ? null : idx;
+                                        } else if (isYearlyGrouping) {
+                                          _selectedMonthIndex = (_selectedMonthIndex == idx) ? null : idx;
+                                          _selectedSubWeekIndex = null;
+                                        }
+                                      });
                                     },
                                     child: SideTitleWidget(
                                       axisSide: meta.axisSide,
@@ -341,7 +377,7 @@ class _DashboardBarChartState extends State<DashboardBarChart> {
                                         angle: isMonthlyGrouping ? -0.45 : -0.3,
                                         child: Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                                          decoration: isSelectedWeek
+                                          decoration: isSelectedGroup
                                               ? BoxDecoration(
                                                   color: const Color(0xFF6366F1).withValues(alpha: 0.25),
                                                   borderRadius: BorderRadius.circular(6),
@@ -351,8 +387,8 @@ class _DashboardBarChartState extends State<DashboardBarChart> {
                                             periodList[idx].label,
                                             style: TextStyle(
                                               fontSize: isYearlyGrouping ? 9 : (isMonthlyGrouping ? 8.5 : 10),
-                                              color: isSelectedWeek ? const Color(0xFF818CF8) : Colors.white60,
-                                              fontWeight: isSelectedWeek ? FontWeight.bold : FontWeight.normal,
+                                              color: isSelectedGroup ? const Color(0xFF818CF8) : Colors.white60,
+                                              fontWeight: isSelectedGroup ? FontWeight.bold : FontWeight.normal,
                                             ),
                                           ),
                                         ),
@@ -389,44 +425,72 @@ class _DashboardBarChartState extends State<DashboardBarChart> {
           ),
         ),
         const SizedBox(height: 12),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: const Color(0xFF020617),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFF334155).withValues(alpha: 0.4)),
-              ),
-              child: Text(
-                widget.shouldHideAmounts
-                    ? 'Avg: ${AppSettings.currencySymbol}•••• • Peak: ${peakPeriod.isEmpty ? "N/A" : peakPeriod}'
-                    : 'Avg: ${AppFormatters.formatAmount(avgVal)} • Peak: ${peakPeriod.isEmpty ? "N/A" : peakPeriod}',
-                style: const TextStyle(
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white70,
-                ),
+        const SizedBox(height: 10),
+        Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: const Color(0xFF020617),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFF334155).withValues(alpha: 0.4)),
+            ),
+            child: Text(
+              '${strings.barChartAvg(widget.shouldHideAmounts ? "${AppSettings.currencySymbol}••••" : AppFormatters.formatAmount(avgVal))} • ${strings.barChartPeak(peakPeriod.isEmpty ? "N/A" : peakPeriod)}',
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: Colors.white70,
               ),
             ),
-            if (isMonthlyGrouping) ...[
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  _selectedWeekIndex != null ? '(Tap bar to close)' : '(Tap a week bar for days)',
-                  style: const TextStyle(fontSize: 10, color: Color(0xFF818CF8), fontStyle: FontStyle.italic),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ],
+          ),
         ),
+        if (isMonthlyGrouping || isYearlyGrouping) ...[
+          const SizedBox(height: 6),
+          Center(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFF6366F1).withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    (isMonthlyGrouping ? _selectedWeekIndex != null : _selectedMonthIndex != null)
+                        ? Icons.close_rounded
+                        : Icons.touch_app_rounded,
+                    size: 13,
+                    color: const Color(0xFF818CF8),
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    isMonthlyGrouping
+                        ? (_selectedWeekIndex != null ? strings.barChartTapToClose : strings.barChartTapForDays)
+                        : (_selectedMonthIndex != null ? strings.barChartTapToClose : strings.barChartTapMonthForWeeks),
+                    style: const TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFFA5B4FC),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
 
         // Interactive Week Drill-Down Sub-Chart (7 Days breakdown for selected week)
         if (isMonthlyGrouping && _selectedWeekIndex != null) ...[
           const SizedBox(height: 14),
           _buildDailyDrillDownSubChart(_selectedWeekIndex!),
+        ],
+
+        // Interactive Month Drill-Down Sub-Chart (5 Weeks breakdown for selected month in Yearly mode)
+        if (isYearlyGrouping && _selectedMonthIndex != null) ...[
+          const SizedBox(height: 14),
+          _buildMonthlyWeeksSubChart(_selectedMonthIndex!),
         ],
       ],
     );
@@ -450,12 +514,14 @@ class _DashboardBarChartState extends State<DashboardBarChart> {
     if (isGroupedAll) {
       final List<FlSpot> expenseSpots = [];
       final List<FlSpot> incomeSpots = [];
-      final double xOffset = isYearlyGrouping ? 0.08 : 0.10;
+      final List<FlSpot> transferSpots = [];
+      final double xOffset = isYearlyGrouping ? 0.08 : 0.12;
 
       for (int i = 0; i < periodList.length; i++) {
         final p = periodList[i];
         expenseSpots.add(FlSpot(i.toDouble() - xOffset, p.expense));
-        incomeSpots.add(FlSpot(i.toDouble() + xOffset, p.income));
+        incomeSpots.add(FlSpot(i.toDouble(), p.income));
+        transferSpots.add(FlSpot(i.toDouble() + xOffset, p.transfer));
       }
 
       if (AppSettings.showExpenseTrendLine && expenseSpots.length >= 2) {
@@ -497,6 +563,30 @@ class _DashboardBarChartState extends State<DashboardBarChart> {
                 return FlDotCirclePainter(
                   radius: 2.5,
                   color: const Color(0xFF10B981),
+                  strokeWidth: 1,
+                  strokeColor: Colors.white,
+                );
+              },
+            ),
+          ),
+        );
+      }
+
+      if (AppSettings.showTransferTrendLine && transferSpots.length >= 2) {
+        lineBarsData.add(
+          LineChartBarData(
+            spots: transferSpots,
+            isCurved: true,
+            curveSmoothness: 0.25,
+            color: const Color(0xFF38BDF8).withValues(alpha: 0.85),
+            barWidth: 1.5,
+            isStrokeCapRound: true,
+            dotData: FlDotData(
+              show: true,
+              getDotPainter: (spot, percent, barData, index) {
+                return FlDotCirclePainter(
+                  radius: 2.5,
+                  color: const Color(0xFF0284C7),
                   strokeWidth: 1,
                   strokeColor: Colors.white,
                 );
@@ -595,7 +685,7 @@ class _DashboardBarChartState extends State<DashboardBarChart> {
     final double fontSize = isYearlyGrouping ? 7.0 : 7.5;
 
     if (typeFilter == 'all') {
-      if (income == 0 && expense == 0) return const SizedBox.shrink();
+      if (income == 0 && expense == 0 && transfer == 0) return const SizedBox.shrink();
 
       return Transform.rotate(
         angle: tiltAngle,
@@ -605,6 +695,16 @@ class _DashboardBarChartState extends State<DashboardBarChart> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              if (expense > 0)
+                Text(
+                  AppFormatters.formatAmount(expense, shouldHide: shouldHideAmounts),
+                  style: TextStyle(
+                    fontSize: fontSize,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFFF87171),
+                    height: 1.1,
+                  ),
+                ),
               if (income > 0)
                 Text(
                   AppFormatters.formatAmount(income, shouldHide: shouldHideAmounts),
@@ -615,13 +715,13 @@ class _DashboardBarChartState extends State<DashboardBarChart> {
                     height: 1.1,
                   ),
                 ),
-              if (expense > 0)
+              if (transfer > 0)
                 Text(
-                  AppFormatters.formatAmount(expense, shouldHide: shouldHideAmounts),
+                  AppFormatters.formatAmount(transfer, shouldHide: shouldHideAmounts),
                   style: TextStyle(
                     fontSize: fontSize,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFFF87171),
+                    color: const Color(0xFF7DD3FC),
                     height: 1.1,
                   ),
                 ),
@@ -658,9 +758,13 @@ class _DashboardBarChartState extends State<DashboardBarChart> {
   }
 
   Widget _buildDailyDrillDownSubChart(int weekIndex) {
+    final strings = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).toString();
     final sampleDate = widget.transactions.isNotEmpty ? widget.transactions.first.date : DateTime.now();
-    final monthName = DateFormat('MMM').format(sampleDate);
-    final daysInMonth = DateUtils.getDaysInMonth(sampleDate.year, sampleDate.month);
+    final sampleYear = sampleDate.year;
+    final sampleMonth = sampleDate.month;
+    final monthName = DateFormat('MMM', locale).format(sampleDate);
+    final daysInMonth = DateUtils.getDaysInMonth(sampleYear, sampleMonth);
 
     final startDay = (weekIndex * 7) + 1;
     int endDay = (weekIndex + 1) * 7;
@@ -669,23 +773,31 @@ class _DashboardBarChartState extends State<DashboardBarChart> {
     final dateRangeTitle = '$startDay $monthName – $endDay $monthName';
 
     final weekTxList = widget.transactions.where((tx) {
-      return tx.date.day >= startDay && tx.date.day <= endDay;
+      return tx.date.year == sampleYear &&
+          tx.date.month == sampleMonth &&
+          tx.date.day >= startDay &&
+          tx.date.day <= endDay;
     }).toList();
 
-    final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    final Map<String, _PeriodBarData> dailyMap = {
-      for (var d in days) d: _PeriodBarData(label: d),
-    };
+    final Map<int, String> dayLabelMap = {};
+    final Map<String, _PeriodBarData> dailyMap = {};
+
+    for (int day = startDay; day <= endDay; day++) {
+      final label = '$day $monthName';
+      dayLabelMap[day] = label;
+      dailyMap[label] = _PeriodBarData(label: label);
+    }
 
     for (var tx in weekTxList) {
-      final dayName = DateFormat('E', 'en_US').format(tx.date);
-      if (dailyMap.containsKey(dayName)) {
+      final day = tx.date.day;
+      if (dayLabelMap.containsKey(day)) {
+        final label = dayLabelMap[day]!;
         if (tx.type == 'credit') {
-          dailyMap[dayName]!.income += tx.amount;
+          dailyMap[label]!.income += tx.amount;
         } else if (tx.type == 'debit') {
-          dailyMap[dayName]!.expense += tx.amount;
+          dailyMap[label]!.expense += tx.amount;
         } else if (tx.type == 'transfer') {
-          dailyMap[dayName]!.transfer += tx.amount;
+          dailyMap[label]!.transfer += tx.amount;
         }
       }
     }
@@ -693,11 +805,14 @@ class _DashboardBarChartState extends State<DashboardBarChart> {
     final dailyList = dailyMap.values.toList();
     double subMaxVal = 0.0;
     for (var d in dailyList) {
+      final double dailyMaxVal = (d.expense > d.income)
+          ? (d.expense > d.transfer ? d.expense : d.transfer)
+          : (d.income > d.transfer ? d.income : d.transfer);
       final subMaxRod = widget.typeFilter == 'credit'
           ? d.income
           : (widget.typeFilter == 'debit'
               ? d.expense
-              : (widget.typeFilter == 'transfer' ? d.transfer : (d.expense > d.income ? d.expense : d.income)));
+              : (widget.typeFilter == 'transfer' ? d.transfer : dailyMaxVal));
       if (subMaxRod > subMaxVal) subMaxVal = subMaxRod;
     }
     if (subMaxVal == 0) subMaxVal = 100.0;
@@ -713,8 +828,8 @@ class _DashboardBarChartState extends State<DashboardBarChart> {
             BarChartRodData(
               toY: d.expense,
               color: const Color(0xFFEF4444),
-              width: 6,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+              width: 4.5,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
               backDrawRodData: BackgroundBarChartRodData(
                 show: true,
                 toY: subCeilingMaxY,
@@ -724,8 +839,19 @@ class _DashboardBarChartState extends State<DashboardBarChart> {
             BarChartRodData(
               toY: d.income,
               color: const Color(0xFF10B981),
-              width: 6,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+              width: 4.5,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
+              backDrawRodData: BackgroundBarChartRodData(
+                show: true,
+                toY: subCeilingMaxY,
+                color: const Color(0xFF1E293B).withValues(alpha: 0.3),
+              ),
+            ),
+            BarChartRodData(
+              toY: d.transfer,
+              color: const Color(0xFF38BDF8),
+              width: 4.5,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
               backDrawRodData: BackgroundBarChartRodData(
                 show: true,
                 toY: subCeilingMaxY,
@@ -751,8 +877,8 @@ class _DashboardBarChartState extends State<DashboardBarChart> {
           BarChartRodData(
             toY: rodVal,
             color: baseColor,
-            width: 10,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(5)),
+            width: 6,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
             backDrawRodData: BackgroundBarChartRodData(
               show: true,
               toY: subCeilingMaxY,
@@ -784,7 +910,7 @@ class _DashboardBarChartState extends State<DashboardBarChart> {
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
-                        'Week ${weekIndex + 1} Breakdown ($dateRangeTitle)',
+                        strings.barChartWeekBreakdown(weekIndex + 1, dateRangeTitle),
                         style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.white),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -840,18 +966,21 @@ class _DashboardBarChartState extends State<DashboardBarChart> {
                       bottomTitles: AxisTitles(
                         sideTitles: SideTitles(
                           showTitles: true,
-                          reservedSize: 22,
+                          reservedSize: 28,
                           getTitlesWidget: (value, meta) {
                             final idx = value.toInt();
                             if (idx >= 0 && idx < dailyList.length) {
                               return SideTitleWidget(
                                 axisSide: meta.axisSide,
-                                child: Text(
-                                  dailyList[idx].label,
-                                  style: const TextStyle(
-                                    fontSize: 9,
-                                    color: Colors.white60,
-                                    fontWeight: FontWeight.bold,
+                                child: Transform.rotate(
+                                  angle: -0.45,
+                                  child: Text(
+                                    dailyList[idx].label,
+                                    style: const TextStyle(
+                                      fontSize: 8.5,
+                                      color: Colors.white60,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
                               );
@@ -873,7 +1002,571 @@ class _DashboardBarChartState extends State<DashboardBarChart> {
                         ceilingMaxY: subCeilingMaxY,
                         isYearlyGrouping: false,
                         topReservedSize: 30,
-                        bottomReservedSize: 22,
+                        bottomReservedSize: 28,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMonthlyWeeksSubChart(int monthIndex) {
+    final strings = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).toString();
+
+    final sampleYear = widget.transactions.isNotEmpty
+        ? widget.transactions.first.date.year
+        : DateTime.now().year;
+    final targetMonth = monthIndex + 1;
+    final monthDate = DateTime(sampleYear, targetMonth, 1);
+    final monthName = DateFormat('MMMM', locale).format(monthDate);
+    final shortMonthName = DateFormat('MMM', locale).format(monthDate);
+    final daysInMonth = DateUtils.getDaysInMonth(sampleYear, targetMonth);
+
+    final monthTxList = widget.transactions.where((tx) {
+      return tx.date.year == sampleYear && tx.date.month == targetMonth;
+    }).toList();
+
+    final Map<String, _PeriodBarData> weekMap = {};
+    for (int i = 1; i <= 5; i++) {
+      final start = (i - 1) * 7 + 1;
+      if (start > daysInMonth) break;
+      int end = i * 7;
+      if (end > daysInMonth) end = daysInMonth;
+
+      final label = '$start $shortMonthName - $end $shortMonthName';
+      weekMap['W$i'] = _PeriodBarData(label: label);
+    }
+
+    for (var tx in monthTxList) {
+      final weekNum = ((tx.date.day - 1) ~/ 7) + 1;
+      final weekKey = 'W${weekNum > 5 ? 5 : weekNum}';
+      if (weekMap.containsKey(weekKey)) {
+        if (tx.type == 'credit') {
+          weekMap[weekKey]!.income += tx.amount;
+        } else if (tx.type == 'debit') {
+          weekMap[weekKey]!.expense += tx.amount;
+        } else if (tx.type == 'transfer') {
+          weekMap[weekKey]!.transfer += tx.amount;
+        }
+      }
+    }
+
+    final weekList = weekMap.values.toList();
+    double subMaxVal = 0.0;
+    for (var w in weekList) {
+      final double weekMaxVal = (w.expense > w.income)
+          ? (w.expense > w.transfer ? w.expense : w.transfer)
+          : (w.income > w.transfer ? w.income : w.transfer);
+      final subMaxRod = widget.typeFilter == 'credit'
+          ? w.income
+          : (widget.typeFilter == 'debit'
+              ? w.expense
+              : (widget.typeFilter == 'transfer' ? w.transfer : weekMaxVal));
+      if (subMaxRod > subMaxVal) subMaxVal = subMaxRod;
+    }
+    if (subMaxVal == 0) subMaxVal = 100.0;
+    final subCeilingMaxY = subMaxVal * 1.02;
+    final isGroupedAll = widget.typeFilter == 'all';
+
+    final subBarGroups = List.generate(weekList.length, (i) {
+      final w = weekList[i];
+      final isSelectedSubWeek = _selectedSubWeekIndex == i;
+
+      if (isGroupedAll) {
+        return BarChartGroupData(
+          x: i,
+          barRods: [
+            BarChartRodData(
+              toY: w.expense,
+              color: isSelectedSubWeek ? const Color(0xFFF87171) : const Color(0xFFEF4444),
+              width: 5.5,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+              backDrawRodData: BackgroundBarChartRodData(
+                show: true,
+                toY: subCeilingMaxY,
+                color: isSelectedSubWeek
+                    ? const Color(0xFF6366F1).withValues(alpha: 0.25)
+                    : const Color(0xFF1E293B).withValues(alpha: 0.3),
+              ),
+            ),
+            BarChartRodData(
+              toY: w.income,
+              color: isSelectedSubWeek ? const Color(0xFF34D399) : const Color(0xFF10B981),
+              width: 5.5,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+              backDrawRodData: BackgroundBarChartRodData(
+                show: true,
+                toY: subCeilingMaxY,
+                color: isSelectedSubWeek
+                    ? const Color(0xFF6366F1).withValues(alpha: 0.25)
+                    : const Color(0xFF1E293B).withValues(alpha: 0.3),
+              ),
+            ),
+            BarChartRodData(
+              toY: w.transfer,
+              color: isSelectedSubWeek ? const Color(0xFF7DD3FC) : const Color(0xFF38BDF8),
+              width: 5.5,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+              backDrawRodData: BackgroundBarChartRodData(
+                show: true,
+                toY: subCeilingMaxY,
+                color: isSelectedSubWeek
+                    ? const Color(0xFF6366F1).withValues(alpha: 0.25)
+                    : const Color(0xFF1E293B).withValues(alpha: 0.3),
+              ),
+            ),
+          ],
+        );
+      }
+
+      final rodVal = widget.typeFilter == 'debit'
+          ? w.expense
+          : (widget.typeFilter == 'credit' ? w.income : w.transfer);
+      final Color baseColor = widget.typeFilter == 'debit'
+          ? const Color(0xFFEF4444)
+          : (widget.typeFilter == 'credit'
+              ? const Color(0xFF10B981)
+              : const Color(0xFF38BDF8));
+
+      return BarChartGroupData(
+        x: i,
+        barRods: [
+          BarChartRodData(
+            toY: rodVal,
+            color: baseColor,
+            width: 7,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+            backDrawRodData: BackgroundBarChartRodData(
+              show: true,
+              toY: subCeilingMaxY,
+              color: isSelectedSubWeek
+                  ? const Color(0xFF6366F1).withValues(alpha: 0.3)
+                  : const Color(0xFF1E293B).withValues(alpha: 0.3),
+            ),
+          ),
+        ],
+      );
+    });
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF020617),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.5), width: 1.2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Flexible(
+                child: Row(
+                  children: [
+                    const Icon(Icons.subdirectory_arrow_right_rounded, size: 16, color: Color(0xFF818CF8)),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        strings.barChartMonthBreakdown(monthName),
+                        style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.white),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              InkWell(
+                onTap: () => setState(() {
+                  _selectedMonthIndex = null;
+                  _selectedSubWeekIndex = null;
+                }),
+                child: const Icon(Icons.close_rounded, size: 16, color: Colors.white54),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 155,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return Listener(
+                  behavior: HitTestBehavior.opaque,
+                  onPointerUp: (event) {
+                    final chartWidth = constraints.maxWidth;
+                    if (chartWidth > 0 && weekList.isNotEmpty) {
+                      final groupWidth = chartWidth / weekList.length;
+                      final touchedGroup = (event.localPosition.dx / groupWidth)
+                          .floor()
+                          .clamp(0, weekList.length - 1);
+                      setState(() {
+                        _selectedSubWeekIndex = (_selectedSubWeekIndex == touchedGroup) ? null : touchedGroup;
+                      });
+                    }
+                  },
+                  child: Stack(
+                    children: [
+                      BarChart(
+                        BarChartData(
+                          alignment: BarChartAlignment.spaceAround,
+                          maxY: subCeilingMaxY,
+                          gridData: const FlGridData(show: false),
+                          borderData: FlBorderData(show: false),
+                          barTouchData: BarTouchData(enabled: false),
+                          titlesData: FlTitlesData(
+                            leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                            topTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                reservedSize: 30,
+                                getTitlesWidget: (value, meta) {
+                                  final idx = value.toInt();
+                                  if (idx >= 0 && idx < weekList.length) {
+                                    final w = weekList[idx];
+                                    return SideTitleWidget(
+                                      axisSide: meta.axisSide,
+                                      child: _buildTopAmountWidget(
+                                        income: w.income,
+                                        expense: w.expense,
+                                        transfer: w.transfer,
+                                        typeFilter: widget.typeFilter,
+                                        shouldHideAmounts: widget.shouldHideAmounts,
+                                        isYearlyGrouping: false,
+                                      ),
+                                    );
+                                  }
+                                  return const SizedBox.shrink();
+                                },
+                              ),
+                            ),
+                            bottomTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                reservedSize: 32,
+                                getTitlesWidget: (value, meta) {
+                                  final idx = value.toInt();
+                                  if (idx >= 0 && idx < weekList.length) {
+                                    final isSelectedSubWeek = _selectedSubWeekIndex == idx;
+                                    return GestureDetector(
+                                      behavior: HitTestBehavior.opaque,
+                                      onTap: () {
+                                        setState(() {
+                                          _selectedSubWeekIndex = (_selectedSubWeekIndex == idx) ? null : idx;
+                                        });
+                                      },
+                                      child: SideTitleWidget(
+                                        axisSide: meta.axisSide,
+                                        child: Transform.rotate(
+                                          angle: -0.45,
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                            decoration: isSelectedSubWeek
+                                                ? BoxDecoration(
+                                                    color: const Color(0xFF6366F1).withValues(alpha: 0.25),
+                                                    borderRadius: BorderRadius.circular(6),
+                                                  )
+                                                : null,
+                                            child: Text(
+                                              weekList[idx].label,
+                                              style: TextStyle(
+                                                fontSize: 8.5,
+                                                color: isSelectedSubWeek ? const Color(0xFF818CF8) : Colors.white60,
+                                                fontWeight: isSelectedSubWeek ? FontWeight.bold : FontWeight.normal,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                  return const SizedBox.shrink();
+                                },
+                              ),
+                            ),
+                          ),
+                          barGroups: subBarGroups,
+                        ),
+                      ),
+                      Positioned.fill(
+                        child: IgnorePointer(
+                          child: LineChart(
+                            _buildTrendLineChartData(
+                              periodList: weekList,
+                              typeFilter: widget.typeFilter,
+                              ceilingMaxY: subCeilingMaxY,
+                              isYearlyGrouping: false,
+                              topReservedSize: 30,
+                              bottomReservedSize: 32,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+          if (_selectedSubWeekIndex != null) ...[
+            const SizedBox(height: 12),
+            _buildDailyDrillDownSubChartForMonth(_selectedSubWeekIndex!, targetMonth, sampleYear),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDailyDrillDownSubChartForMonth(int weekIndex, int targetMonth, int sampleYear) {
+    final strings = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).toString();
+    final monthName = DateFormat('MMM', locale).format(DateTime(sampleYear, targetMonth, 1));
+    final daysInMonth = DateUtils.getDaysInMonth(sampleYear, targetMonth);
+
+    final startDay = (weekIndex * 7) + 1;
+    int endDay = (weekIndex + 1) * 7;
+    if (endDay > daysInMonth) endDay = daysInMonth;
+
+    final dateRangeTitle = '$startDay $monthName – $endDay $monthName';
+
+    final weekTxList = widget.transactions.where((tx) {
+      return tx.date.year == sampleYear &&
+          tx.date.month == targetMonth &&
+          tx.date.day >= startDay &&
+          tx.date.day <= endDay;
+    }).toList();
+
+    final Map<int, String> dayLabelMap = {};
+    final Map<String, _PeriodBarData> dailyMap = {};
+
+    for (int day = startDay; day <= endDay; day++) {
+      final label = '$day $monthName';
+      dayLabelMap[day] = label;
+      dailyMap[label] = _PeriodBarData(label: label);
+    }
+
+    for (var tx in weekTxList) {
+      final day = tx.date.day;
+      if (dayLabelMap.containsKey(day)) {
+        final label = dayLabelMap[day]!;
+        if (tx.type == 'credit') {
+          dailyMap[label]!.income += tx.amount;
+        } else if (tx.type == 'debit') {
+          dailyMap[label]!.expense += tx.amount;
+        } else if (tx.type == 'transfer') {
+          dailyMap[label]!.transfer += tx.amount;
+        }
+      }
+    }
+
+    final dailyList = dailyMap.values.toList();
+    double subMaxVal = 0.0;
+    for (var d in dailyList) {
+      final double dailyMaxVal = (d.expense > d.income)
+          ? (d.expense > d.transfer ? d.expense : d.transfer)
+          : (d.income > d.transfer ? d.income : d.transfer);
+      final subMaxRod = widget.typeFilter == 'credit'
+          ? d.income
+          : (widget.typeFilter == 'debit'
+              ? d.expense
+              : (widget.typeFilter == 'transfer' ? d.transfer : dailyMaxVal));
+      if (subMaxRod > subMaxVal) subMaxVal = subMaxRod;
+    }
+    if (subMaxVal == 0) subMaxVal = 100.0;
+    final subCeilingMaxY = subMaxVal * 1.02;
+    final isGroupedAll = widget.typeFilter == 'all';
+
+    final subBarGroups = List.generate(dailyList.length, (i) {
+      final d = dailyList[i];
+      if (isGroupedAll) {
+        return BarChartGroupData(
+          x: i,
+          barRods: [
+            BarChartRodData(
+              toY: d.expense,
+              color: const Color(0xFFEF4444),
+              width: 4.5,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
+              backDrawRodData: BackgroundBarChartRodData(
+                show: true,
+                toY: subCeilingMaxY,
+                color: const Color(0xFF1E293B).withValues(alpha: 0.3),
+              ),
+            ),
+            BarChartRodData(
+              toY: d.income,
+              color: const Color(0xFF10B981),
+              width: 4.5,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
+              backDrawRodData: BackgroundBarChartRodData(
+                show: true,
+                toY: subCeilingMaxY,
+                color: const Color(0xFF1E293B).withValues(alpha: 0.3),
+              ),
+            ),
+            BarChartRodData(
+              toY: d.transfer,
+              color: const Color(0xFF38BDF8),
+              width: 4.5,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
+              backDrawRodData: BackgroundBarChartRodData(
+                show: true,
+                toY: subCeilingMaxY,
+                color: const Color(0xFF1E293B).withValues(alpha: 0.3),
+              ),
+            ),
+          ],
+        );
+      }
+
+      final rodVal = widget.typeFilter == 'debit'
+          ? d.expense
+          : (widget.typeFilter == 'credit' ? d.income : d.transfer);
+      final Color baseColor = widget.typeFilter == 'debit'
+          ? const Color(0xFFEF4444)
+          : (widget.typeFilter == 'credit'
+              ? const Color(0xFF10B981)
+              : const Color(0xFF38BDF8));
+
+      return BarChartGroupData(
+        x: i,
+        barRods: [
+          BarChartRodData(
+            toY: rodVal,
+            color: baseColor,
+            width: 6,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+            backDrawRodData: BackgroundBarChartRodData(
+              show: true,
+              toY: subCeilingMaxY,
+              color: const Color(0xFF1E293B).withValues(alpha: 0.3),
+            ),
+          ),
+        ],
+      );
+    });
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF020617),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.5), width: 1.2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Flexible(
+                child: Row(
+                  children: [
+                    const Icon(Icons.subdirectory_arrow_right_rounded, size: 16, color: Color(0xFF818CF8)),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        strings.barChartWeekBreakdown(weekIndex + 1, dateRangeTitle),
+                        style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.white),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              InkWell(
+                onTap: () => setState(() => _selectedSubWeekIndex = null),
+                child: const Icon(Icons.close_rounded, size: 16, color: Colors.white54),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 155,
+            child: Stack(
+              children: [
+                BarChart(
+                  BarChartData(
+                    alignment: BarChartAlignment.spaceAround,
+                    maxY: subCeilingMaxY,
+                    gridData: const FlGridData(show: false),
+                    borderData: FlBorderData(show: false),
+                    barTouchData: BarTouchData(enabled: false),
+                    titlesData: FlTitlesData(
+                      leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      topTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 30,
+                          getTitlesWidget: (value, meta) {
+                            final idx = value.toInt();
+                            if (idx >= 0 && idx < dailyList.length) {
+                              final d = dailyList[idx];
+                              return SideTitleWidget(
+                                axisSide: meta.axisSide,
+                                child: _buildTopAmountWidget(
+                                  income: d.income,
+                                  expense: d.expense,
+                                  transfer: d.transfer,
+                                  typeFilter: widget.typeFilter,
+                                  shouldHideAmounts: widget.shouldHideAmounts,
+                                  isYearlyGrouping: false,
+                                ),
+                              );
+                            }
+                            return const SizedBox.shrink();
+                          },
+                        ),
+                      ),
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 28,
+                          getTitlesWidget: (value, meta) {
+                            final idx = value.toInt();
+                            if (idx >= 0 && idx < dailyList.length) {
+                              return SideTitleWidget(
+                                axisSide: meta.axisSide,
+                                child: Transform.rotate(
+                                  angle: -0.45,
+                                  child: Text(
+                                    dailyList[idx].label,
+                                    style: const TextStyle(
+                                      fontSize: 8.5,
+                                      color: Colors.white60,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }
+                            return const SizedBox.shrink();
+                          },
+                        ),
+                      ),
+                    ),
+                    barGroups: subBarGroups,
+                  ),
+                ),
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: LineChart(
+                      _buildTrendLineChartData(
+                        periodList: dailyList,
+                        typeFilter: widget.typeFilter,
+                        ceilingMaxY: subCeilingMaxY,
+                        isYearlyGrouping: false,
+                        topReservedSize: 30,
+                        bottomReservedSize: 28,
                       ),
                     ),
                   ),

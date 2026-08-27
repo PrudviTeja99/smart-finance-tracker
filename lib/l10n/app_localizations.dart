@@ -329,25 +329,25 @@ abstract class AppLocalizations {
   /// No description provided for @dashboardIncomeAnalysis.
   ///
   /// In en, this message translates to:
-  /// **'Income Analysis'**
+  /// **'Income Breakdown'**
   String get dashboardIncomeAnalysis;
 
   /// No description provided for @dashboardExpenseAnalysis.
   ///
   /// In en, this message translates to:
-  /// **'Expense Analysis'**
+  /// **'Expenses Breakdown'**
   String get dashboardExpenseAnalysis;
 
   /// No description provided for @dashboardTransferAnalysis.
   ///
   /// In en, this message translates to:
-  /// **'Transfer Analysis'**
+  /// **'Transfers Breakdown'**
   String get dashboardTransferAnalysis;
 
   /// No description provided for @dashboardAllTransactionsAnalysis.
   ///
   /// In en, this message translates to:
-  /// **'All Transactions Analysis'**
+  /// **'Transactions Breakdown'**
   String get dashboardAllTransactionsAnalysis;
 
   /// No description provided for @settingsSmartTracking.
@@ -2719,6 +2719,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Restored to Captured Alerts!'**
   String get inboxRestoredToCapturedAlerts;
+
+  /// No description provided for @barChartNoData.
+  ///
+  /// In en, this message translates to:
+  /// **'No transaction trend data available for this period.'**
+  String get barChartNoData;
+
+  /// No description provided for @barChartAvg.
+  ///
+  /// In en, this message translates to:
+  /// **'Avg: {amount}'**
+  String barChartAvg(String amount);
+
+  /// No description provided for @barChartPeak.
+  ///
+  /// In en, this message translates to:
+  /// **'Peak: {period}'**
+  String barChartPeak(String period);
+
+  /// No description provided for @barChartTapToClose.
+  ///
+  /// In en, this message translates to:
+  /// **'(Tap bar to close)'**
+  String get barChartTapToClose;
+
+  /// No description provided for @barChartTapForDays.
+  ///
+  /// In en, this message translates to:
+  /// **'(Tap a week bar for days)'**
+  String get barChartTapForDays;
+
+  /// No description provided for @barChartTapMonthForWeeks.
+  ///
+  /// In en, this message translates to:
+  /// **'(Tap a month bar for weeks)'**
+  String get barChartTapMonthForWeeks;
+
+  /// No description provided for @barChartMonthBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'{monthName} Breakdown'**
+  String barChartMonthBreakdown(String monthName);
+
+  /// No description provided for @barChartWeekBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Week {weekNum} Breakdown ({dateRange})'**
+  String barChartWeekBreakdown(int weekNum, String dateRange);
 }
 
 class _AppLocalizationsDelegate
