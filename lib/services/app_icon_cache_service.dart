@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -35,11 +36,13 @@ class AppIconCacheService {
         await _cacheDir!.create(recursive: true);
       }
 
-      // Load cached app names from disk
+      // Load cached app names from disk asynchronously in an isolate
       final namesFile = File('${_cacheDir!.path}/app_names.json');
       if (await namesFile.exists()) {
         final jsonStr = await namesFile.readAsString();
-        final Map<String, dynamic> map = json.decode(jsonStr);
+        final map = await Isolate.run(() {
+          return json.decode(jsonStr) as Map<String, dynamic>;
+        });
         map.forEach((k, v) {
           _appNameCache[k] = v.toString();
         });

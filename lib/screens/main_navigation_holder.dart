@@ -125,12 +125,11 @@ class _MainNavigationHolderState extends State<MainNavigationHolder>
             physics: const NeverScrollableScrollPhysics(),
             controller: _pageController,
             onPageChanged: (index) {
-              setState(() {
-                _selectedIndex = index;
-                _visitedTabs.add(index);
-              });
-              if (index == 1) {
-                _updatePendingCount(); // Refresh count on viewing pending list
+              if (_selectedIndex != index) {
+                setState(() {
+                  _selectedIndex = index;
+                  _visitedTabs.add(index);
+                });
               }
             },
             children: List.generate(3, _buildTab),

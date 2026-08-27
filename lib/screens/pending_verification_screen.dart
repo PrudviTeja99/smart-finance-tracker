@@ -107,11 +107,7 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
   void didUpdateWidget(PendingVerificationScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.isActive && !oldWidget.isActive) {
-      if (_hasLoadedPrimaryData) {
-        _refreshAll();
-      } else {
-        _scheduleInitialLoad();
-      }
+      _scheduleInitialLoad();
     }
 
     if (oldWidget.refreshSignal != widget.refreshSignal) {
@@ -310,7 +306,11 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
 
     try {
       await load;
-      _loadSecondaryInboxData();
+      // Allow primary draft items frame to paint before running secondary queries
+      await Future<void>.delayed(const Duration(milliseconds: 80));
+      if (mounted) {
+        _loadSecondaryInboxData();
+      }
     } catch (e) {
       debugPrint('Refresh failed: $e');
     } finally {

@@ -41,7 +41,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _loadSettingsData();
+    _scheduleInitialLoad();
   }
 
   @override
@@ -61,8 +61,17 @@ class _SettingsScreenState extends State<SettingsScreen>
   void didUpdateWidget(SettingsScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.isActive && !oldWidget.isActive) {
-      _loadSettingsData();
+      _scheduleInitialLoad();
     }
+  }
+
+  void _scheduleInitialLoad() {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      if (mounted && widget.isActive) {
+        await _loadSettingsData();
+      }
+    });
   }
 
   Future<void> _loadSettingsData() async {
@@ -81,7 +90,11 @@ class _SettingsScreenState extends State<SettingsScreen>
 
     final serviceEnabled = permission && AppSettings.smartTrackingEnabled;
 
-    if (mounted) {
+    final hasAccountsChanged = _accounts.length != accountsList.length;
+    final hasCategoriesChanged = _categories.length != categoriesList.length;
+    final hasServiceChanged = _isServiceEnabled != serviceEnabled;
+
+    if (mounted && (hasAccountsChanged || hasCategoriesChanged || hasServiceChanged || _accounts.isEmpty)) {
       setState(() {
         _accounts = accountsList;
         _categories = categoriesList;
