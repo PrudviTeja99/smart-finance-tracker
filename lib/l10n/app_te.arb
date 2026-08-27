@@ -550,5 +550,12 @@
       "weekNum": { "type": "int" },
       "dateRange": { "type": "String" }
     }
-  }
+  },
+  "settingsChartTrendLinesTitle": "చార్ట్ ట్రెండ్ లైన్‌లు",
+  "settingsExpenseTrendLineTitle": "ఖర్చుల ట్రెండ్ లైన్",
+  "settingsExpenseTrendLineSubtitle": "ఖర్చుల బార్‌లను కలుపుతూ వక్రరేఖను చూపించు",
+  "settingsIncomeTrendLineTitle": "ఆదాయం ట్రెండ్ లైన్",
+  "settingsIncomeTrendLineSubtitle": "ఆదాయం బార్‌లను కలుపుతూ వక్రరేఖను చూపించు",
+  "settingsTransferTrendLineTitle": "బదిలీల ట్రెండ్ లైన్",
+  "settingsTransferTrendLineSubtitle": "బదిలీల బార్‌లను కలుపుతూ వక్రరేఖను చూపించు"
 }

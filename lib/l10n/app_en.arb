@@ -550,5 +550,12 @@
       "weekNum": { "type": "int" },
       "dateRange": { "type": "String" }
     }
-  }
+  },
+  "settingsChartTrendLinesTitle": "Chart Trend Lines",
+  "settingsExpenseTrendLineTitle": "Expense Trend Line",
+  "settingsExpenseTrendLineSubtitle": "Show curved line connecting expense bar tops",
+  "settingsIncomeTrendLineTitle": "Income Trend Line",
+  "settingsIncomeTrendLineSubtitle": "Show curved line connecting income bar tops",
+  "settingsTransferTrendLineTitle": "Transfer Trend Line",
+  "settingsTransferTrendLineSubtitle": "Show curved line connecting transfer bar tops"
 }

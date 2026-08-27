@@ -1540,4 +1540,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String barChartWeekBreakdown(int weekNum, String dateRange) {
     return 'Week $weekNum Breakdown ($dateRange)';
   }
+
+  @override
+  String get settingsChartTrendLinesTitle => 'Chart Trend Lines';
+
+  @override
+  String get settingsExpenseTrendLineTitle => 'Expense Trend Line';
+
+  @override
+  String get settingsExpenseTrendLineSubtitle =>
+      'Show curved line connecting expense bar tops';
+
+  @override
+  String get settingsIncomeTrendLineTitle => 'Income Trend Line';
+
+  @override
+  String get settingsIncomeTrendLineSubtitle =>
+      'Show curved line connecting income bar tops';
+
+  @override
+  String get settingsTransferTrendLineTitle => 'Transfer Trend Line';
+
+  @override
+  String get settingsTransferTrendLineSubtitle =>
+      'Show curved line connecting transfer bar tops';
 }
