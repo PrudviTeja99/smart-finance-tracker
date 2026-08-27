@@ -24,12 +24,10 @@ class MonthSwitcher extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isMonthBased = timeframe == 'This Month' || timeframe == 'Custom';
-
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       physics: const BouncingScrollPhysics(),
-      clipBehavior: Clip.none,
+      clipBehavior: Clip.antiAlias,
       child: Row(
         children: [
           // Timeframe / Month Selector Chip

@@ -1,3 +1,4 @@
+import 'package:finance_tracker/l10n/app_localizations.dart';
 import 'package:finance_tracker/services/database_service.dart';
 import 'package:finance_tracker/utils/app_snackbar.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +14,7 @@ Future<void> showAuditLogBottomSheet({
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
     builder: (context) {
+      final strings = AppLocalizations.of(context)!;
       return Container(
         height: MediaQuery.of(context).size.height * 0.78,
         decoration: const BoxDecoration(
@@ -43,10 +45,10 @@ Future<void> showAuditLogBottomSheet({
                   const Icon(Icons.auto_awesome,
                       color: Color(0xFF818CF8), size: 22),
                   const SizedBox(width: 10),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'On-Device Learning Algorithm Decisions',
-                      style: TextStyle(
+                      strings.inboxAuditLogTitle,
+                      style: const TextStyle(
                           color: Colors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.bold),
@@ -55,7 +57,7 @@ Future<void> showAuditLogBottomSheet({
                   IconButton(
                     icon: const Icon(Icons.delete_sweep_rounded,
                         color: Color(0xFFEF4444), size: 24),
-                    tooltip: 'Clear All',
+                    tooltip: strings.inboxClearAll,
                     onPressed: () async {
                       final confirmed = await showDialog<bool>(
                         context: context,
@@ -63,23 +65,22 @@ Future<void> showAuditLogBottomSheet({
                           backgroundColor: const Color(0xFF1E293B),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(20)),
-                          title: const Text('Clear Audit Log?',
-                              style: TextStyle(color: Colors.white)),
-                          content: const Text(
-                            'This will clear the history of automatic decisions made by your learning algorithm.\n\n'
-                            'Your learning progress and confirmed transactions will not be affected.',
-                            style: TextStyle(color: Colors.white70),
+                          title: Text(strings.inboxClearAuditLogTitle,
+                              style: const TextStyle(color: Colors.white)),
+                          content: Text(
+                            strings.inboxClearAuditLogConfirm,
+                            style: const TextStyle(color: Colors.white70),
                           ),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(context, false),
-                              child: const Text('Cancel',
-                                  style: TextStyle(color: Colors.white54)),
+                              child: Text(strings.inboxCancel,
+                                  style: const TextStyle(color: Colors.white54)),
                             ),
                             TextButton(
                               onPressed: () => Navigator.pop(context, true),
-                              child: const Text('Clear All',
-                                  style: TextStyle(
+                              child: Text(strings.inboxClearAll,
+                                  style: const TextStyle(
                                       color: Color(0xFFEF4444),
                                       fontWeight: FontWeight.bold)),
                             ),
@@ -94,7 +95,7 @@ Future<void> showAuditLogBottomSheet({
                         if (context.mounted) {
                           Navigator.pop(context);
                           AppSnackBar.show(
-                              context, 'Automatic decision log cleared.',
+                              context, strings.inboxClearedAlertsSuccess(0),
                               type: SnackBarType.neutral);
                         }
                       }
@@ -104,9 +105,9 @@ Future<void> showAuditLogBottomSheet({
               ),
 
               const SizedBox(height: 6),
-              const Text(
-                'Full transparency into automatic actions performed by your on-device learning algorithm.',
-                style: TextStyle(color: Colors.white54, fontSize: 12),
+              Text(
+                strings.inboxAuditLogSubtitle,
+                style: const TextStyle(color: Colors.white54, fontSize: 12),
               ),
               const SizedBox(height: 16),
 
@@ -122,10 +123,10 @@ Future<void> showAuditLogBottomSheet({
                     }
                     final logs = snapshot.data!;
                     if (logs.isEmpty) {
-                      return const Center(
-                        child: Text('No automated decisions logged yet today.',
+                      return Center(
+                        child: Text(strings.inboxNoAutomatedActions,
                             style:
-                                TextStyle(color: Colors.white38, fontSize: 13)),
+                                const TextStyle(color: Colors.white38, fontSize: 13)),
                       );
                     }
                     return ListView.builder(
@@ -192,8 +193,8 @@ Future<void> showAuditLogBottomSheet({
                                     ),
                                     child: Text(
                                       isDrafted
-                                          ? 'AUTO-DRAFTED'
-                                          : 'AUTO-DISMISSED',
+                                          ? strings.inboxAutoDraftedBadge
+                                          : strings.inboxAutoDismissedBadge,
                                       style: TextStyle(
                                         color: isDrafted
                                             ? const Color(0xFF34D399)
@@ -271,8 +272,8 @@ Future<void> showAuditLogBottomSheet({
                                           const SizedBox(width: 4),
                                           Text(
                                             isDrafted
-                                                ? 'Undo Auto-Draft'
-                                                : 'Undo Auto-Dismiss',
+                                                ? strings.inboxUndoAutoDraft
+                                                : strings.inboxUndoAutoDismiss,
                                             style: const TextStyle(
                                                 color: Colors.white70,
                                                 fontSize: 11,

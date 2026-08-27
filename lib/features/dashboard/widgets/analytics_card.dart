@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import '../../../models/transaction_model.dart';
 import '../../../models/category_model.dart';
+import '../../../l10n/app_localizations.dart';
 import 'donut_chart.dart';
 import 'bar_chart.dart';
 import 'category_legend.dart';
+import 'type_filter_chips.dart';
 
 class AnalyticsCard extends StatelessWidget {
   final List<TransactionModel> transactions;
   final List<CategoryModel> categories;
   final String typeFilter; // 'all', 'debit', 'credit', 'transfer'
+  final ValueChanged<String> onTypeChanged;
   final String timeframe;
   final String chartView; // 'donut', 'bar'
   final ValueChanged<String> onToggleChartView;
@@ -21,6 +24,7 @@ class AnalyticsCard extends StatelessWidget {
     required this.transactions,
     required this.categories,
     required this.typeFilter,
+    required this.onTypeChanged,
     required this.timeframe,
     required this.chartView,
     required this.onToggleChartView,
@@ -29,26 +33,78 @@ class AnalyticsCard extends StatelessWidget {
     required this.shouldHideAmounts,
   });
 
+  Widget _buildChartSegment({
+    required String label,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(7),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF6366F1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(7),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF6366F1).withValues(alpha: 0.3),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  )
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 13,
+              color: isSelected ? Colors.white : Colors.white54,
+            ),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                color: isSelected ? Colors.white : Colors.white70,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // If typeFilter is 'transfer', we don't render donut/bar breakdown
-    if (transactions.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    final categoryTotals = <int, double>{};
+    final unsortedTotals = <int, double>{};
+    final categoryCounts = <int, int>{};
     for (var tx in transactions) {
       if (typeFilter == 'all' || tx.type == typeFilter) {
-        categoryTotals[tx.categoryId] =
-            (categoryTotals[tx.categoryId] ?? 0.0) + tx.amount;
+        unsortedTotals[tx.categoryId] =
+            (unsortedTotals[tx.categoryId] ?? 0.0) + tx.amount;
+        categoryCounts[tx.categoryId] =
+            (categoryCounts[tx.categoryId] ?? 0) + 1;
       }
     }
 
+    final sortedEntries = unsortedTotals.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    final categoryTotals = Map<int, double>.fromEntries(sortedEntries);
+
+    final strings = AppLocalizations.of(context)!;
     final String sectionTitle = typeFilter == 'credit'
-        ? 'Income Analysis'
+        ? strings.dashboardIncomeAnalysis
         : (typeFilter == 'debit'
-            ? 'Expense Analysis'
-            : (typeFilter == 'transfer' ? 'Transfer Analysis' : 'All Transactions Analysis'));
+            ? strings.dashboardExpenseAnalysis
+            : (typeFilter == 'transfer' ? strings.dashboardTransferAnalysis : strings.dashboardAllTransactionsAnalysis));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -58,77 +114,47 @@ class AnalyticsCard extends StatelessWidget {
           children: [
             Text(
               sectionTitle,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
             ),
-            // Donut vs Bar View Toggle Buttons
+            // Donut vs Bar View Segmented Switcher
             Container(
               padding: const EdgeInsets.all(3),
               decoration: BoxDecoration(
-                color: const Color(0xFF1E293B),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFF334155)),
+                color: const Color(0xFF020617),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFF334155).withValues(alpha: 0.4)),
               ),
               child: Row(
                 children: [
-                  GestureDetector(
+                  _buildChartSegment(
+                    label: 'Donut',
+                    icon: Icons.pie_chart_rounded,
+                    isSelected: chartView == 'donut',
                     onTap: () => onToggleChartView('donut'),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: chartView == 'donut'
-                            ? const Color(0xFF6366F1)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        Icons.pie_chart_rounded,
-                        size: 16,
-                        color: chartView == 'donut'
-                            ? Colors.white
-                            : Colors.white54,
-                      ),
-                    ),
                   ),
-                  GestureDetector(
+                  _buildChartSegment(
+                    label: 'Bar',
+                    icon: Icons.bar_chart_rounded,
+                    isSelected: chartView == 'bar',
                     onTap: () => onToggleChartView('bar'),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: chartView == 'bar'
-                            ? const Color(0xFF6366F1)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        Icons.bar_chart_rounded,
-                        size: 16,
-                        color: chartView == 'bar'
-                            ? Colors.white
-                            : Colors.white54,
-                      ),
-                    ),
                   ),
                 ],
               ),
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 10),
+        TypeFilterChips(
+          selectedType: typeFilter,
+          onTypeChanged: onTypeChanged,
+        ),
+        const SizedBox(height: 12),
         Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFF1E293B),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.02)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            color: const Color(0xFF0F172A),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFF334155).withValues(alpha: 0.4)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -136,6 +162,7 @@ class AnalyticsCard extends StatelessWidget {
               if (chartView == 'donut') ...[
                 DonutChart(
                   categoryTotals: categoryTotals,
+                  categoryCounts: categoryCounts,
                   categories: categories,
                   typeFilter: typeFilter,
                   touchedIndex: touchedIndex,
@@ -145,11 +172,13 @@ class AnalyticsCard extends StatelessWidget {
                 const SizedBox(height: 16),
                 CategoryLegend(
                   categoryTotals: categoryTotals,
+                  categoryCounts: categoryCounts,
                   categories: categories,
                   touchedIndex: touchedIndex,
                   onCategoryTapped: onTouchIndexChanged,
                   shouldHideAmounts: shouldHideAmounts,
                 ),
+                const SizedBox(height: 4),
               ] else ...[
                 DashboardBarChart(
                   transactions: transactions,

@@ -4,6 +4,7 @@ import 'package:finance_tracker/models/transaction_model.dart';
 import 'package:finance_tracker/screens/dashboard_screen.dart';
 import 'package:finance_tracker/services/database_service.dart';
 import 'package:finance_tracker/utils/app_settings.dart';
+import 'package:finance_tracker/utils/app_formatters.dart';
 import 'package:finance_tracker/utils/app_snackbar.dart';
 import 'package:finance_tracker/utils/icon_helper.dart';
 import 'package:flutter/material.dart';
@@ -67,8 +68,12 @@ class _DraftEditorState extends State<DraftEditor> {
   @override
   Widget build(BuildContext context) {
     final selectedCategory = widget.categories.firstWhere(
-        (c) => c.id == _categoryId,
-        orElse: () => widget.categories.last);
+      (c) => c.id == _categoryId,
+      orElse: () => widget.categories.firstWhere(
+        (c) => c.name.toLowerCase() == 'others',
+        orElse: () => widget.categories.first,
+      ),
+    );
     final selectedAcc = widget.accounts.firstWhere((a) => a.id == _accountId,
         orElse: () => widget.accounts.first);
     final selectedToAcc = _type == 'transfer' && _toAccountId != null
@@ -431,7 +436,7 @@ class _DraftEditorState extends State<DraftEditor> {
               onPressed: () async {
                 final amt = double.tryParse(_amountController.text) ?? 0.0;
                 if (amt <= 0) {
-                  AppSnackBar.show(context, 'Please enter a valid amount',
+                  AppSnackBar.show(context, strings.transactionFormEnterValidAmount,
                       type: SnackBarType.warning);
                   return;
                 }
@@ -458,8 +463,8 @@ class _DraftEditorState extends State<DraftEditor> {
                   Navigator.pop(context);
                 }
               },
-              child: const Text('Verify & Confirm',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+              child: Text(strings.inboxVerifyAndConfirm,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
             ),
           ],
         ),
@@ -699,7 +704,7 @@ class _DraftEditorState extends State<DraftEditor> {
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
-                                        'Balance: ${AppSettings.currencySymbol}${acc.balance.toStringAsFixed(2)}',
+                                        'Balance: ${AppFormatters.formatAmount(acc.balance)}',
                                         style: const TextStyle(
                                           fontSize: 11,
                                           color: Colors.white54,

@@ -1,4 +1,6 @@
+import 'package:finance_tracker/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 Future<void> showMonthYearPickerSheet({
   required BuildContext context,
@@ -7,14 +9,32 @@ Future<void> showMonthYearPickerSheet({
   FocusManager.instance.primaryFocus?.unfocus();
 
   final now = DateTime.now();
-  final months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
+  final locale = Localizations.localeOf(context).toString();
+  final months = List.generate(12, (index) {
+    return DateFormat('MMMM', locale).format(DateTime(now.year, index + 1, 1));
+  });
   final years = List.generate(11, (index) => 2020 + index);
 
   int tempSelectedMonth = now.month;
   int tempSelectedYear = now.year;
+
+  // Calculate initial scroll offset to center selected item in ~300px viewport
+  const double itemHeight = 44.0;
+  const double centerOffsetMargin = 128.0;
+
+  final double initialMonthOffset =
+      ((tempSelectedMonth - 1) * itemHeight - centerOffsetMargin)
+          .clamp(0.0, 1000.0);
+  final int initialYearIndex = years.indexOf(tempSelectedYear);
+  final double initialYearOffset =
+      ((initialYearIndex >= 0 ? initialYearIndex : 0) * itemHeight -
+              centerOffsetMargin)
+          .clamp(0.0, 1000.0);
+
+  final monthScrollController =
+      ScrollController(initialScrollOffset: initialMonthOffset);
+  final yearScrollController =
+      ScrollController(initialScrollOffset: initialYearOffset);
 
   return showModalBottomSheet(
     context: context,
@@ -24,6 +44,7 @@ Future<void> showMonthYearPickerSheet({
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
     builder: (context) {
+      final strings = AppLocalizations.of(context)!;
       return StatefulBuilder(
         builder: (context, setPickerState) {
           return SafeArea(
@@ -46,9 +67,9 @@ Future<void> showMonthYearPickerSheet({
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Select Month & Year',
-                        style: TextStyle(
+                      Text(
+                        strings.pickerSelectMonthYear,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -68,9 +89,9 @@ Future<void> showMonthYearPickerSheet({
                           onMonthSelected(start, end);
                           Navigator.pop(context);
                         },
-                        child: const Text(
-                          'Apply',
-                          style: TextStyle(
+                        child: Text(
+                          strings.pickerApply,
+                          style: const TextStyle(
                             color: Color(0xFF6366F1),
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
@@ -86,6 +107,7 @@ Future<void> showMonthYearPickerSheet({
                         // Month List
                         Expanded(
                           child: ListView.builder(
+                            controller: monthScrollController,
                             itemCount: months.length,
                             itemBuilder: (context, index) {
                               final monthNum = index + 1;
@@ -128,6 +150,7 @@ Future<void> showMonthYearPickerSheet({
                         // Year List
                         Expanded(
                           child: ListView.builder(
+                            controller: yearScrollController,
                             itemCount: years.length,
                             itemBuilder: (context, index) {
                               final yearNum = years[index];

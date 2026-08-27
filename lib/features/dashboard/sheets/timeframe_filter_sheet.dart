@@ -1,3 +1,4 @@
+import 'package:finance_tracker/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -19,12 +20,12 @@ Future<void> showTimeframeFilterSheet({
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
     builder: (context) {
+      final strings = AppLocalizations.of(context)!;
       return StatefulBuilder(
         builder: (context, setSheetState) {
           final isCustom = timeframe == 'Custom';
           bool isSpecificDate = false;
           bool isSpecificMonth = false;
-          bool isDateRange = false;
 
           if (isCustom && startDate != null && endDate != null) {
             if (startDate.year == endDate.year &&
@@ -37,18 +38,15 @@ Future<void> showTimeframeFilterSheet({
                 startDate.month == endDate.month &&
                 startDate.year == endDate.year) {
               isSpecificMonth = true;
-            } else {
-              isDateRange = true;
             }
           }
 
+          final locale = Localizations.localeOf(context).toString();
+
           final dateLabel =
-              isSpecificDate ? DateFormat('dd MMM yyyy').format(startDate!) : '';
+              isSpecificDate ? DateFormat('dd MMM yyyy', locale).format(startDate!) : '';
           final monthLabel =
-              isSpecificMonth ? DateFormat('MMMM yyyy').format(startDate!) : '';
-          final rangeLabel = isDateRange
-              ? '${DateFormat('dd MMM').format(startDate!)} - ${DateFormat('dd MMM').format(endDate!)}'
-              : '';
+              isSpecificMonth ? DateFormat('MMMM yyyy', locale).format(startDate!) : '';
 
           Widget buildRadioOption(String value) {
             final now = DateTime.now();
@@ -56,19 +54,19 @@ Future<void> showTimeframeFilterSheet({
             String displayLabel = value;
 
             if (value == 'Today') {
-              displayLabel = 'Today (${now.day} ${DateFormat('MMM').format(now)})';
+              displayLabel = '${strings.timeframeToday} (${now.day} ${DateFormat('MMM', locale).format(now)})';
             } else if (value == 'Yesterday') {
               final yest = now.subtract(const Duration(days: 1));
-              displayLabel = 'Yesterday (${yest.day} ${DateFormat('MMM').format(yest)})';
+              displayLabel = '${strings.timeframeYesterday} (${yest.day} ${DateFormat('MMM', locale).format(yest)})';
             } else if (value == 'This Week') {
               final startOffset = now.weekday - 1;
               final tempStart = now.subtract(Duration(days: startOffset));
               displayLabel =
-                  'This Week (${tempStart.day} ${DateFormat('MMM').format(tempStart)} - ${now.day} ${DateFormat('MMM').format(now)})';
+                  '${strings.transactionsThisWeek} (${tempStart.day} ${DateFormat('MMM', locale).format(tempStart)} - ${now.day} ${DateFormat('MMM', locale).format(now)})';
             } else if (value == 'This Month') {
-              displayLabel = 'This Month (${DateFormat('MMMM yyyy').format(now)})';
+              displayLabel = '${strings.transactionsThisMonth} (${DateFormat('MMMM yyyy', locale).format(now)})';
             } else if (value == 'This Year') {
-              displayLabel = 'This Year (${now.year})';
+              displayLabel = '${strings.transactionsThisYear} (${now.year})';
             }
 
             return InkWell(
@@ -173,11 +171,11 @@ Future<void> showTimeframeFilterSheet({
                     ),
                   ),
                   const SizedBox(height: 20),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 24),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Text(
-                      'Select Date Filter',
-                      style: TextStyle(
+                      strings.timeframeFilterTitle,
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -195,7 +193,7 @@ Future<void> showTimeframeFilterSheet({
                     child: Divider(color: Colors.white10),
                   ),
                   buildCustomRadioOption(
-                    title: 'Specific Date...',
+                    title: strings.timeframeSpecificDate,
                     isSelected: isSpecificDate,
                     subLabel: dateLabel,
                     onTap: () async {
@@ -227,48 +225,12 @@ Future<void> showTimeframeFilterSheet({
                     },
                   ),
                   buildCustomRadioOption(
-                    title: 'Specific Month...',
+                    title: strings.timeframeSpecificMonth,
                     isSelected: isSpecificMonth,
                     subLabel: monthLabel,
                     onTap: () async {
                       Navigator.pop(context);
                       onOpenMonthYearPicker();
-                    },
-                  ),
-                  buildCustomRadioOption(
-                    title: 'Custom Date Range...',
-                    isSelected: isDateRange,
-                    subLabel: rangeLabel,
-                    onTap: () async {
-                      final range = await showDateRangePicker(
-                        context: context,
-                        firstDate: DateTime(2020),
-                        lastDate: DateTime(2030),
-                        initialDateRange: startDate != null &&
-                                endDate != null &&
-                                isDateRange
-                            ? DateTimeRange(start: startDate, end: endDate)
-                            : null,
-                        builder: (context, child) {
-                          return Theme(
-                            data: Theme.of(context).copyWith(
-                              colorScheme: const ColorScheme.dark(
-                                primary: Color(0xFF6366F1),
-                                onPrimary: Colors.white,
-                                surface: Color(0xFF1E293B),
-                                onSurface: Colors.white,
-                              ),
-                            ),
-                            child: child!,
-                          );
-                        },
-                      );
-                      if (range != null) {
-                        final s = DateTime(range.start.year, range.start.month, range.start.day);
-                        final e = DateTime(range.end.year, range.end.month, range.end.day, 23, 59, 59);
-                        onSelectTimeframe('Custom', s, e);
-                        if (context.mounted) Navigator.pop(context);
-                      }
                     },
                   ),
                 ],

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../../models/category_model.dart';
-import '../../../utils/app_settings.dart';
 
 class CategoryLegend extends StatelessWidget {
   final Map<int, double> categoryTotals;
+  final Map<int, int>? categoryCounts;
   final List<CategoryModel> categories;
   final int touchedIndex;
   final ValueChanged<int> onCategoryTapped;
@@ -12,18 +12,35 @@ class CategoryLegend extends StatelessWidget {
   const CategoryLegend({
     super.key,
     required this.categoryTotals,
+    this.categoryCounts,
     required this.categories,
     required this.touchedIndex,
     required this.onCategoryTapped,
     required this.shouldHideAmounts,
   });
 
+  /// Formats percentage with up to 2 decimal places, stripping trailing zeros.
+  /// e.g. 65.0 → "65", 0.50 → "0.5", 1.25 → "1.25"
+  static String _formatPct(double pct) {
+    if (pct == pct.roundToDouble() && pct == pct.round().toDouble()) {
+      return pct.toStringAsFixed(0);
+    }
+    final s = pct.toStringAsFixed(2);
+    // Remove trailing zeros after decimal point
+    if (s.contains('.')) {
+      final trimmed = s.replaceAll(RegExp(r'0+$'), '').replaceAll(RegExp(r'\.$'), '');
+      return trimmed;
+    }
+    return s;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (categoryTotals.isEmpty) return const SizedBox.shrink();
 
     final totalSum = categoryTotals.values.fold(0.0, (a, b) => a + b);
-    final entries = categoryTotals.entries.toList();
+    final entries = categoryTotals.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
 
     return Wrap(
       spacing: 8,
@@ -32,8 +49,13 @@ class CategoryLegend extends StatelessWidget {
       children: List.generate(entries.length, (index) {
         final entry = entries[index];
         final isSelected = index == touchedIndex;
-        final category = categories.firstWhere((c) => c.id == entry.key,
-            orElse: () => categories.last);
+        final category = categories.firstWhere(
+          (c) => c.id == entry.key,
+          orElse: () => categories.firstWhere(
+            (c) => c.name.toLowerCase() == 'others',
+            orElse: () => categories.first,
+          ),
+        );
         final value = entry.value;
         final percentage = totalSum > 0 ? (value / totalSum) * 100 : 0.0;
         final catColor = Color(category.color);
@@ -72,22 +94,11 @@ class CategoryLegend extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  '${category.name} (${percentage.toStringAsFixed(0)}%)',
+                  '${category.name} (${_formatPct(percentage)}%)',
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                     color: isSelected ? Colors.white : Colors.white70,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  shouldHideAmounts
-                      ? '${AppSettings.currencySymbol}••••'
-                      : '${AppSettings.currencySymbol}${entry.value.toStringAsFixed(0)}',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: isSelected ? catColor : Colors.white,
                   ),
                 ),
               ],

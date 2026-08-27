@@ -7,19 +7,25 @@ import '../models/category_model.dart';
 import '../services/database_service.dart';
 import '../services/backup_service.dart';
 import '../services/notification_handler.dart';
+import '../services/app_language_service.dart';
+import '../l10n/app_localizations.dart';
 import '../utils/transaction_parser.dart';
 import '../utils/bio_tagger.dart';
 import '../utils/app_settings.dart';
 import '../utils/icon_helper.dart';
 import '../utils/app_snackbar.dart';
+import '../utils/app_formatters.dart';
 import '../services/perceptron_storage_service.dart';
 import 'archived_alerts_screen.dart';
 import 'model_training_screen.dart';
+import '../shared/sheets/manage_categories_sheet.dart';
 import 'package:flutter/cupertino.dart';
 import 'developer/log_inspector_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key});
+  final bool isActive;
+
+  const SettingsScreen({super.key, required this.isActive});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -46,7 +52,15 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
+    if (state == AppLifecycleState.resumed && widget.isActive) {
+      _loadSettingsData();
+    }
+  }
+
+  @override
+  void didUpdateWidget(SettingsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActive && !oldWidget.isActive) {
       _loadSettingsData();
     }
   }
@@ -96,6 +110,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       }
     } else {
       // Confirmation dialog before disabling
+      final strings = AppLocalizations.of(context)!;
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
@@ -104,26 +119,23 @@ class _SettingsScreenState extends State<SettingsScreen>
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           icon: const Icon(Icons.warning_amber_rounded,
               color: Color(0xFFF59E0B), size: 36),
-          title: const Text('Disable Smart Tracking?',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
-          content: const Text(
-            'The app will stop listening to incoming notifications in the background. '
-            'New transactions will not be captured automatically until you re-enable this.\n\n'
-            'Archived alerts, automation logs, and processed queue data will be cleaned up in the background. '
-            'Your confirmed transactions and learned AI model weights will be preserved.',
-            style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.5),
+          title: Text(strings.settingsDisableSmartTrackingTitle,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+          content: Text(
+            strings.settingsDisableSmartTrackingDescription,
+            style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.5),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Keep Enabled',
-                  style: TextStyle(
+              child: Text(strings.settingsKeepEnabled,
+                  style: const TextStyle(
                       color: Colors.white54, fontWeight: FontWeight.bold)),
             ),
             TextButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Disable',
-                  style: TextStyle(
+              child: Text(strings.settingsDisable,
+                  style: const TextStyle(
                       color: Color(0xFFEF4444), fontWeight: FontWeight.bold)),
             ),
           ],
@@ -151,43 +163,445 @@ class _SettingsScreenState extends State<SettingsScreen>
     _loadSettingsData();
   }
 
-  // Trigger JSON file restore picker
-  Future<void> _importJSONBackup() async {
+  void _showExportFormatSheet() {
+    final strings = AppLocalizations.of(context)!;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF0F172A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                strings.settingsExportFormatTitle,
+                style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                strings.settingsExportFormatSubtitle,
+                style: const TextStyle(fontSize: 12, color: Colors.white54),
+              ),
+              const SizedBox(height: 20),
+              ListTile(
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                tileColor: const Color(0xFF1E293B),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF6366F1).withOpacity(0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.code_rounded,
+                      color: Color(0xFF6366F1), size: 22),
+                ),
+                title: Text(strings.settingsExportJsonTitle,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, color: Colors.white)),
+                subtitle: Text(
+                    strings.settingsExportJsonSubtitle,
+                    style: const TextStyle(fontSize: 11, color: Colors.white54)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showExportDestinationSheet(ExportFormat.json);
+                },
+              ),
+              const SizedBox(height: 12),
+              ListTile(
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                tileColor: const Color(0xFF1E293B),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981).withOpacity(0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.table_chart_rounded,
+                      color: Color(0xFF10B981), size: 22),
+                ),
+                title: Text(strings.settingsExportCsvTitle,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, color: Colors.white)),
+                subtitle: Text(
+                    strings.settingsExportCsvSubtitle,
+                    style: const TextStyle(fontSize: 11, color: Colors.white54)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showExportDestinationSheet(ExportFormat.csv);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showExportDestinationSheet(ExportFormat format) {
+    final strings = AppLocalizations.of(context)!;
+    final formatName = format == ExportFormat.json ? 'JSON' : 'CSV';
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF0F172A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                strings.settingsExportDestinationTitle(formatName),
+                style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                strings.settingsExportDestinationSubtitle,
+                style: const TextStyle(fontSize: 12, color: Colors.white54),
+              ),
+              const SizedBox(height: 20),
+              ListTile(
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                tileColor: const Color(0xFF1E293B),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF38BDF8).withOpacity(0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.save_alt_rounded,
+                      color: Color(0xFF38BDF8), size: 22),
+                ),
+                title: Text(strings.settingsSaveLocally,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, color: Colors.white)),
+                subtitle: Text(
+                    strings.settingsSaveLocallySubtitle,
+                    style: const TextStyle(fontSize: 11, color: Colors.white54)),
+                onTap: () async {
+                  Navigator.pop(context);
+                  String? path;
+                  if (format == ExportFormat.json) {
+                    path = await BackupService.exportBackupJSON(
+                        destination: ExportDestination.saveLocally);
+                  } else {
+                    path = await BackupService.exportToCSV(
+                        destination: ExportDestination.saveLocally);
+                  }
+                  if (mounted) {
+                    if (path != null) {
+                      AppSnackBar.show(context, strings.settingsFileSavedTo(path),
+                          type: SnackBarType.success);
+                    } else {
+                      AppSnackBar.show(
+                          context, strings.settingsExportCanceled,
+                          type: SnackBarType.neutral);
+                    }
+                  }
+                },
+              ),
+              const SizedBox(height: 12),
+              ListTile(
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                tileColor: const Color(0xFF1E293B),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEA80FC).withOpacity(0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.share_rounded,
+                      color: Color(0xFFEA80FC), size: 22),
+                ),
+                title: Text(strings.settingsShareViaApps,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, color: Colors.white)),
+                subtitle: Text(
+                    strings.settingsShareViaAppsSubtitle,
+                    style: const TextStyle(fontSize: 11, color: Colors.white54)),
+                onTap: () async {
+                  Navigator.pop(context);
+                  if (format == ExportFormat.json) {
+                    await BackupService.exportBackupJSON(
+                        destination: ExportDestination.share);
+                  } else {
+                    await BackupService.exportToCSV(
+                        destination: ExportDestination.share);
+                  }
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _handleImportWorkflow() async {
     try {
+      // Step 1: Pick file
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['json'],
+        allowedExtensions: ['json', 'csv'],
       );
 
-      if (result != null && result.files.single.path != null) {
-        final file = File(result.files.single.path!);
-        final jsonContent = await file.readAsString();
-        final success = await BackupService.restoreBackupJSON(jsonContent);
+      if (result == null || result.files.single.path == null) return;
 
+      final filePath = result.files.single.path!;
+      final fileName = result.files.single.name;
+      final isJson = filePath.toLowerCase().endsWith('.json');
+      final isCsv = filePath.toLowerCase().endsWith('.csv');
+
+      if (!isJson && !isCsv) {
         if (mounted) {
-          AppSnackBar.show(
-            context,
-            success
-                ? 'Database restored successfully!'
-                : 'Invalid backup file.',
-            type: success ? SnackBarType.success : SnackBarType.error,
-          );
-          if (success) {
-            _loadSettingsData();
-          }
+          final strings = AppLocalizations.of(context)!;
+          AppSnackBar.show(context,
+              strings.settingsInvalidFileFormat,
+              type: SnackBarType.warning);
         }
+        return;
       }
+
+      final file = File(filePath);
+      final content = await file.readAsString();
+
+      if (!mounted) return;
+
+      // Step 2: Show Import Mode Selection Sheet (Append vs Override)
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: const Color(0xFF0F172A),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        builder: (context) {
+          final strings = AppLocalizations.of(context)!;
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.white24,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  strings.settingsImportDataTitle,
+                  style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  strings.settingsImportSelected(fileName),
+                  style:
+                      const TextStyle(fontSize: 12, color: Color(0xFF6366F1)),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 20),
+                ListTile(
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  tileColor: const Color(0xFF1E293B),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16)),
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withOpacity(0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.add_circle_outline_rounded,
+                        color: Color(0xFF10B981), size: 22),
+                  ),
+                  title: Text(strings.settingsAppendToExisting,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, color: Colors.white)),
+                  subtitle: Text(
+                      strings.settingsAppendSubtitle,
+                      style: const TextStyle(fontSize: 11, color: Colors.white54)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _executeImport(content,
+                        isJson: isJson, isCsv: isCsv, mode: ImportMode.append);
+                  },
+                ),
+                const SizedBox(height: 12),
+                ListTile(
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  tileColor: const Color(0xFF1E293B),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16)),
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEF4444).withOpacity(0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.warning_amber_rounded,
+                        color: Color(0xFFEF4444), size: 22),
+                  ),
+                  title: Text(strings.settingsOverrideReplaceAll,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFFCA5A5))),
+                  subtitle: Text(
+                      strings.settingsOverrideSubtitle,
+                      style: const TextStyle(fontSize: 11, color: Colors.white54)),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        backgroundColor: const Color(0xFF1E293B),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20)),
+                        icon: const Icon(Icons.warning_amber_rounded,
+                            color: Color(0xFFEF4444), size: 36),
+                        title: Text(strings.settingsConfirmDataOverrideTitle,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 17)),
+                        content: Text(
+                            strings.settingsConfirmDataOverrideDescription),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: Text(strings.settingsCancel,
+                                style: const TextStyle(color: Colors.white60)),
+                          ),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFEF4444),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10)),
+                            ),
+                            onPressed: () => Navigator.pop(context, true),
+                            child: Text(strings.settingsReplaceAll),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (confirm == true) {
+                      _executeImport(content,
+                          isJson: isJson,
+                          isCsv: isCsv,
+                          mode: ImportMode.override);
+                    }
+                  },
+                ),
+              ],
+            ),
+          );
+        },
+      );
     } catch (e) {
-      debugPrint('Restore file picker error: $e');
+      debugPrint('Import file picker error: $e');
+      if (mounted) {
+        final strings = AppLocalizations.of(context)!;
+        AppSnackBar.show(context, strings.settingsFailedToReadImportFile,
+            type: SnackBarType.error);
+      }
+    }
+  }
+
+  Future<void> _executeImport(
+    String content, {
+    required bool isJson,
+    required bool isCsv,
+    required ImportMode mode,
+  }) async {
+    bool success = false;
+    if (isJson) {
+      success = await BackupService.importBackupJSON(content, mode: mode);
+    } else if (isCsv) {
+      success = await BackupService.importFromCSV(content, mode: mode);
+    }
+
+    if (mounted) {
+      final strings = AppLocalizations.of(context)!;
+      AppSnackBar.show(
+        context,
+        success
+            ? (mode == ImportMode.override
+                ? strings.settingsDatabaseReplacedSuccess
+                : strings.settingsDataImportedSuccess)
+            : strings.settingsInvalidImportFile,
+        type: success ? SnackBarType.success : SnackBarType.error,
+      );
+      if (success) {
+        _loadSettingsData();
+      }
     }
   }
 
   void _showDurationPickerSheet() {
     int tempValue = AppSettings.autoDeleteValue;
-    String tempUnit = AppSettings.autoDeleteUnit;
+    String tempUnit = AppSettings.autoDeleteUnit == 'years' ? 'months' : AppSettings.autoDeleteUnit;
 
-    final units = ['days', 'months', 'years'];
-    final unitIndex = units.indexOf(tempUnit).clamp(0, 2);
+    final units = ['days', 'months'];
+    final unitIndex = units.indexOf(tempUnit).clamp(0, 1);
 
     final valueScrollController =
         FixedExtentScrollController(initialItem: tempValue - 1);
@@ -207,6 +621,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       ),
       builder: (context) => StatefulBuilder(
         builder: (context, setSheetState) {
+          final strings = AppLocalizations.of(context)!;
           void onTextChanged() {
             if (isUpdatingFromWheel) return;
             isUpdatingFromText = true;
@@ -241,9 +656,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Auto-Delete Retention',
-                        style: TextStyle(
+                      Text(
+                        strings.settingsAutoDeleteRetentionTitle,
+                        style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: Colors.white),
@@ -256,9 +671,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                     ],
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    'Select or type the age of alerts to permanently remove.',
-                    style: TextStyle(fontSize: 12, color: Colors.white38),
+                  Text(
+                    strings.settingsAutoDeleteRetentionSubtitle,
+                    style: const TextStyle(fontSize: 12, color: Colors.white38),
                   ),
                   const SizedBox(height: 20),
 
@@ -393,8 +808,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                       }
                       setState(() {});
                     },
-                    child: const Text('Save Retention Period',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: Text(strings.settingsSaveRetentionPeriod,
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
                   ),
                   const SizedBox(height: 20),
                 ],
@@ -408,12 +823,11 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   @override
   Widget build(BuildContext context) {
-    _loadSettingsData(); // Lazy refresh
-
+    final strings = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings',
-            style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(strings.settingsTitle,
+            style: const TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -438,237 +852,241 @@ class _SettingsScreenState extends State<SettingsScreen>
             children: [
               // 1. Preferences Card (Top)
               _buildSettingsGroup(
-                title: 'Preferences',
+                title: strings.settingsPreferences,
                 icon: Icons.tune_rounded,
                 children: [
                   ListTile(
-                    leading: const Icon(Icons.account_balance_wallet_rounded,
-                        color: Color(0xFF6366F1)),
-                    title: const Text('Manage Payment Accounts',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text('${_accounts.length} active accounts',
+                    leading: _buildLeadingIcon(Icons.account_balance_wallet_rounded, color: const Color(0xFF3B82F6)),
+                    title: Text(strings.settingsManageAccounts,
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text(strings.settingsActiveAccounts(_accounts.length),
                         style: const TextStyle(fontSize: 11)),
                     trailing: const Icon(Icons.arrow_forward_ios_rounded,
                         size: 16, color: Colors.white54),
                     onTap: _showManageAccountsSheet,
                   ),
-                  const Divider(color: Colors.white10),
+                  Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
                   ListTile(
-                    leading: const Icon(Icons.category_rounded,
-                        color: Color(0xFF6366F1)),
-                    title: const Text('Manage Transaction Categories',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text('${_categories.length} active categories',
+                    leading: _buildLeadingIcon(Icons.category_rounded, color: const Color(0xFFA855F7)),
+                    title: Text(strings.settingsManageCategories,
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text(strings.settingsActiveCategories(_categories.length),
                         style: const TextStyle(fontSize: 11)),
                     trailing: const Icon(Icons.arrow_forward_ios_rounded,
                         size: 16, color: Colors.white54),
                     onTap: _showManageCategoriesSheet,
                   ),
-                  const Divider(color: Colors.white10),
+                  Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
                   ListTile(
-                    leading: const Icon(Icons.monetization_on_rounded,
-                        color: Color(0xFF6366F1)),
-                    title: const Text('Currency Symbol',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: const Text('Display currency across the app',
-                        style: TextStyle(fontSize: 11)),
-                    trailing: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF6366F1).withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                            color: const Color(0xFF6366F1).withOpacity(0.25)),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: AppSettings.currencySymbol,
-                          dropdownColor: const Color(0xFF1E293B),
-                          isDense: true,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF6366F1),
-                            fontSize: 13,
-                          ),
-                          icon: const Padding(
-                            padding: EdgeInsets.only(left: 4),
-                            child: Icon(Icons.arrow_drop_down,
-                                color: Color(0xFF6366F1), size: 18),
-                          ),
-                          items: const [
-                            DropdownMenuItem(
-                                value: '₹', child: Text('INR (₹)')),
-                            DropdownMenuItem(
-                                value: '\$', child: Text('USD (\$)')),
-                            DropdownMenuItem(
-                                value: '€', child: Text('EUR (€)')),
-                            DropdownMenuItem(
-                                value: '£', child: Text('GBP (£)')),
-                            DropdownMenuItem(
-                                value: '¥', child: Text('JPY/CNY (¥)')),
-                            DropdownMenuItem(
-                                value: '₩', child: Text('KRW (₩)')),
-                          ],
-                          onChanged: (val) async {
-                            if (val != null) {
-                              await AppSettings.setCurrencySymbol(val);
-                              setState(() {});
-                            }
-                          },
-                        ),
-                      ),
+                    leading: _buildLeadingIcon(Icons.language_rounded, color: const Color(0xFF14B8A6)),
+                    title: Text(strings.settingsAppLanguage,
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text(
+                      strings.settingsAppLanguageSubtitle,
+                      style: const TextStyle(fontSize: 11),
                     ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF6366F1).withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.25)),
+                          ),
+                          child: Text(
+                            AppLanguageService.instance.selectedLanguage.code == 'te'
+                                ? strings.languageTelugu
+                                : strings.languageEnglish,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF818CF8),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.white38),
+                      ],
+                    ),
+                    onTap: _showLanguageSelectionSheet,
                   ),
-                  const Divider(color: Colors.white10),
+                  Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
+                  ListTile(
+                    leading: _buildLeadingIcon(Icons.monetization_on_rounded, color: const Color(0xFF10B981)),
+                    title: Text(strings.settingsCurrencySymbol,
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text(strings.settingsCurrencySymbolSubtitle,
+                        style: const TextStyle(fontSize: 11)),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF6366F1).withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.25)),
+                          ),
+                          child: Text(
+                            AppSettings.currencySymbol == '₹'
+                                ? 'INR (₹)'
+                                : (AppSettings.currencySymbol == '\$'
+                                    ? 'USD (\$)'
+                                    : (AppSettings.currencySymbol == '€'
+                                        ? 'EUR (€)'
+                                        : (AppSettings.currencySymbol == '£'
+                                            ? 'GBP (£)'
+                                            : (AppSettings.currencySymbol == '¥'
+                                                ? 'JPY/CNY (¥)'
+                                                : 'KRW (₩)')))),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF818CF8),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.white38),
+                      ],
+                    ),
+                    onTap: _showCurrencySelectionSheet,
+                  ),
+                  Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
+                  ListTile(
+                    leading: _buildLeadingIcon(Icons.pin_rounded, color: const Color(0xFFF59E0B)),
+                    title: Text(strings.settingsNumberFormat,
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text(strings.settingsNumberFormatSubtitle,
+                        style: const TextStyle(fontSize: 11)),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF6366F1).withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.25)),
+                          ),
+                          child: Text(
+                            AppSettings.numberLocale == 'en_IN'
+                                ? 'Indian (12,34,567)'
+                                : (AppSettings.numberLocale == 'en_US'
+                                    ? 'Standard (1,234,567)'
+                                    : (AppSettings.numberLocale == 'de_DE'
+                                        ? 'European (1.234.567)'
+                                        : (AppSettings.numberLocale == 'en_GB'
+                                            ? 'UK (1,234,567)'
+                                            : 'Auto (System)'))),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF818CF8),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.white38),
+                      ],
+                    ),
+                    onTap: _showNumberFormatSelectionSheet,
+                  ),
+                  Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
                   SwitchListTile(
-                    title: const Text('Auto-Hide Balances on Entry',
-                        style: TextStyle(
+                    title: Text(strings.settingsAutoHideBalances,
+                        style: const TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 14)),
-                    subtitle: const Text(
-                        'Masks Dashboard values when app opens',
-                        style: TextStyle(fontSize: 11)),
+                    subtitle: Text(strings.settingsAutoHideBalancesSubtitle,
+                        style: const TextStyle(fontSize: 11)),
                     value: AppSettings.autoHideEnabled,
                     activeColor: const Color(0xFF6366F1),
-                    secondary: const Icon(Icons.visibility_off_rounded,
-                        color: Color(0xFF6366F1)),
+                    secondary: _buildLeadingIcon(Icons.visibility_off_rounded, color: const Color(0xFFF43F5E)),
                     onChanged: (val) async {
                       await AppSettings.setAutoHideEnabled(val);
                       setState(() {});
                     },
                   ),
-                  if (AppSettings.autoHideEnabled)
-                    Container(
-                      margin: const EdgeInsets.only(
-                          left: 56, right: 16, bottom: 12),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(12),
-                        border:
-                            Border.all(color: Colors.white.withOpacity(0.02)),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  if (AppSettings.autoHideEnabled) ...[
+                    Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
+                    ListTile(
+                      leading: _buildLeadingIcon(Icons.timer_rounded, color: const Color(0xFF6366F1)),
+                      title: Text(strings.settingsHideDuration,
+                          style: const TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: Text(strings.settingsAutoHideBalancesSubtitle,
+                          style: const TextStyle(fontSize: 11)),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Text(
-                            'Hide Duration',
-                            style: TextStyle(
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF6366F1).withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.25)),
+                            ),
+                            child: Text(
+                              '${AppSettings.autoHideSeconds} ${AppSettings.autoHideSeconds == 1 ? "second" : "seconds"}',
+                              style: const TextStyle(
                                 fontWeight: FontWeight.bold,
-                                fontSize: 13,
-                                color: Colors.white70),
+                                color: Color(0xFF818CF8),
+                                fontSize: 12,
+                              ),
+                            ),
                           ),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: Icon(
-                                  Icons.remove_circle_outline,
-                                  color: AppSettings.autoHideSeconds > 1
-                                      ? Colors.white60
-                                      : Colors.white24,
-                                  size: 22,
-                                ),
-                                onPressed: AppSettings.autoHideSeconds > 1
-                                    ? () async {
-                                        await AppSettings.setAutoHideSeconds(
-                                            AppSettings.autoHideSeconds - 1);
-                                        setState(() {});
-                                      }
-                                    : null,
-                              ),
-                              const SizedBox(width: 4),
-                              Container(
-                                width: 56,
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  color:
-                                      const Color(0xFF6366F1).withOpacity(0.12),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                      color: const Color(0xFF6366F1)
-                                          .withOpacity(0.25)),
-                                ),
-                                child: DropdownButtonHideUnderline(
-                                  child: DropdownButton<int>(
-                                    value: AppSettings.autoHideSeconds,
-                                    dropdownColor: const Color(0xFF1E293B),
-                                    icon: const SizedBox.shrink(),
-                                    alignment: Alignment.center,
-                                    isDense: true,
-                                    padding:
-                                        const EdgeInsets.symmetric(vertical: 8),
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF6366F1),
-                                      fontSize: 13,
-                                    ),
-                                    items: (() {
-                                      final presets = [
-                                        1,
-                                        2,
-                                        3,
-                                        5,
-                                        10,
-                                        15,
-                                        30,
-                                        45,
-                                        60
-                                      ];
-                                      final currentVal =
-                                          AppSettings.autoHideSeconds;
-                                      final itemsList =
-                                          presets.contains(currentVal)
-                                              ? presets
-                                              : (List<int>.from(presets)
-                                                ..add(currentVal)
-                                                ..sort());
-                                      return itemsList.map((val) {
-                                        return DropdownMenuItem<int>(
-                                          value: val,
-                                          child: Center(
-                                            child: Text(
-                                              '${val}s',
-                                              style: const TextStyle(
-                                                  fontWeight: FontWeight.bold),
-                                            ),
-                                          ),
-                                        );
-                                      }).toList();
-                                    })(),
-                                    onChanged: (val) async {
-                                      if (val != null) {
-                                        await AppSettings.setAutoHideSeconds(
-                                            val);
-                                        setState(() {});
-                                      }
-                                    },
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              IconButton(
-                                icon: Icon(
-                                  Icons.add_circle_outline,
-                                  color: AppSettings.autoHideSeconds < 60
-                                      ? Colors.white60
-                                      : Colors.white24,
-                                  size: 22,
-                                ),
-                                onPressed: AppSettings.autoHideSeconds < 60
-                                    ? () async {
-                                        await AppSettings.setAutoHideSeconds(
-                                            AppSettings.autoHideSeconds + 1);
-                                        setState(() {});
-                                      }
-                                    : null,
-                              ),
-                            ],
-                          ),
+                          const SizedBox(width: 6),
+                          const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.white38),
                         ],
                       ),
+                      onTap: _showHideDurationSelectionSheet,
                     ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Chart Trend Lines Preferences
+              _buildSettingsGroup(
+                title: 'Chart Trend Lines',
+                icon: Icons.show_chart_rounded,
+                children: [
+                  SwitchListTile(
+                    secondary: _buildLeadingIcon(Icons.trending_down_rounded, color: const Color(0xFFEF4444)),
+                    title: const Text('Expense Trend Line', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    subtitle: const Text('Show curved line connecting expense bar tops', style: TextStyle(fontSize: 11)),
+                    value: AppSettings.showExpenseTrendLine,
+                    activeColor: const Color(0xFFEF4444),
+                    onChanged: (val) async {
+                      await AppSettings.setShowExpenseTrendLine(val);
+                      setState(() {});
+                    },
+                  ),
+                  Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
+                  SwitchListTile(
+                    secondary: _buildLeadingIcon(Icons.trending_up_rounded, color: const Color(0xFF10B981)),
+                    title: const Text('Income Trend Line', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    subtitle: const Text('Show curved line connecting income bar tops', style: TextStyle(fontSize: 11)),
+                    value: AppSettings.showIncomeTrendLine,
+                    activeColor: const Color(0xFF10B981),
+                    onChanged: (val) async {
+                      await AppSettings.setShowIncomeTrendLine(val);
+                      setState(() {});
+                    },
+                  ),
+                  Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
+                  SwitchListTile(
+                    secondary: _buildLeadingIcon(Icons.swap_horiz_rounded, color: const Color(0xFF38BDF8)),
+                    title: const Text('Transfer Trend Line', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    subtitle: const Text('Show curved line connecting transfer bar tops', style: TextStyle(fontSize: 11)),
+                    value: AppSettings.showTransferTrendLine,
+                    activeColor: const Color(0xFF38BDF8),
+                    onChanged: (val) async {
+                      await AppSettings.setShowTransferTrendLine(val);
+                      setState(() {});
+                    },
+                  ),
                 ],
               ),
               const SizedBox(height: 16),
@@ -679,43 +1097,31 @@ class _SettingsScreenState extends State<SettingsScreen>
 
               // 2. Data & Backups (Middle)
               _buildSettingsGroup(
-                title: 'Data & Backups',
+                title: strings.settingsDataAndBackups,
                 icon: Icons.sync_rounded,
                 children: [
                   ListTile(
-                    leading: const Icon(Icons.table_rows_rounded,
-                        color: Color(0xFF10B981)),
-                    title: const Text('Export Ledger to CSV',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: const Text(
-                        'Share transactions as Excel-compatible file',
-                        style: TextStyle(fontSize: 11)),
-                    onTap: () async {
-                      await BackupService.exportToCSV();
-                    },
+                    leading: _buildLeadingIcon(Icons.upload_rounded, color: const Color(0xFF0EA5E9)),
+                    title: Text(strings.settingsExportDataBackup,
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text(
+                        strings.settingsExportSubtitle,
+                        style: const TextStyle(fontSize: 11, color: Colors.white54)),
+                    trailing: const Icon(Icons.arrow_forward_ios_rounded,
+                        size: 16, color: Colors.white54),
+                    onTap: _showExportFormatSheet,
                   ),
-                  const Divider(color: Colors.white10),
+                  Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
                   ListTile(
-                    leading:
-                        const Icon(Icons.download, color: Color(0xFF6366F1)),
-                    title: const Text('Backup Data (JSON)',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: const Text(
-                        'Generate database backup file to share',
-                        style: TextStyle(fontSize: 11)),
-                    onTap: () async {
-                      await BackupService.exportBackupJSON();
-                    },
-                  ),
-                  const Divider(color: Colors.white10),
-                  ListTile(
-                    leading: const Icon(Icons.upload, color: Color(0xFFEA80FC)),
-                    title: const Text('Restore Data (JSON)',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: const Text(
-                        'Select JSON backup file to overwrite database',
-                        style: TextStyle(fontSize: 11)),
-                    onTap: _importJSONBackup,
+                    leading: _buildLeadingIcon(Icons.download_rounded, color: const Color(0xFF10B981)),
+                    title: Text(strings.settingsImportDataRestore,
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text(
+                        strings.settingsImportSubtitle,
+                        style: const TextStyle(fontSize: 11, color: Colors.white54)),
+                    trailing: const Icon(Icons.arrow_forward_ios_rounded,
+                        size: 16, color: Colors.white54),
+                    onTap: _handleImportWorkflow,
                   ),
                 ],
               ),
@@ -748,6 +1154,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setSheetState) {
+            final strings = AppLocalizations.of(context)!;
             IconData getIcon(String type) {
               switch (type) {
                 case 'bank':
@@ -770,9 +1177,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Manage Accounts',
-                        style: TextStyle(
+                      Text(
+                        strings.settingsManageAccountsTitle,
+                        style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                             color: Colors.white),
@@ -805,10 +1212,10 @@ class _SettingsScreenState extends State<SettingsScreen>
                   const SizedBox(height: 16),
                   Expanded(
                     child: _accounts.isEmpty
-                        ? const Center(
+                        ? Center(
                             child: Text(
-                              'No accounts yet. Tap + to add one.',
-                              style: TextStyle(color: Colors.white38),
+                              strings.settingsNoAccountsYet,
+                              style: const TextStyle(color: Colors.white38),
                             ),
                           )
                         : ListView.builder(
@@ -935,151 +1342,20 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   void _showManageCategoriesSheet() {
-    showModalBottomSheet(
+    showManageCategoriesSheet(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: const Color(0xFF0F172A),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      onCategoriesChanged: _loadSettingsData,
+    );
+  }
+
+  Widget _buildLeadingIcon(IconData icon, {Color color = const Color(0xFF818CF8), Color? bg}) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: bg ?? color.withValues(alpha: 0.12),
+        shape: BoxShape.circle,
       ),
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            return Container(
-              height: MediaQuery.of(context).size.height * 0.85,
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Manage Categories',
-                        style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white),
-                      ),
-                      Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.add_circle,
-                                color: Color(0xFF10B981), size: 28),
-                            onPressed: () async {
-                              await _openCategoryFormDialog(null);
-                              final dbService = DatabaseService.instance;
-                              final categoriesList =
-                                  await dbService.getAllCategories();
-                              setState(() {
-                                _categories = categoriesList;
-                              });
-                              setSheetState(() {});
-                            },
-                          ),
-                          IconButton(
-                            icon:
-                                const Icon(Icons.close, color: Colors.white70),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Expanded(
-                    child: _categories.isEmpty
-                        ? const Center(
-                            child: Text(
-                              'No categories yet. Tap + to add one.',
-                              style: TextStyle(color: Colors.white38),
-                            ),
-                          )
-                        : ListView.builder(
-                            itemCount: _categories.length,
-                            itemBuilder: (context, index) {
-                              final cat = _categories[index];
-                              return Container(
-                                margin: const EdgeInsets.symmetric(vertical: 6),
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF1E293B),
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                      color: Colors.white.withOpacity(0.03)),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(10),
-                                      decoration: BoxDecoration(
-                                        color:
-                                            Color(cat.color).withOpacity(0.15),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Icon(IconHelper.getIcon(cat.icon),
-                                          color: Color(cat.color), size: 20),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Text(
-                                        cat.name,
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 14),
-                                      ),
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.edit,
-                                          size: 18, color: Colors.white60),
-                                      onPressed: () async {
-                                        await _openCategoryFormDialog(cat);
-                                        final dbService =
-                                            DatabaseService.instance;
-                                        final categoriesList =
-                                            await dbService.getAllCategories();
-                                        setState(() {
-                                          _categories = categoriesList;
-                                        });
-                                        setSheetState(() {});
-                                      },
-                                    ),
-                                    if (cat.name != 'Others')
-                                      IconButton(
-                                        icon: const Icon(Icons.delete,
-                                            size: 18, color: Color(0xFFEF4444)),
-                                        onPressed: () async {
-                                          final confirm =
-                                              await _showConfirmDeleteDialog(
-                                                  cat.name);
-                                          if (confirm == true) {
-                                            await DatabaseService.instance
-                                                .deleteCategory(cat.id!);
-                                            final dbService =
-                                                DatabaseService.instance;
-                                            final categoriesList =
-                                                await dbService
-                                                    .getAllCategories();
-                                            setState(() {
-                                              _categories = categoriesList;
-                                            });
-                                            setSheetState(() {});
-                                            _loadSettingsData();
-                                          }
-                                        },
-                                      ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
+      child: Icon(icon, color: color, size: 20),
     );
   }
 
@@ -1095,28 +1371,33 @@ class _SettingsScreenState extends State<SettingsScreen>
           padding: const EdgeInsets.only(left: 8, top: 20, bottom: 8),
           child: Row(
             children: [
-              Icon(icon, color: const Color(0xFF6366F1), size: 16),
+              Icon(icon, color: const Color(0xFF818CF8), size: 16),
               const SizedBox(width: 8),
               Text(
                 title.toUpperCase(),
                 style: const TextStyle(
                   fontWeight: FontWeight.w700,
                   fontSize: 11,
-                  color: Color(0xFF64748B), // Slate 500
+                  color: Color(0xFF94A3B8), // Slate 400
                   letterSpacing: 1.5,
                 ),
               ),
             ],
           ),
         ),
-        Card(
+        Material(
           color: const Color(0xFF1E293B),
-          margin: EdgeInsets.zero,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Column(children: children),
+          borderRadius: BorderRadius.circular(20),
+          clipBehavior: Clip.antiAlias,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFF334155).withValues(alpha: 0.5)),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Column(children: children),
+            ),
           ),
         ),
       ],
@@ -1130,87 +1411,143 @@ class _SettingsScreenState extends State<SettingsScreen>
     required String description,
     required String buttonText,
     required VoidCallback onTap,
+    bool isHighlyRecommended = false,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: const Color(0xFF6366F1), size: 20),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                  color: Colors.white,
+            Row(
+              children: [
+                _buildLeadingIcon(icon, color: const Color(0xFF818CF8)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
+                const Icon(Icons.chevron_right_rounded,
+                    color: Color(0xFF94A3B8), size: 20),
+              ],
+            ),
+            if (isHighlyRecommended) ...[
+              const SizedBox(height: 6),
+              Padding(
+                padding: const EdgeInsets.only(left: 46),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                        color: const Color(0xFFF59E0B).withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.star_rounded,
+                        size: 11,
+                        color: Color(0xFFF59E0B),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        AppLocalizations.of(context)!
+                            .settingsHighlyRecommendedTag
+                            .toUpperCase(),
+                        style: const TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFF59E0B),
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 6),
+            Padding(
+              padding: const EdgeInsets.only(left: 46),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    description,
+                    style: const TextStyle(
+                      color: Colors.white54,
+                      fontSize: 11,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF6366F1).withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: const Color(0xFF6366F1).withValues(alpha: 0.35),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          buttonText,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF818CF8),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        const Icon(
+                          Icons.arrow_forward_rounded,
+                          size: 14,
+                          color: Color(0xFF818CF8),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
         ),
-        const SizedBox(height: 8),
-        Text(
-          description,
-          style: const TextStyle(
-            color: Colors.white54,
-            fontSize: 12,
-            height: 1.4,
-          ),
-        ),
-        const SizedBox(height: 12),
-        InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(8),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(
-              color: const Color(0xFF6366F1).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: const Color(0xFF6366F1).withOpacity(0.3),
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.settings_rounded,
-                    size: 16, color: Color(0xFF818CF8)),
-                const SizedBox(width: 8),
-                Text(
-                  buttonText,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF818CF8),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
+      ),
     );
   }
 
   Widget _buildSmartTrackingCard() {
+    final strings = AppLocalizations.of(context)!;
     return _buildSettingsGroup(
-      title: 'Smart Tracking',
+      title: strings.settingsSmartTracking,
       icon: Icons.notifications_active_rounded,
       children: [
         // Smart Tracking Toggle
         SwitchListTile(
-          title: const Text('Smart Tracking',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-          subtitle: const Text(
-              'Read incoming transaction notifications in background',
-              style: TextStyle(fontSize: 11)),
+          title: Text(strings.settingsSmartTracking,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          subtitle: Text(
+              strings.settingsSmartTrackingSubtitle,
+              style: const TextStyle(fontSize: 11)),
           activeColor: const Color(0xFF6366F1),
           value: _isServiceEnabled,
           onChanged: _toggleService,
-          secondary:
-              const Icon(Icons.receipt_long_rounded, color: Color(0xFF6366F1)),
+          secondary: _buildLeadingIcon(Icons.receipt_long_rounded, color: const Color(0xFF0EA5E9)),
         ),
 
         // Reliability Recommendations - always shown when toggle is present
@@ -1220,67 +1557,88 @@ class _SettingsScreenState extends State<SettingsScreen>
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFF1E293B),
+                color: const Color(0xFF0B132B),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFF334155)),
+                border: Border.all(
+                  color: const Color(0xFF6366F1).withValues(alpha: 0.35),
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Row(
-                    children: [
-                      Icon(Icons.shield_rounded,
-                          color: Color(0xFF6366F1), size: 20),
-                      SizedBox(width: 8),
-                      Text(
-                        'Reliability Recommendations',
-                        style: TextStyle(
-                            color: Color(0xFFE2E8F0),
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold),
-                      ),
-                    ],
+                  // Explanation Header Banner
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                          color: const Color(0xFF6366F1).withValues(alpha: 0.2)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            _buildLeadingIcon(Icons.shield_rounded,
+                                color: const Color(0xFF818CF8)),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                strings.settingsReliabilityRecommendations,
+                                style: const TextStyle(
+                                    color: Color(0xFFE2E8F0),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          strings.settingsReliabilityRecommendationsSubtitle,
+                          style: const TextStyle(
+                              color: Colors.white70, fontSize: 12, height: 1.4),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 6),
-                  const Text(
-                    'Configure the options below to maximize Smart Tracking reliability, especially on devices with aggressive background management.',
-                    style: TextStyle(
-                        color: Colors.white54, fontSize: 12, height: 1.4),
-                  ),
-                  const SizedBox(height: 16),
                   _buildReliabilityAction(
                     icon: Icons.rocket_launch_rounded,
-                    title: 'Enable Auto Start (Highly Recommended)',
+                    isHighlyRecommended: true,
+                    title: strings.settingsEnableAutoStartTitle,
                     description:
-                        'Allows Android to automatically start Smart Finance Tracker after reboot and when notifications arrive. This improves notification capture reliability on many devices with aggressive battery management.',
-                    buttonText: 'Enable Auto Start',
+                        strings.settingsEnableAutoStartDescription,
+                    buttonText: strings.settingsEnableAutoStartBtn,
                     onTap: () => NotificationHandler.openAutoStartSettings(),
                   ),
-                  const Divider(color: Colors.white10, height: 24),
+                  Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 16),
                   _buildReliabilityAction(
                     icon: Icons.battery_saver_rounded,
-                    title: 'Enable Unrestricted Run',
+                    isHighlyRecommended: true,
+                    title: strings.settingsEnableUnrestrictedRunTitle,
                     description:
-                        'Prevent Android from putting Smart Finance Tracker\'s notification listener to sleep. The app only wakes for a few milliseconds when a notification arrives, so battery impact is minimal.',
-                    buttonText: 'Enable Unrestricted Run',
+                        strings.settingsEnableUnrestrictedRunDescription,
+                    buttonText: strings.settingsEnableUnrestrictedRunBtn,
                     onTap: () => NotificationHandler.requestBatteryExemption(),
                   ),
-                  const Divider(color: Colors.white10, height: 24),
+                  Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 16),
                   _buildReliabilityAction(
                     icon: Icons.notifications_active_rounded,
-                    title: 'Keep Notification Access Enabled',
+                    title: strings.settingsKeepNotificationAccessTitle,
                     description:
-                        'Smart Tracking requires notification access to capture incoming transaction alerts. If notification access is disabled, automatic transaction detection will stop working.',
-                    buttonText: 'Open Notification Access',
+                        strings.settingsKeepNotificationAccessDescription,
+                    buttonText: strings.settingsOpenNotificationAccessBtn,
                     onTap: () => NotificationHandler.openPermissionSettings(),
                   ),
                 ],
               ),
             ),
           ),
-          const Divider(color: Colors.white10),
+          Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
         ] else
-          const Divider(color: Colors.white10),
+          Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
 
         // Auto-Delete Archived Alerts
         Opacity(
@@ -1291,19 +1649,18 @@ class _SettingsScreenState extends State<SettingsScreen>
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 SwitchListTile(
-                  title: const Text('Auto-Delete Archived Alerts',
+                  title: Text(strings.settingsAutoDeleteArchivedAlerts,
                       style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                          const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                   subtitle: Text(
                     _isServiceEnabled
-                        ? 'Automatically purge old ignored notification logs'
-                        : 'Requires Smart Tracking to be enabled',
+                        ? strings.settingsAutoDeleteSubtitle
+                        : strings.settingsAutoDeleteRequiresSmartTracking,
                     style: const TextStyle(fontSize: 11),
                   ),
                   value: AppSettings.autoDeleteArchive,
                   activeColor: const Color(0xFF6366F1),
-                  secondary: const Icon(Icons.auto_delete_rounded,
-                      color: Color(0xFF6366F1)),
+                  secondary: _buildLeadingIcon(Icons.auto_delete_rounded, color: const Color(0xFFF97316)),
                   onChanged: (val) async {
                     if (!val) {
                       final confirmed = await showDialog<bool>(
@@ -1314,14 +1671,12 @@ class _SettingsScreenState extends State<SettingsScreen>
                               borderRadius: BorderRadius.circular(20)),
                           icon: const Icon(Icons.auto_delete_rounded,
                               color: Color(0xFFF59E0B), size: 36),
-                          title: const Text('Disable Auto-Delete?',
-                              style: TextStyle(
+                          title: Text(strings.settingsDisableAutoDeleteTitle,
+                              style: const TextStyle(
                                   fontWeight: FontWeight.bold, fontSize: 17)),
-                          content: const Text(
-                            'Archived alerts will no longer be automatically cleaned up. '
-                            'Over time, this may increase storage usage as old notification logs accumulate.\n\n'
-                            'You can still manually delete alerts from the Archived Alerts screen.',
-                            style: TextStyle(
+                          content: Text(
+                            strings.settingsDisableAutoDeleteDescription,
+                            style: const TextStyle(
                                 color: Colors.white70,
                                 fontSize: 13,
                                 height: 1.5),
@@ -1329,15 +1684,15 @@ class _SettingsScreenState extends State<SettingsScreen>
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(context, false),
-                              child: const Text('Keep Enabled',
-                                  style: TextStyle(
+                              child: Text(strings.settingsKeepEnabled,
+                                  style: const TextStyle(
                                       color: Colors.white54,
                                       fontWeight: FontWeight.bold)),
                             ),
                             TextButton(
                               onPressed: () => Navigator.pop(context, true),
-                              child: const Text('Disable',
-                                  style: TextStyle(
+                              child: Text(strings.settingsDisable,
+                                  style: const TextStyle(
                                       color: Color(0xFFEF4444),
                                       fontWeight: FontWeight.bold)),
                             ),
@@ -1364,8 +1719,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                       tileColor: Colors.black.withOpacity(0.15),
-                      title: const Text('Delete older than',
-                          style: TextStyle(
+                      title: Text(strings.settingsDeleteOlderThan,
+                          style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               color: Colors.white70,
                               fontSize: 13)),
@@ -1403,7 +1758,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           ),
         ),
 
-        const Divider(color: Colors.white10),
+        Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
 
         // View Archived Alerts
         Opacity(
@@ -1411,14 +1766,13 @@ class _SettingsScreenState extends State<SettingsScreen>
           child: AbsorbPointer(
             absorbing: !_isServiceEnabled,
             child: ListTile(
-              leading:
-                  const Icon(Icons.archive_rounded, color: Color(0xFF6366F1)),
-              title: const Text('View Archived Alerts',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              leading: _buildLeadingIcon(Icons.archive_rounded, color: const Color(0xFFF59E0B)),
+              title: Text(strings.settingsViewArchivedAlerts,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
               subtitle: Text(
                 _isServiceEnabled
-                    ? 'View and restore ignored notifications'
-                    : 'Requires Smart Tracking to be enabled',
+                    ? strings.settingsViewArchivedAlertsSubtitle
+                    : strings.settingsAutoDeleteRequiresSmartTracking,
                 style: const TextStyle(fontSize: 11),
               ),
               trailing: const Icon(Icons.arrow_forward_ios_rounded,
@@ -1437,19 +1791,19 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   Widget _buildAdvancedSettingsCard() {
+    final strings = AppLocalizations.of(context)!;
     return _buildSettingsGroup(
-      title: 'Advanced Settings',
+      title: strings.settingsAdvancedSettings,
       icon: Icons.construction_rounded,
       children: [
         // Train Your Model
         ListTile(
-          leading:
-              const Icon(Icons.psychology_rounded, color: Color(0xFF818CF8)),
-          title: const Text('Train Your Model',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-          subtitle: const Text(
-              'Manually teach the AI using sample notifications',
-              style: TextStyle(fontSize: 11)),
+          leading: _buildLeadingIcon(Icons.psychology_rounded, color: const Color(0xFF8B5CF6)),
+          title: Text(strings.settingsTrainYourModel,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          subtitle: Text(
+              strings.settingsTrainYourModelSubtitle,
+              style: const TextStyle(fontSize: 11)),
           trailing: const Icon(Icons.arrow_forward_ios_rounded,
               size: 16, color: Colors.white54),
           onTap: () {
@@ -1461,71 +1815,57 @@ class _SettingsScreenState extends State<SettingsScreen>
           },
         ),
 
-        const Divider(color: Colors.white10),
+        Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
 
         // SnackBar Display Duration
         ListTile(
-          leading: const Icon(Icons.timer_rounded, color: Color(0xFF6366F1)),
-          title: const Text('SnackBar Display Duration',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          leading: _buildLeadingIcon(Icons.timer_rounded, color: const Color(0xFFF59E0B)),
+          title: Text(strings.settingsSnackBarDuration,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
           subtitle: Text(
-              '${(AppSettings.snackBarDurationMs / 1000).toStringAsFixed(1)} seconds',
+              strings.settingsSnackBarDurationSubtitle((AppSettings.snackBarDurationMs / 1000).toStringAsFixed(1)),
               style: const TextStyle(fontSize: 11)),
-          trailing: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: const Color(0xFF6366F1).withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                  color: const Color(0xFF6366F1).withValues(alpha: 0.25)),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<int>(
-                value: AppSettings.snackBarDurationMs,
-                dropdownColor: const Color(0xFF1E293B),
-                isDense: true,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF6366F1),
-                  fontSize: 13,
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF6366F1).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.25)),
                 ),
-                icon: const Padding(
-                  padding: EdgeInsets.only(left: 4),
-                  child: Icon(Icons.arrow_drop_down,
-                      color: Color(0xFF6366F1), size: 18),
+                child: Text(
+                  '${(AppSettings.snackBarDurationMs / 1000).toStringAsFixed(1)}s',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF818CF8),
+                    fontSize: 12,
+                  ),
                 ),
-                items: const [
-                  DropdownMenuItem(value: 1000, child: Text('1.0s')),
-                  DropdownMenuItem(value: 1500, child: Text('1.5s')),
-                  DropdownMenuItem(value: 2000, child: Text('2.0s')),
-                  DropdownMenuItem(value: 3000, child: Text('3.0s')),
-                  DropdownMenuItem(value: 4000, child: Text('4.0s')),
-                ],
-                onChanged: (val) async {
-                  if (val != null) {
-                    await AppSettings.setSnackBarDuration(val);
-                    setState(() {});
-                  }
-                },
               ),
-            ),
+              const SizedBox(width: 6),
+              const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.white38),
+            ],
           ),
+          onTap: _showSnackBarDurationSelectionSheet,
         ),
       ],
     );
   }
 
   Widget _buildDeveloperOptionsCard() {
+    final strings = AppLocalizations.of(context)!;
     return _buildSettingsGroup(
-      title: 'Developer Options',
+      title: strings.settingsDeveloperOptions,
       icon: Icons.bug_report_rounded,
       children: [
         ListTile(
-          leading: const Icon(Icons.terminal_rounded, color: Color(0xFF818CF8)),
-          title: const Text('Log Inspector',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-          subtitle: const Text('View live app logs in real time',
-              style: TextStyle(fontSize: 11)),
+          leading: _buildLeadingIcon(Icons.terminal_rounded, color: const Color(0xFF06B6D4)),
+          title: Text(strings.settingsLogInspector,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          subtitle: Text(strings.settingsLogInspectorSubtitle,
+              style: const TextStyle(fontSize: 11)),
           trailing: const Icon(Icons.arrow_forward_ios_rounded,
               size: 16, color: Colors.white54),
           onTap: () {
@@ -1536,12 +1876,14 @@ class _SettingsScreenState extends State<SettingsScreen>
             );
           },
         ),
+        Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
         ListTile(
-          leading: const Icon(Icons.playlist_add_rounded, color: Color(0xFF10B981)),
-          title: const Text('Simulate Notification',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-          subtitle: const Text('Simulate incoming notifications for testing parser/AI',
-              style: TextStyle(fontSize: 11)),
+          leading: _buildLeadingIcon(Icons.playlist_add_rounded, color: const Color(0xFFEC4899)),
+          title: Text(strings.settingsSimulateNotification,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          subtitle: Text(
+              strings.settingsSimulateNotificationSubtitle,
+              style: const TextStyle(fontSize: 11)),
           trailing: const Icon(Icons.arrow_forward_ios_rounded,
               size: 16, color: Colors.white54),
           onTap: () => _showSimulateNotificationBottomSheet(),
@@ -1567,6 +1909,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
+        final strings = AppLocalizations.of(context)!;
         return Container(
           height: MediaQuery.of(context).size.height * 0.75,
           decoration: const BoxDecoration(
@@ -1590,14 +1933,14 @@ class _SettingsScreenState extends State<SettingsScreen>
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Row(
+                Row(
                   children: [
-                    Icon(Icons.auto_awesome,
+                    const Icon(Icons.auto_awesome,
                         color: Color(0xFF818CF8), size: 22),
-                    SizedBox(width: 10),
+                    const SizedBox(width: 10),
                     Text(
-                      'Model Automation Audit Log',
-                      style: TextStyle(
+                      strings.settingsModelAuditLogTitle,
+                      style: const TextStyle(
                           color: Colors.white,
                           fontSize: 18,
                           fontWeight: FontWeight.bold),
@@ -1605,9 +1948,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                   ],
                 ),
                 const SizedBox(height: 6),
-                const Text(
-                  'Full transparency into automatic actions performed by your on-device AI.',
-                  style: TextStyle(color: Colors.white54, fontSize: 12),
+                Text(
+                  strings.settingsModelAuditLogSubtitle,
+                  style: const TextStyle(color: Colors.white54, fontSize: 12),
                 ),
                 const SizedBox(height: 16),
                 Expanded(
@@ -1622,9 +1965,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                       }
                       final logs = snapshot.data!;
                       if (logs.isEmpty) {
-                        return const Center(
-                          child: Text('No automated actions logged yet today.',
-                              style: TextStyle(
+                        return Center(
+                          child: Text(strings.settingsNoAutomatedActionsYet,
+                              style: const TextStyle(
                                   color: Colors.white38, fontSize: 13)),
                         );
                       }
@@ -1672,8 +2015,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                                       ),
                                       child: Text(
                                         isDrafted
-                                            ? 'AUTO-DRAFTED'
-                                            : 'AUTO-DISMISSED',
+                                            ? strings.settingsAutoDraftedBadge
+                                            : strings.settingsAutoDismissedBadge,
                                         style: TextStyle(
                                           color: isDrafted
                                               ? const Color(0xFF34D399)
@@ -1691,7 +2034,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                                             fontWeight: FontWeight.w600)),
                                     const Spacer(),
                                     Text(
-                                      '${(confidence * 100).toInt()}% Conf.',
+                                      strings.settingsConfidencePct((confidence * 100).toInt()),
                                       style: const TextStyle(
                                           color: Colors.white38, fontSize: 11),
                                     ),
@@ -1733,8 +2076,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                                           const SizedBox(width: 4),
                                           Text(
                                             isDrafted
-                                                ? 'Undo Auto-Draft'
-                                                : 'Undo Auto-Dismiss',
+                                                ? strings.settingsUndoAutoDraft
+                                                : strings.settingsUndoAutoDismiss,
                                             style: const TextStyle(
                                                 color: Colors.white70,
                                                 fontSize: 11,
@@ -1774,7 +2117,8 @@ class _SettingsScreenState extends State<SettingsScreen>
         await dbService.updateNotificationLogStatus(logId, 'unclassified');
       }
       if (mounted) {
-        AppSnackBar.show(context, 'Restored to Captured Alerts!',
+        final strings = AppLocalizations.of(context)!;
+        AppSnackBar.show(context, strings.settingsRestoredToCapturedAlerts,
             type: SnackBarType.success);
       }
     } else if (actionType == 'auto_drafted') {
@@ -1786,8 +2130,9 @@ class _SettingsScreenState extends State<SettingsScreen>
         await PerceptronStorageService.instance.saveWeights();
       }
       if (mounted) {
+        final strings = AppLocalizations.of(context)!;
         AppSnackBar.show(context,
-            'Moved back to Captured Alerts. AI learned to ignore similar alerts.',
+            strings.settingsUndoDraftLearnedIgnore,
             type: SnackBarType.neutral);
       }
     }
@@ -1803,22 +2148,23 @@ class _SettingsScreenState extends State<SettingsScreen>
   // --- DIALOGS FOR FORMS ---
 
   Future<bool?> _showConfirmDeleteDialog(String name) {
+    final strings = AppLocalizations.of(context)!;
     return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
-        title: const Text('Delete configuration?'),
-        content: Text('Are you sure you want to delete "$name"?'),
+        title: Text(strings.settingsDeleteConfigTitle),
+        content: Text(strings.settingsDeleteConfigConfirm(name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child:
-                const Text('Cancel', style: TextStyle(color: Colors.white70)),
+                Text(strings.settingsCancel, style: const TextStyle(color: Colors.white70)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete',
-                style: TextStyle(color: Color(0xFFEF4444))),
+            child: Text(strings.settingsDelete,
+                style: const TextStyle(color: Color(0xFFEF4444))),
           ),
         ],
       ),
@@ -1826,6 +2172,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   Future<void> _openAccountFormDialog(AccountModel? editAcc) async {
+    final strings = AppLocalizations.of(context)!;
     final isEdit = editAcc != null;
     final nameController =
         TextEditingController(text: isEdit ? editAcc.name : '');
@@ -1836,14 +2183,14 @@ class _SettingsScreenState extends State<SettingsScreen>
     String type = isEdit ? editAcc.type : 'bank';
 
     final types = [
-      {'value': 'bank', 'label': 'Bank', 'icon': Icons.account_balance},
-      {'value': 'credit_card', 'label': 'Card', 'icon': Icons.credit_card},
+      {'value': 'bank', 'label': strings.settingsAccountTypeBank, 'icon': Icons.account_balance},
+      {'value': 'credit_card', 'label': strings.settingsAccountTypeCard, 'icon': Icons.credit_card},
       {
         'value': 'wallet',
-        'label': 'Wallet',
+        'label': strings.settingsAccountTypeWallet,
         'icon': Icons.account_balance_wallet
       },
-      {'value': 'cash', 'label': 'Cash', 'icon': Icons.money},
+      {'value': 'cash', 'label': strings.settingsAccountTypeCash, 'icon': Icons.money},
     ];
 
     await showModalBottomSheet(
@@ -1880,14 +2227,14 @@ class _SettingsScreenState extends State<SettingsScreen>
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      isEdit ? 'Edit Account' : 'Add Account',
+                      isEdit ? strings.settingsEditAccount : strings.settingsAddAccount,
                       style: const TextStyle(
                           fontSize: 20, fontWeight: FontWeight.bold),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 20),
-                    const Text('Account Type',
-                        style: TextStyle(fontSize: 12, color: Colors.white54)),
+                    Text(strings.settingsAccountType,
+                        style: const TextStyle(fontSize: 12, color: Colors.white54)),
                     const SizedBox(height: 8),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1941,21 +2288,21 @@ class _SettingsScreenState extends State<SettingsScreen>
                     const SizedBox(height: 16),
                     TextField(
                       controller: nameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Account Name',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.badge_outlined),
+                      decoration: InputDecoration(
+                        labelText: strings.settingsAccountName,
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.badge_outlined),
                       ),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: kwController,
-                      decoration: const InputDecoration(
-                        labelText: 'Matching Keywords (comma separated)',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.vpn_key_outlined),
+                      decoration: InputDecoration(
+                        labelText: strings.settingsMatchingKeywords,
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.vpn_key_outlined),
                         helperText:
-                            'E.g. "5678, SBI" (used to auto-predict this account)',
+                            strings.settingsMatchingKeywordsHelper,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -1965,7 +2312,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                           const TextInputType.numberWithOptions(decimal: true),
                       decoration: InputDecoration(
                         labelText:
-                            'Starting Balance (${AppSettings.currencySymbol})',
+                            strings.settingsStartingBalance(AppSettings.currencySymbol),
                         border: const OutlineInputBorder(),
                         prefixText: '${AppSettings.currencySymbol} ',
                         prefixStyle: const TextStyle(
@@ -1983,8 +2330,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                                   borderRadius: BorderRadius.circular(12)),
                             ),
                             onPressed: () => Navigator.pop(context),
-                            child: const Text('Cancel',
-                                style: TextStyle(color: Colors.white70)),
+                            child: Text(strings.settingsCancel,
+                                style: const TextStyle(color: Colors.white70)),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -2023,7 +2370,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                               Navigator.pop(context);
                               _loadSettingsData();
                             },
-                            child: Text(isEdit ? 'Save' : 'Add',
+                            child: Text(isEdit ? strings.settingsSave : strings.settingsAdd,
                                 style: const TextStyle(
                                     fontWeight: FontWeight.bold)),
                           ),
@@ -2041,7 +2388,636 @@ class _SettingsScreenState extends State<SettingsScreen>
     );
   }
 
+  void _showLanguageSelectionSheet() {
+    final strings = AppLocalizations.of(context)!;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF0F172A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.white24,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    strings.settingsAppLanguage,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    strings.settingsAppLanguageSubtitle,
+                    style: const TextStyle(color: Colors.white54, fontSize: 12),
+                  ),
+                  const SizedBox(height: 16),
+                  ...AppLanguageService.instance.supportedLanguages.map((lang) {
+                    final isSelected =
+                        AppLanguageService.instance.selectedLanguage.code ==
+                            lang.code;
+                    final label = lang.code == 'te'
+                        ? strings.languageTelugu
+                        : strings.languageEnglish;
+
+                    return InkWell(
+                      onTap: () async {
+                        Navigator.pop(context);
+                        await AppLanguageService.instance
+                            .selectLanguage(lang.code);
+                        if (mounted) setState(() {});
+                      },
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 14),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? const Color(0xFF6366F1).withValues(alpha: 0.15)
+                              : const Color(0xFF1E293B),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isSelected
+                                ? const Color(0xFF6366F1)
+                                : const Color(0xFF334155),
+                            width: isSelected ? 1.5 : 1.0,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  lang.code == 'te' ? '🇮🇳' : '🇬🇧',
+                                  style: const TextStyle(fontSize: 20),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  label,
+                                  style: TextStyle(
+                                    color: isSelected
+                                        ? Colors.white
+                                        : Colors.white70,
+                                    fontSize: 15,
+                                    fontWeight: isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Icon(
+                              isSelected
+                                  ? Icons.check_circle_rounded
+                                  : Icons.radio_button_unchecked_rounded,
+                              color: isSelected
+                                  ? const Color(0xFF6366F1)
+                                  : Colors.white24,
+                              size: 22,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showCurrencySelectionSheet() {
+    final strings = AppLocalizations.of(context)!;
+    final options = [
+      {'code': '₹', 'label': 'INR (₹)', 'sub': 'Indian Rupee'},
+      {'code': '\$', 'label': 'USD (\$)', 'sub': 'US Dollar'},
+      {'code': '€', 'label': 'EUR (€)', 'sub': 'Euro'},
+      {'code': '£', 'label': 'GBP (£)', 'sub': 'British Pound'},
+      {'code': '¥', 'label': 'JPY/CNY (¥)', 'sub': 'Yen / Yuan'},
+      {'code': '₩', 'label': 'KRW (₩)', 'sub': 'Korean Won'},
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF0F172A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.white24,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    strings.settingsCurrencySymbol,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    strings.settingsCurrencySymbolSubtitle,
+                    style: const TextStyle(color: Colors.white54, fontSize: 12),
+                  ),
+                  const SizedBox(height: 16),
+                  ...options.map((opt) {
+                    final isSelected = AppSettings.currencySymbol == opt['code'];
+
+                    return InkWell(
+                      onTap: () async {
+                        Navigator.pop(context);
+                        await AppSettings.setCurrencySymbol(opt['code']!);
+                        if (mounted) setState(() {});
+                      },
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? const Color(0xFF6366F1).withValues(alpha: 0.15)
+                              : const Color(0xFF1E293B),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isSelected
+                                ? const Color(0xFF6366F1)
+                                : const Color(0xFF334155),
+                            width: isSelected ? 1.5 : 1.0,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  width: 36,
+                                  height: 36,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF6366F1).withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    opt['code']!,
+                                    style: const TextStyle(
+                                      color: Color(0xFF818CF8),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 14),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      opt['label']!,
+                                      style: TextStyle(
+                                        color: isSelected
+                                            ? Colors.white
+                                            : Colors.white70,
+                                        fontSize: 14,
+                                        fontWeight: isSelected
+                                            ? FontWeight.bold
+                                            : FontWeight.normal,
+                                      ),
+                                    ),
+                                    Text(
+                                      opt['sub']!,
+                                      style: const TextStyle(
+                                          color: Colors.white38, fontSize: 11),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            Icon(
+                              isSelected
+                                  ? Icons.check_circle_rounded
+                                  : Icons.radio_button_unchecked_rounded,
+                              color: isSelected
+                                  ? const Color(0xFF6366F1)
+                                  : Colors.white24,
+                              size: 22,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showNumberFormatSelectionSheet() {
+    final strings = AppLocalizations.of(context)!;
+    final options = [
+      {'code': 'auto', 'label': '🌐 Auto (System Default)', 'preview': 'Follows system locale'},
+      {'code': 'en_IN', 'label': '🇮🇳 Indian Format', 'preview': '12,34,567'},
+      {'code': 'en_US', 'label': '🌍 Standard Format', 'preview': '1,234,567'},
+      {'code': 'de_DE', 'label': '🇪🇺 European Format', 'preview': '1.234.567'},
+      {'code': 'en_GB', 'label': '🇬🇧 UK Format', 'preview': '1,234,567'},
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF0F172A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.white24,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    strings.settingsNumberFormat,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    strings.settingsNumberFormatSubtitle,
+                    style: const TextStyle(color: Colors.white54, fontSize: 12),
+                  ),
+                  const SizedBox(height: 16),
+                  ...options.map((opt) {
+                    final isSelected = AppSettings.numberLocale == opt['code'];
+
+                    return InkWell(
+                      onTap: () async {
+                        Navigator.pop(context);
+                        await AppSettings.setNumberLocale(opt['code']!);
+                        AppFormatters.clearCache();
+                        if (mounted) setState(() {});
+                      },
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? const Color(0xFF6366F1).withValues(alpha: 0.15)
+                              : const Color(0xFF1E293B),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isSelected
+                                ? const Color(0xFF6366F1)
+                                : const Color(0xFF334155),
+                            width: isSelected ? 1.5 : 1.0,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  opt['label']!,
+                                  style: TextStyle(
+                                    color: isSelected
+                                        ? Colors.white
+                                        : Colors.white70,
+                                    fontSize: 14,
+                                    fontWeight: isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                  ),
+                                ),
+                                Text(
+                                  opt['preview']!,
+                                  style: const TextStyle(
+                                      color: Colors.white38, fontSize: 11),
+                                ),
+                              ],
+                            ),
+                            Icon(
+                              isSelected
+                                  ? Icons.check_circle_rounded
+                                  : Icons.radio_button_unchecked_rounded,
+                              color: isSelected
+                                  ? const Color(0xFF6366F1)
+                                  : Colors.white24,
+                              size: 22,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showHideDurationSelectionSheet() {
+    final strings = AppLocalizations.of(context)!;
+    final options = [1, 2, 3, 5, 10, 15, 30];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF0F172A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.white24,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    strings.settingsHideDuration,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    strings.settingsAutoHideBalancesSubtitle,
+                    style: const TextStyle(color: Colors.white54, fontSize: 12),
+                  ),
+                  const SizedBox(height: 16),
+                  ...options.map((sec) {
+                    final isSelected = AppSettings.autoHideSeconds == sec;
+
+                    return InkWell(
+                      onTap: () async {
+                        Navigator.pop(context);
+                        await AppSettings.setAutoHideSeconds(sec);
+                        if (mounted) setState(() {});
+                      },
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? const Color(0xFF6366F1).withValues(alpha: 0.15)
+                              : const Color(0xFF1E293B),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isSelected
+                                ? const Color(0xFF6366F1)
+                                : const Color(0xFF334155),
+                            width: isSelected ? 1.5 : 1.0,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '$sec ${sec == 1 ? "second" : "seconds"}',
+                              style: TextStyle(
+                                color: isSelected ? Colors.white : Colors.white70,
+                                fontSize: 14,
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                              ),
+                            ),
+                            Icon(
+                              isSelected
+                                  ? Icons.check_circle_rounded
+                                  : Icons.radio_button_unchecked_rounded,
+                              color: isSelected
+                                  ? const Color(0xFF6366F1)
+                                  : Colors.white24,
+                              size: 22,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showSnackBarDurationSelectionSheet() {
+    final strings = AppLocalizations.of(context)!;
+    final options = [
+      {'ms': 1000, 'label': '1.0 second', 'sub': 'Fast toast dismiss'},
+      {'ms': 1500, 'label': '1.5 seconds', 'sub': 'Quick summary view'},
+      {'ms': 2000, 'label': '2.0 seconds', 'sub': 'Standard duration (Recommended)'},
+      {'ms': 3000, 'label': '3.0 seconds', 'sub': 'Comfortable reading time'},
+      {'ms': 4000, 'label': '4.0 seconds', 'sub': 'Extended reading time'},
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF0F172A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.white24,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    strings.settingsSnackBarDuration,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    strings.settingsSnackBarDurationSubtitle((AppSettings.snackBarDurationMs / 1000).toStringAsFixed(1)),
+                    style: const TextStyle(color: Colors.white54, fontSize: 12),
+                  ),
+                  const SizedBox(height: 16),
+                  ...options.map((opt) {
+                    final isSelected = AppSettings.snackBarDurationMs == opt['ms'];
+
+                    return InkWell(
+                      onTap: () async {
+                        Navigator.pop(context);
+                        await AppSettings.setSnackBarDuration(opt['ms'] as int);
+                        if (mounted) setState(() {});
+                      },
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? const Color(0xFF6366F1).withValues(alpha: 0.15)
+                              : const Color(0xFF1E293B),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isSelected
+                                ? const Color(0xFF6366F1)
+                                : const Color(0xFF334155),
+                            width: isSelected ? 1.5 : 1.0,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  opt['label'] as String,
+                                  style: TextStyle(
+                                    color: isSelected
+                                        ? Colors.white
+                                        : Colors.white70,
+                                    fontSize: 14,
+                                    fontWeight: isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                  ),
+                                ),
+                                Text(
+                                  opt['sub'] as String,
+                                  style: const TextStyle(
+                                      color: Colors.white38, fontSize: 11),
+                                ),
+                              ],
+                            ),
+                            Icon(
+                              isSelected
+                                  ? Icons.check_circle_rounded
+                                  : Icons.radio_button_unchecked_rounded,
+                              color: isSelected
+                                  ? const Color(0xFF6366F1)
+                                  : Colors.white24,
+                              size: 22,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _openCategoryFormDialog(CategoryModel? editCat) async {
+    final strings = AppLocalizations.of(context)!;
     final isEdit = editCat != null;
     final nameController =
         TextEditingController(text: isEdit ? editCat.name : '');
@@ -2105,7 +3081,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        isEdit ? 'Edit Category' : 'Add Category',
+                        isEdit ? strings.settingsEditCategory : strings.settingsAddCategory,
                         style: const TextStyle(
                             fontSize: 20, fontWeight: FontWeight.bold),
                         textAlign: TextAlign.center,
@@ -2114,16 +3090,16 @@ class _SettingsScreenState extends State<SettingsScreen>
                       TextField(
                         controller: nameController,
                         focusNode: nameFocusNode,
-                        decoration: const InputDecoration(
-                          labelText: 'Category Name',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.category_outlined),
+                        decoration: InputDecoration(
+                          labelText: strings.settingsCategoryName,
+                          border: const OutlineInputBorder(),
+                          prefixIcon: const Icon(Icons.category_outlined),
                         ),
                       ),
                       const SizedBox(height: 16),
-                      const Text('Theme Color',
+                      Text(strings.settingsThemeColor,
                           style:
-                              TextStyle(fontSize: 12, color: Colors.white54)),
+                              const TextStyle(fontSize: 12, color: Colors.white54)),
                       const SizedBox(height: 8),
                       Center(
                         child: Wrap(
@@ -2203,9 +3179,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                         ),
                       ),
                       const SizedBox(height: 20),
-                      const Text('Category Icon',
+                      Text(strings.settingsCategoryIcon,
                           style:
-                              TextStyle(fontSize: 12, color: Colors.white54)),
+                              const TextStyle(fontSize: 12, color: Colors.white54)),
                       const SizedBox(height: 10),
                       Row(
                         children: [
@@ -2227,15 +3203,15 @@ class _SettingsScreenState extends State<SettingsScreen>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Icon: "${icon.replaceAll('_', ' ')}"',
+                                  strings.settingsIconLabel(icon.replaceAll('_', ' ')),
                                   style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 14),
                                 ),
                                 const SizedBox(height: 2),
-                                const Text(
-                                  'Search from 60+ modern icons',
-                                  style: TextStyle(
+                                Text(
+                                  strings.settingsBrowseIconsSubtitle,
+                                  style: const TextStyle(
                                       fontSize: 10, color: Colors.white38),
                                 ),
                               ],
@@ -2256,8 +3232,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                             ),
                             icon: const Icon(Icons.search_rounded,
                                 size: 14, color: Color(0xFF6366F1)),
-                            label: const Text('Browse',
-                                style: TextStyle(
+                            label: Text(strings.settingsBrowse,
+                                style: const TextStyle(
                                     fontSize: 12, fontWeight: FontWeight.bold)),
                             onPressed: () {
                               nameFocusNode.unfocus();
@@ -2283,8 +3259,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                                     borderRadius: BorderRadius.circular(12)),
                               ),
                               onPressed: () => Navigator.pop(context),
-                              child: const Text('Cancel',
-                                  style: TextStyle(color: Colors.white70)),
+                              child: Text(strings.settingsCancel,
+                                  style: const TextStyle(color: Colors.white70)),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -2320,7 +3296,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                                 Navigator.pop(context);
                                 _loadSettingsData();
                               },
-                              child: Text(isEdit ? 'Save' : 'Add',
+                              child: Text(isEdit ? strings.settingsSave : strings.settingsAdd,
                                   style: const TextStyle(
                                       fontWeight: FontWeight.bold)),
                             ),
@@ -2417,6 +3393,7 @@ class _SearchableIconPickerState extends State<SearchableIconPicker> {
       maxChildSize: 0.95,
       expand: false,
       builder: (context, scrollController) {
+        final strings = AppLocalizations.of(context)!;
         return GestureDetector(
           onTap: () => FocusScope.of(context).unfocus(),
           behavior: HitTestBehavior.opaque,
@@ -2440,9 +3417,9 @@ class _SearchableIconPickerState extends State<SearchableIconPicker> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text(
-                  'Search Category Icons',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                Text(
+                  strings.settingsSearchCategoryIcons,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 12),
                 // Search field
@@ -2451,7 +3428,7 @@ class _SearchableIconPickerState extends State<SearchableIconPicker> {
                   autofocus: false,
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
-                    hintText: 'Search by keyword (e.g. food, taxi, bill...)',
+                    hintText: strings.settingsSearchIconsHint,
                     hintStyle: const TextStyle(color: Colors.white38),
                     prefixIcon: const Icon(Icons.search_rounded,
                         color: Color(0xFF6366F1)),
@@ -2475,11 +3452,11 @@ class _SearchableIconPickerState extends State<SearchableIconPicker> {
                 const SizedBox(height: 16),
                 Expanded(
                   child: filteredKeys.isEmpty
-                      ? const Center(
+                      ? Center(
                           child: Text(
-                            'No matching icons found.\nTry another keyword!',
+                            strings.settingsNoIconsFound,
                             textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.white38),
+                            style: const TextStyle(color: Colors.white38),
                           ),
                         )
                       : GridView.builder(
@@ -2572,6 +3549,7 @@ class _ColorSpectrumPickerState extends State<ColorSpectrumPicker> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     return Container(
       decoration: const BoxDecoration(
         color: Color(0xFF0F172A),
@@ -2592,9 +3570,9 @@ class _ColorSpectrumPickerState extends State<ColorSpectrumPicker> {
             ),
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Pick a Custom Color',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          Text(
+            strings.settingsPickCustomColor,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 20),
           // Color preview
@@ -2639,10 +3617,10 @@ class _ColorSpectrumPickerState extends State<ColorSpectrumPicker> {
           ),
           const SizedBox(height: 24),
           // Saturation x Lightness grid
-          const Align(
+          Align(
             alignment: Alignment.centerLeft,
-            child: Text('Shade',
-                style: TextStyle(fontSize: 11, color: Colors.white54)),
+            child: Text(strings.settingsShade,
+                style: const TextStyle(fontSize: 11, color: Colors.white54)),
           ),
           const SizedBox(height: 8),
           SizedBox(
@@ -2664,10 +3642,10 @@ class _ColorSpectrumPickerState extends State<ColorSpectrumPicker> {
           ),
           const SizedBox(height: 20),
           // Hue slider
-          const Align(
+          Align(
             alignment: Alignment.centerLeft,
-            child: Text('Hue',
-                style: TextStyle(fontSize: 11, color: Colors.white54)),
+            child: Text(strings.settingsHue,
+                style: const TextStyle(fontSize: 11, color: Colors.white54)),
           ),
           const SizedBox(height: 8),
           SizedBox(
@@ -2703,8 +3681,8 @@ class _ColorSpectrumPickerState extends State<ColorSpectrumPicker> {
                 widget.onSelected(_currentColor.value);
                 Navigator.pop(context);
               },
-              child: const Text('Select Color',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+              child: Text(strings.settingsSelectColor,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
             ),
           ),
         ],
@@ -2814,33 +3792,40 @@ class _SimulateNotificationSheet extends StatefulWidget {
   const _SimulateNotificationSheet();
 
   @override
-  State<_SimulateNotificationSheet> createState() => _SimulateNotificationSheetState();
+  State<_SimulateNotificationSheet> createState() =>
+      _SimulateNotificationSheetState();
 }
 
-class _SimulateNotificationSheetState extends State<_SimulateNotificationSheet> {
-  final _packageNameController = TextEditingController(text: 'com.android.messaging');
+class _SimulateNotificationSheetState
+    extends State<_SimulateNotificationSheet> {
+  final _packageNameController =
+      TextEditingController(text: 'com.android.messaging');
   final _titleController = TextEditingController(text: 'HDFC Bank');
   final _bodyController = TextEditingController(
-      text: 'Alert: Rs 2,500.00 spent on Debit Card XX4321 at STARBUCKS. Bal: Rs 15,432.00.');
+      text:
+          'Alert: Rs 2,500.00 spent on Debit Card XX4321 at STARBUCKS. Bal: Rs 15,432.00.');
 
   final List<Map<String, String>> _templates = [
     {
       'name': 'HDFC Debit',
       'package': 'com.android.messaging',
       'title': 'HDFC Bank',
-      'body': 'Alert: Rs 2,500.00 spent on Debit Card XX4321 at STARBUCKS. Bal: Rs 15,432.00.'
+      'body':
+          'Alert: Rs 2,500.00 spent on Debit Card XX4321 at STARBUCKS. Bal: Rs 15,432.00.'
     },
     {
       'name': 'ICICI Credit',
       'package': 'com.android.messaging',
       'title': 'ICICI Bank',
-      'body': 'Your ICICI Bank Credit Card XX9999 has been charged Rs 8,450.00 at AMAZON INDIA. Available Limit: Rs 92,300.00.'
+      'body':
+          'Your ICICI Bank Credit Card XX9999 has been charged Rs 8,450.00 at AMAZON INDIA. Available Limit: Rs 92,300.00.'
     },
     {
       'name': 'SBI UPI SMS',
       'package': 'com.android.messaging',
       'title': 'SBI UPI',
-      'body': 'Dear SBI User, Rs 1,500.00 debited from A/c XX8888 on 22-07-2026 for UPI Ref: 629381029472.'
+      'body':
+          'Dear SBI User, Rs 1,500.00 debited from A/c XX8888 on 22-07-2026 for UPI Ref: 629381029472.'
     },
     {
       'name': 'Google Pay',
@@ -2858,7 +3843,8 @@ class _SimulateNotificationSheetState extends State<_SimulateNotificationSheet> 
       'name': 'Promo (Ignore)',
       'package': 'com.zomato.android',
       'title': 'Zomato',
-      'body': 'Hungry? Grab 50% discount up to Rs 120 on your next order! Use code CRRAVE50.'
+      'body':
+          'Hungry? Grab 50% discount up to Rs 120 on your next order! Use code CRRAVE50.'
     },
   ];
 
@@ -2884,7 +3870,10 @@ class _SimulateNotificationSheetState extends State<_SimulateNotificationSheet> 
     final body = _bodyController.text.trim();
 
     if (pkg.isEmpty || body.isEmpty) {
-      AppSnackBar.show(context, 'Package name and notification body are required.', type: SnackBarType.warning);
+      final strings = AppLocalizations.of(context)!;
+      AppSnackBar.show(
+          context, strings.settingsSimulateRequiredError,
+          type: SnackBarType.warning);
       return;
     }
 
@@ -2900,17 +3889,23 @@ class _SimulateNotificationSheetState extends State<_SimulateNotificationSheet> 
     try {
       await NotificationHandler.handleNotificationEvent(mockEvent);
       if (mounted) {
-        AppSnackBar.show(context, 'Simulated notification processed successfully! Check Transaction Inbox.', type: SnackBarType.success);
+        final strings = AppLocalizations.of(context)!;
+        AppSnackBar.show(context,
+            strings.settingsSimulateSuccess,
+            type: SnackBarType.success);
       }
     } catch (e) {
       if (mounted) {
-        AppSnackBar.show(context, 'Simulation failed: $e', type: SnackBarType.error);
+        final strings = AppLocalizations.of(context)!;
+        AppSnackBar.show(context, strings.settingsSimulateFailure(e.toString()),
+            type: SnackBarType.error);
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     return Container(
       decoration: const BoxDecoration(
         color: Color(0xFF0F172A),
@@ -2940,13 +3935,14 @@ class _SimulateNotificationSheetState extends State<_SimulateNotificationSheet> 
                 ),
               ),
               const SizedBox(height: 16),
-              const Row(
+              Row(
                 children: [
-                  Icon(Icons.playlist_add_rounded, color: Color(0xFF10B981), size: 24),
-                  SizedBox(width: 10),
+                  const Icon(Icons.playlist_add_rounded,
+                      color: Color(0xFF10B981), size: 24),
+                  const SizedBox(width: 10),
                   Text(
-                    'Simulate Notification',
-                    style: TextStyle(
+                    strings.settingsSimulateNotificationTitle,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -2955,15 +3951,19 @@ class _SimulateNotificationSheetState extends State<_SimulateNotificationSheet> 
                 ],
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Select a pre-seeded template or write custom notification data to test parsing, drafts, and active ignore learning.',
-                style: TextStyle(color: Colors.white54, fontSize: 12, height: 1.4),
+              Text(
+                strings.settingsSimulateNotificationDescription,
+                style:
+                    const TextStyle(color: Colors.white54, fontSize: 12, height: 1.4),
               ),
               const SizedBox(height: 16),
               // Horizontal Templates List
-              const Text(
-                'Quick Templates',
-                style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold),
+              Text(
+                strings.settingsQuickTemplates,
+                style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               SizedBox(
@@ -2977,11 +3977,15 @@ class _SimulateNotificationSheetState extends State<_SimulateNotificationSheet> 
                       padding: const EdgeInsets.only(right: 8),
                       child: ActionChip(
                         label: Text(t['name'] ?? ''),
-                        labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white),
+                        labelStyle: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white),
                         backgroundColor: const Color(0xFF1E293B),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
-                          side: BorderSide(color: Colors.white.withOpacity(0.08)),
+                          side:
+                              BorderSide(color: Colors.white.withOpacity(0.08)),
                         ),
                         onPressed: () => _applyTemplate(t),
                       ),
@@ -2991,9 +3995,12 @@ class _SimulateNotificationSheetState extends State<_SimulateNotificationSheet> 
               ),
               const SizedBox(height: 20),
               // Package Name Input
-              const Text(
-                'App Package Name',
-                style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold),
+              Text(
+                strings.settingsAppPackageName,
+                style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 6),
               Container(
@@ -3009,15 +4016,19 @@ class _SimulateNotificationSheetState extends State<_SimulateNotificationSheet> 
                     hintText: 'e.g. com.android.messaging',
                     hintStyle: TextStyle(color: Colors.white30, fontSize: 13),
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   ),
                 ),
               ),
               const SizedBox(height: 16),
               // Title Input
-              const Text(
-                'Notification Title',
-                style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold),
+              Text(
+                strings.settingsNotificationTitleLabel,
+                style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 6),
               Container(
@@ -3033,15 +4044,19 @@ class _SimulateNotificationSheetState extends State<_SimulateNotificationSheet> 
                     hintText: 'e.g. HDFC Bank',
                     hintStyle: TextStyle(color: Colors.white30, fontSize: 13),
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   ),
                 ),
               ),
               const SizedBox(height: 16),
               // Body Input
-              const Text(
-                'Notification Body (Message Text)',
-                style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold),
+              Text(
+                strings.settingsNotificationBodyLabel,
+                style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 6),
               Container(
@@ -3054,11 +4069,12 @@ class _SimulateNotificationSheetState extends State<_SimulateNotificationSheet> 
                   controller: _bodyController,
                   maxLines: 3,
                   style: const TextStyle(color: Colors.white, fontSize: 13),
-                  decoration: const InputDecoration(
-                    hintText: 'Write transaction message alert text here...',
-                    hintStyle: TextStyle(color: Colors.white30, fontSize: 13),
+                  decoration: InputDecoration(
+                    hintText: strings.settingsNotificationBodyHint,
+                    hintStyle: const TextStyle(color: Colors.white30, fontSize: 13),
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   ),
                 ),
               ),
@@ -3077,9 +4093,9 @@ class _SimulateNotificationSheetState extends State<_SimulateNotificationSheet> 
                     elevation: 2,
                   ),
                   onPressed: _simulate,
-                  child: const Text(
-                    'Simulate & Process',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  child: Text(
+                    strings.settingsSimulateAndProcess,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                 ),
               ),

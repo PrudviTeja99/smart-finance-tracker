@@ -27,83 +27,93 @@ class BatchProcessorService {
   );
 
   bool _isBatchRunning = false;
+  bool _rerunRequested = false;
 
   /// Triggered on App Startup or Resume to process buffered raw notifications
   Future<void> processQueue({Function()? onCompleted}) async {
-    if (_isBatchRunning) return;
+    // A notification can arrive while an existing batch is running.  Do not
+    // lose that refresh request: drain the queue once more after the current
+    // snapshot has completed.
+    if (_isBatchRunning) {
+      _rerunRequested = true;
+      return;
+    }
     _isBatchRunning = true;
 
     try {
       final dbService = DatabaseService.instance;
-      final pendingRaw = await dbService.getPendingRawNotifications();
+      do {
+        _rerunRequested = false;
+        final pendingRaw = await dbService.getPendingRawNotifications();
 
-      if (pendingRaw.isEmpty) {
-        progressNotifier.value = BatchProgressState(isProcessing: false, totalCount: 0, processedCount: 0);
-        _isBatchRunning = false;
-        return;
-      }
-
-      final total = pendingRaw.length;
-      progressNotifier.value = BatchProgressState(isProcessing: true, totalCount: total, processedCount: 0);
-
-      final List<int> processedRawIds = [];
-
-      for (int i = 0; i < total; i++) {
-        final rawItem = pendingRaw[i];
-        final rawId = rawItem['id'] as int;
-        final pkg = rawItem['package_name'] as String;
-        final title = rawItem['title'] as String? ?? '';
-        final body = rawItem['body'] as String;
-
-        // Process notification via full 7-field prefill & Perceptron enginez
-        final mockEvent = NotificationEvent(
-          packageName: pkg,
-          title: title,
-          text: body,
-          timestamp: rawItem['timestamp'] as int?,
-        );
-
-        try {
-          final result =
-              await NotificationHandler.handleNotificationEvent(mockEvent);
-
-          if (result != "error") {
-            processedRawIds.add(rawId);
-          }
-        } catch (e, st) {
-          debugPrint("Failed processing raw notification $rawId");
-          debugPrint("$e");
-          debugPrintStack(stackTrace: st);
-
-          // Leave it pending for retry.
+        if (pendingRaw.isEmpty) {
+          continue;
         }
 
+        final total = pendingRaw.length;
         progressNotifier.value = BatchProgressState(
           isProcessing: true,
           totalCount: total,
-          processedCount: i + 1,
+          processedCount: 0,
         );
 
-        // Yield execution briefly to keep UI responsive
-        if ((i + 1) % 5 == 0) {
-          await Future.delayed(
-            const Duration(milliseconds: 5),
+        for (int i = 0; i < total; i++) {
+          final rawItem = pendingRaw[i];
+          final rawId = rawItem['id'] as int;
+          final pkg = rawItem['package_name'] as String;
+          final title = rawItem['title'] as String? ?? '';
+          final body = rawItem['body'] as String;
+
+          // Mark as processed immediately to claim the raw item and prevent duplicate processing
+          await dbService.markRawNotificationsProcessed([rawId]);
+
+          // Process notification via full 7-field prefill & Perceptron engine
+          final mockEvent = NotificationEvent(
+            packageName: pkg,
+            title: title,
+            text: body,
+            timestamp: rawItem['timestamp'] as int?,
           );
+
+          try {
+            final result =
+                await NotificationHandler.handleNotificationEvent(mockEvent);
+
+            if (result == "error") {
+              // Revert status to pending so it can be retried on next batch
+              await dbService.markRawNotificationPending(rawId);
+            }
+          } catch (e, st) {
+            debugPrint("Failed processing raw notification $rawId");
+            debugPrint("$e");
+            debugPrintStack(stackTrace: st);
+
+            // Revert status to pending for retry
+            await dbService.markRawNotificationPending(rawId);
+          }
+
+          progressNotifier.value = BatchProgressState(
+            isProcessing: true,
+            totalCount: total,
+            processedCount: i + 1,
+          );
+
+          // Yield execution briefly to keep UI responsive
+          if ((i + 1) % 5 == 0) {
+            await Future.delayed(
+              const Duration(milliseconds: 5),
+            );
+          }
         }
-      }
 
-      // Mark raw items as processed
-      await dbService.markRawNotificationsProcessed(processedRawIds);
+        progressNotifier.value = BatchProgressState(
+          isProcessing: false,
+          totalCount: total,
+          processedCount: total,
+        );
+      } while (_rerunRequested);
 
-      progressNotifier.value = BatchProgressState(
-        isProcessing: false,
-        totalCount: total,
-        processedCount: total,
-      );
-
-      if (onCompleted != null) {
-        onCompleted();
-      }
+      onCompleted?.call();
     } catch (e) {
       debugPrint('Batch processing error: $e');
     } finally {

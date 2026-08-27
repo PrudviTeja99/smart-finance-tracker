@@ -1,3 +1,4 @@
+import 'package:finance_tracker/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 class SummaryHeader extends StatelessWidget {
@@ -18,12 +19,13 @@ class SummaryHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     return Row(
       children: [
-        const Expanded(
+        Expanded(
           child: Text(
-            'Overview',
-            style: TextStyle(
+            strings.dashboardOverviewTitle,
+            style: const TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
               letterSpacing: -0.5,
@@ -32,7 +34,7 @@ class SummaryHeader extends StatelessWidget {
         ),
         if (isTimerActive) ...[
           Tooltip(
-            message: 'Tap to reveal amounts',
+            message: strings.dashboardLockClockTooltip,
             child: InkWell(
               onTap: onCancelTimer,
               borderRadius: BorderRadius.circular(12),

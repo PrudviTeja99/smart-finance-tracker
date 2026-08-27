@@ -1,3 +1,4 @@
+import 'package:finance_tracker/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import '../models/account_model.dart';
 import '../models/category_model.dart';
@@ -63,9 +64,10 @@ class _ModelTrainingScreenState extends State<ModelTrainingScreen> {
 
   // Step 1: Ask the current model what it thinks this notification means
   Future<void> _runPrediction() async {
+    final strings = AppLocalizations.of(context)!;
     final body = _bodyController.text.trim();
     if (body.isEmpty) {
-        AppSnackBar.show(context, 'Paste a notification message first', type: SnackBarType.warning);
+        AppSnackBar.show(context, strings.modelTrainingPasteNotificationWarning, type: SnackBarType.warning);
         return;
     }
 
@@ -115,20 +117,21 @@ class _ModelTrainingScreenState extends State<ModelTrainingScreen> {
 
   // Step 2a: The prediction (or corrected fields) was right — reinforce it
   Future<void> _confirmAndTrain() async {
+    final strings = AppLocalizations.of(context)!;
     final body = _bodyController.text.trim();
     final amount = double.tryParse(_amountController.text.trim());
     final description = _descController.text.trim();
 
     if (amount == null || amount <= 0) {
-      AppSnackBar.show(context, 'Enter a valid amount', type: SnackBarType.warning);
+      AppSnackBar.show(context, strings.modelTrainingEnterValidAmount, type: SnackBarType.warning);
       return;
     }
     if (description.isEmpty) {
-      AppSnackBar.show(context, 'Enter the merchant/description', type: SnackBarType.warning);
+      AppSnackBar.show(context, strings.modelTrainingEnterDescription, type: SnackBarType.warning);
       return;
     }
     if (_accountId == null || _categoryId == null) {
-      AppSnackBar.show(context, 'Add an account and category first', type: SnackBarType.warning);
+      AppSnackBar.show(context, strings.modelTrainingAddAccountCategoryFirst, type: SnackBarType.warning);
       return;
     }
 
@@ -150,13 +153,14 @@ class _ModelTrainingScreenState extends State<ModelTrainingScreen> {
 
     if (mounted) {
       setState(() => _isSaving = false);
-      AppSnackBar.show(context, 'Model trained on this example!', type: SnackBarType.success);
+      AppSnackBar.show(context, strings.modelTrainingTrainedSuccess, type: SnackBarType.success);
       _resetToInput();
     }
   }
 
   // Step 2b: This was never a transaction — reinforce the ignore path instead
   Future<void> _trainAsIgnore() async {
+    final strings = AppLocalizations.of(context)!;
     final body = _bodyController.text.trim();
     setState(() => _isSaving = true);
 
@@ -164,7 +168,7 @@ class _ModelTrainingScreenState extends State<ModelTrainingScreen> {
 
     if (mounted) {
       setState(() => _isSaving = false);
-      AppSnackBar.show(context, 'Model trained: this pattern will be ignored.', type: SnackBarType.neutral);
+      AppSnackBar.show(context, strings.modelTrainingPatternIgnoredSuccess, type: SnackBarType.neutral);
       _resetToInput();
     }
   }
@@ -210,16 +214,17 @@ class _ModelTrainingScreenState extends State<ModelTrainingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Train Your Model', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(strings.modelTrainingTitle, style: const TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
           if (_hasPredicted)
             TextButton(
               onPressed: _isSaving ? null : _resetToInput,
-              child: const Text('Start Over', style: TextStyle(color: Colors.white60, fontSize: 13)),
+              child: Text(strings.modelTrainingStartOver, style: const TextStyle(color: Colors.white60, fontSize: 13)),
             ),
         ],
       ),
@@ -236,14 +241,14 @@ class _ModelTrainingScreenState extends State<ModelTrainingScreen> {
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.2)),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.info_outline_rounded, color: Color(0xFF818CF8), size: 18),
-                    SizedBox(width: 10),
+                    const Icon(Icons.info_outline_rounded, color: Color(0xFF818CF8), size: 18),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'Paste a notification, see what the model predicts, correct any mistakes, then confirm to reinforce the learning.',
-                        style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.4),
+                        strings.modelTrainingHeaderInstruction,
+                        style: const TextStyle(color: Colors.white70, fontSize: 12, height: 1.4),
                       ),
                     ),
                   ],
@@ -251,7 +256,7 @@ class _ModelTrainingScreenState extends State<ModelTrainingScreen> {
               ),
               const SizedBox(height: 20),
 
-              const Text('Notification Text', style: TextStyle(fontSize: 12, color: Colors.white54, fontWeight: FontWeight.bold)),
+              Text(strings.modelTrainingNotificationText, style: const TextStyle(fontSize: 12, color: Colors.white54, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               TextField(
                 controller: _bodyController,
@@ -292,7 +297,7 @@ class _ModelTrainingScreenState extends State<ModelTrainingScreen> {
                           child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(Colors.white)),
                         )
                       : const Icon(Icons.psychology_rounded, size: 18),
-                  label: Text(_isPredicting ? 'Analyzing...' : 'Predict', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  label: Text(_isPredicting ? strings.modelTrainingAnalyzing : strings.modelTrainingPredict, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                 ),
 
               if (_hasPredicted) ...[
@@ -305,7 +310,7 @@ class _ModelTrainingScreenState extends State<ModelTrainingScreen> {
                   ),
                   onPressed: _isSaving ? null : _runPrediction,
                   icon: const Icon(Icons.refresh_rounded, size: 16),
-                  label: const Text('Re-run Prediction', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  label: Text(strings.modelTrainingRerunPrediction, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                 ),
                 const SizedBox(height: 20),
 
@@ -329,8 +334,8 @@ class _ModelTrainingScreenState extends State<ModelTrainingScreen> {
                       Expanded(
                         child: Text(
                           _wasDetectedAsTransaction
-                              ? 'Detected as a transaction — review the fields below'
-                              : 'Not detected as a transaction — fill in the correct fields, or confirm it should be ignored',
+                              ? strings.modelTrainingDetectedTransaction
+                              : strings.modelTrainingNotDetectedTransaction,
                           style: TextStyle(
                             color: _wasDetectedAsTransaction ? const Color(0xFF34D399) : const Color(0xFFFBBF24),
                             fontSize: 12,
@@ -343,7 +348,7 @@ class _ModelTrainingScreenState extends State<ModelTrainingScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                const Text('Correct Answers', style: TextStyle(fontSize: 12, color: Colors.white54, fontWeight: FontWeight.bold)),
+                Text(strings.modelTrainingCorrectAnswers, style: const TextStyle(fontSize: 12, color: Colors.white54, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
 
                 Row(
@@ -356,7 +361,7 @@ class _ModelTrainingScreenState extends State<ModelTrainingScreen> {
                         enabled: !_isSaving,
                         style: const TextStyle(color: Colors.white, fontSize: 14),
                         decoration: InputDecoration(
-                          labelText: 'Amount (${AppSettings.currencySymbol})',
+                          labelText: '${strings.transactionFormAmount} (${AppSettings.currencySymbol})',
                           labelStyle: const TextStyle(color: Colors.white54, fontSize: 11),
                           filled: true,
                           fillColor: const Color(0xFF0F172A),
@@ -401,7 +406,7 @@ class _ModelTrainingScreenState extends State<ModelTrainingScreen> {
                   enabled: !_isSaving,
                   style: const TextStyle(color: Colors.white, fontSize: 14),
                   decoration: InputDecoration(
-                    labelText: 'Merchant / Description',
+                    labelText: strings.transactionFormDescription,
                     labelStyle: const TextStyle(color: Colors.white54, fontSize: 11),
                     filled: true,
                     fillColor: const Color(0xFF0F172A),
@@ -419,11 +424,11 @@ class _ModelTrainingScreenState extends State<ModelTrainingScreen> {
 
                 const SizedBox(height: 12),
 
-                const Text('Account Identifier in Message', style: TextStyle(fontSize: 12, color: Colors.white54, fontWeight: FontWeight.bold)),
+                Text(strings.modelTrainingAccountIdentifier, style: const TextStyle(fontSize: 12, color: Colors.white54, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
-                const Text(
-                'The exact text (e.g. "XX1234" or "SBI") that tells the model which account this is',
-                style: TextStyle(fontSize: 10, color: Colors.white38),
+                Text(
+                strings.modelTrainingAccountIdentifierSubtitle,
+                style: const TextStyle(fontSize: 10, color: Colors.white38),
                 ),
                 const SizedBox(height: 8),
                 TextField(
@@ -456,7 +461,7 @@ class _ModelTrainingScreenState extends State<ModelTrainingScreen> {
                     dropdownColor: const Color(0xFF1E293B),
                     style: const TextStyle(color: Colors.white, fontSize: 14),
                     decoration: InputDecoration(
-                      labelText: 'Account',
+                      labelText: strings.transactionFormAccount,
                       labelStyle: const TextStyle(color: Colors.white54, fontSize: 11),
                       filled: true,
                       fillColor: const Color(0xFF0F172A),
@@ -481,7 +486,7 @@ class _ModelTrainingScreenState extends State<ModelTrainingScreen> {
                     dropdownColor: const Color(0xFF1E293B),
                     style: const TextStyle(color: Colors.white, fontSize: 14),
                     decoration: InputDecoration(
-                      labelText: 'Category',
+                      labelText: strings.transactionFormCategory,
                       labelStyle: const TextStyle(color: Colors.white54, fontSize: 11),
                       filled: true,
                       fillColor: const Color(0xFF0F172A),
@@ -523,7 +528,7 @@ class _ModelTrainingScreenState extends State<ModelTrainingScreen> {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         onPressed: _isSaving ? null : _trainAsIgnore,
-                        child: const Text('Not a Transaction', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        child: Text(strings.modelTrainingNotATransaction, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -542,7 +547,7 @@ class _ModelTrainingScreenState extends State<ModelTrainingScreen> {
                                 width: 18,
                                 child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(Colors.white)),
                               )
-                            : const Text('Confirm & Train', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                            : Text(strings.modelTrainingConfirmAndTrain, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                       ),
                     ),
                   ],

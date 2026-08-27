@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../models/account_model.dart';
@@ -8,6 +9,7 @@ import '../models/transaction_model.dart';
 class DatabaseService {
   static final DatabaseService instance = DatabaseService._init();
   static Database? _database;
+  final ValueNotifier<int> dashboardDataVersion = ValueNotifier<int>(0);
 
   DatabaseService._init();
 
@@ -23,7 +25,7 @@ class DatabaseService {
 
     final db = await openDatabase(
       path,
-      version: 3,
+      version: 4,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -108,6 +110,11 @@ class DatabaseService {
         timestamp INTEGER NOT NULL,
         status TEXT DEFAULT 'pending'
       )
+    ''');
+
+    await db.execute('''
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_raw_notif_dedup 
+        ON raw_notification_queue(package_name, body, timestamp);
     ''');
 
     // 7. Create model_audit_log table for transparent automation tracking
@@ -295,6 +302,19 @@ class DatabaseService {
     try {
       await db.execute('ALTER TABLE model_audit_log ADD COLUMN log_id INTEGER');
     } catch (_) {}
+
+    if (oldVersion < 4) {
+      await db.execute('''
+        DELETE FROM raw_notification_queue WHERE id NOT IN (
+          SELECT MIN(id) FROM raw_notification_queue 
+          GROUP BY package_name, body, timestamp
+        )
+      ''');
+      await db.execute('''
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_raw_notif_dedup 
+          ON raw_notification_queue(package_name, body, timestamp)
+      ''');
+    }
   }
 
   // --- CLASSIFIER STATE METHODS ---
@@ -336,6 +356,21 @@ class DatabaseService {
     String status = 'unclassified',
   }) async {
     final db = await database;
+
+    final windowStart =
+        date.subtract(const Duration(seconds: 60)).toIso8601String();
+    final windowEnd =
+        date.add(const Duration(seconds: 60)).toIso8601String();
+
+    final existingId = Sqflite.firstIntValue(await db.rawQuery('''
+      SELECT id FROM notification_logs
+      WHERE body = ? AND package_name = ?
+        AND date BETWEEN ? AND ?
+      LIMIT 1
+    ''', [body, packageName, windowStart, windowEnd]));
+
+    if (existingId != null) return existingId;
+
     return await db.insert('notification_logs', {
       'app_name': appName,
       'package_name': packageName,
@@ -408,7 +443,9 @@ class DatabaseService {
 
   Future<int> insertAccount(AccountModel account) async {
     final db = await database;
-    return await db.insert('accounts', account.toMap());
+    final result = await db.insert('accounts', account.toMap());
+    _notifyDashboardDataChanged();
+    return result;
   }
 
   Future<List<AccountModel>> getAllAccounts() async {
@@ -430,21 +467,25 @@ class DatabaseService {
 
   Future<int> updateAccount(AccountModel account) async {
     final db = await database;
-    return await db.update(
+    final result = await db.update(
       'accounts',
       account.toMap(),
       where: 'id = ?',
       whereArgs: [account.id],
     );
+    if (result > 0) _notifyDashboardDataChanged();
+    return result;
   }
 
   Future<int> deleteAccount(int id) async {
     final db = await database;
-    return await db.delete(
+    final result = await db.delete(
       'accounts',
       where: 'id = ?',
       whereArgs: [id],
     );
+    if (result > 0) _notifyDashboardDataChanged();
+    return result;
   }
 
   // Calculate account balances dynamically based on confirmed transactions
@@ -498,7 +539,9 @@ class DatabaseService {
 
   Future<int> insertCategory(CategoryModel category) async {
     final db = await database;
-    return await db.insert('categories', category.toMap());
+    final result = await db.insert('categories', category.toMap());
+    _notifyDashboardDataChanged();
+    return result;
   }
 
   Future<List<CategoryModel>> getAllCategories() async {
@@ -509,21 +552,25 @@ class DatabaseService {
 
   Future<int> updateCategory(CategoryModel category) async {
     final db = await database;
-    return await db.update(
+    final result = await db.update(
       'categories',
       category.toMap(),
       where: 'id = ?',
       whereArgs: [category.id],
     );
+    if (result > 0) _notifyDashboardDataChanged();
+    return result;
   }
 
   Future<int> deleteCategory(int id) async {
     final db = await database;
-    return await db.delete(
+    final result = await db.delete(
       'categories',
       where: 'id = ?',
       whereArgs: [id],
     );
+    if (result > 0) _notifyDashboardDataChanged();
+    return result;
   }
 
   // --- TRANSACTIONS CRUD ---
@@ -547,18 +594,20 @@ class DatabaseService {
     if (tx.body.trim().isNotEmpty && tx.body != 'Manual transaction entry') {
       final duplicateCount = Sqflite.firstIntValue(await db.rawQuery('''
           SELECT COUNT(*) FROM transactions
-          WHERE body = ? 
+          WHERE TRIM(body) = TRIM(?) 
             AND amount = ? 
             AND type = ?
             AND account_id = ?
-        ''', [tx.body.trim(), tx.amount, tx.type, tx.accountId]));
+        ''', [tx.body, tx.amount, tx.type, tx.accountId]));
 
       if (duplicateCount != null && duplicateCount > 0) {
         return -1;
       }
     }
 
-    return await db.insert('transactions', tx.toMap());
+    final result = await db.insert('transactions', tx.toMap());
+    _notifyDashboardDataChanged();
+    return result;
   }
 
   // Retrieve pending transactions
@@ -602,21 +651,34 @@ class DatabaseService {
 
   Future<int> updateTransaction(TransactionModel tx) async {
     final db = await database;
-    return await db.update(
+    final result = await db.update(
       'transactions',
       tx.toMap(),
       where: 'id = ?',
       whereArgs: [tx.id],
     );
+    if (result > 0) _notifyDashboardDataChanged();
+    return result;
   }
 
   Future<int> deleteTransaction(int id) async {
     final db = await database;
-    return await db.delete(
+    final result = await db.delete(
       'transactions',
       where: 'id = ?',
       whereArgs: [id],
     );
+    if (result > 0) _notifyDashboardDataChanged();
+    return result;
+  }
+
+  /// Call this after a bulk import or restore that writes directly to SQLite.
+  void notifyDashboardDataChanged() {
+    _notifyDashboardDataChanged();
+  }
+
+  void _notifyDashboardDataChanged() {
+    dashboardDataVersion.value++;
   }
 
   Future<List<String>> getUniqueDescriptions() async {
@@ -684,44 +746,44 @@ class DatabaseService {
   }) async {
     final db = await database;
 
-    final now = DateTime.now().millisecondsSinceEpoch;
-    final fiveSecondsAgo = now - const Duration(seconds: 5).inMilliseconds;
-    // Or use 10 seconds if you prefer:
-    // final tenSecondsAgo = now - const Duration(seconds: 10).inMilliseconds;
+    final thirtySeconds = const Duration(seconds: 30).inMilliseconds;
 
-    // Look for an identical pending notification received recently.
+    // Look for an identical notification received within +/-30 seconds
     final duplicateCount = Sqflite.firstIntValue(
       await db.rawQuery(
         '''
         SELECT COUNT(*)
         FROM raw_notification_queue
         WHERE package_name = ?
-          AND title = ?
           AND body = ?
-          AND status = 'pending'
-          AND timestamp >= ?
+          AND timestamp BETWEEN ? AND ?
         ''',
         [
           packageName,
-          title,
           body,
-          fiveSecondsAgo,
+          timestamp - thirtySeconds,
+          timestamp + thirtySeconds,
         ],
       ),
     );
 
     if (duplicateCount != null && duplicateCount > 0) {
-      // Duplicate detected.
       return -1;
     }
 
-    return await db.insert('raw_notification_queue', {
-      'package_name': packageName,
-      'title': title,
-      'body': body,
-      'timestamp': timestamp,
-      'status': 'pending',
-    });
+    final result = await db.insert(
+      'raw_notification_queue',
+      {
+        'package_name': packageName,
+        'title': title,
+        'body': body,
+        'timestamp': timestamp,
+        'status': 'pending',
+      },
+      conflictAlgorithm: ConflictAlgorithm.ignore,
+    );
+
+    return result == 0 ? -1 : result;
   }
 
   Future<List<Map<String, dynamic>>> getPendingRawNotifications() async {
@@ -739,6 +801,16 @@ class DatabaseService {
     final idList = ids.join(',');
     await db.rawUpdate(
       "UPDATE raw_notification_queue SET status = 'processed' WHERE id IN ($idList)",
+    );
+  }
+
+  Future<void> markRawNotificationPending(int id) async {
+    final db = await database;
+    await db.update(
+      'raw_notification_queue',
+      {'status': 'pending'},
+      where: 'id = ?',
+      whereArgs: [id],
     );
   }
 

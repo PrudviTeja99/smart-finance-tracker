@@ -1,3 +1,4 @@
+import 'package:finance_tracker/l10n/app_localizations.dart';
 import 'package:finance_tracker/services/database_service.dart';
 import 'package:flutter/material.dart';
 
@@ -11,6 +12,7 @@ class ModelActivityBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     return FutureBuilder<Map<String, int>>(
       future: DatabaseService.instance.getDailyAuditCounts(),
       builder: (context, snapshot) {
@@ -40,7 +42,7 @@ class ModelActivityBanner extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Today\'s Automated Decisions: Auto-drafted $drafted, Auto-dismissed $archived',
+                  strings.inboxTodaysAutomatedDecisions(drafted, archived),
                   style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 12,
@@ -58,9 +60,9 @@ class ModelActivityBanner extends StatelessWidget {
                     border: Border.all(
                         color: const Color(0xFF6366F1).withValues(alpha: 0.4)),
                   ),
-                  child: const Text(
-                    'View Log',
-                    style: TextStyle(
+                  child: Text(
+                    strings.inboxViewLog,
+                    style: const TextStyle(
                         color: Color(0xFF818CF8),
                         fontSize: 11,
                         fontWeight: FontWeight.bold),

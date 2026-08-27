@@ -1,15 +1,14 @@
+import 'package:finance_tracker/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import '../../models/transaction_model.dart';
-import '../../models/account_model.dart';
 import 'state/dashboard_state_mixin.dart';
 import 'widgets/summary_header.dart';
 import 'widgets/hero_card.dart';
 import 'widgets/account_carousel.dart';
 import 'widgets/month_switcher.dart';
-import 'widgets/type_filter_chips.dart';
 import 'widgets/analytics_card.dart';
-import 'widgets/search_bar.dart';
 import 'widgets/ledger_list.dart';
+import '../../screens/transactions_screen.dart';
 import 'sheets/timeframe_filter_sheet.dart';
 import 'sheets/account_filter_sheet.dart';
 import 'sheets/month_year_picker_sheet.dart';
@@ -61,7 +60,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   void _onRefreshSignal() {
-    if (mounted) {
+    if (mounted && widget.isActive) {
       refreshData();
     }
   }
@@ -182,137 +181,203 @@ class _DashboardScreenState extends State<DashboardScreen>
                   // Title + Privacy toggle header
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SummaryHeader(
-                            obscureAmounts: privacyController.obscureAmounts,
-                            onTogglePrivacy: () {
-                              privacyController.setObscureAmounts(
-                                  !privacyController.obscureAmounts);
-                            },
-                            isTimerActive:
-                                privacyController.isAutoHideTimerActive,
-                            remainingSeconds:
-                                privacyController.remainingSeconds,
-                            onCancelTimer:
-                                privacyController.cancelAutoHideTimer,
-                          ),
-                          const SizedBox(height: 12),
-                          MonthSwitcher(
-                            timeframe: timeframe,
-                            timeframeDisplay: getTimeframeDisplay(),
-                            onOpenTimeframeSheet: _openTimeframeSheet,
-                            onPreviousMonth: previousMonth,
-                            onNextMonth: nextMonth,
-                            accountFilterDisplay: getAccountFilterDisplay(),
-                            isAccountFiltered: selectedAccountFilterId != null,
-                            onOpenAccountSheet: _openAccountSheet,
-                          ),
-                        ],
+                      padding: const EdgeInsets.fromLTRB(12, 16, 12, 10),
+                      child: SummaryHeader(
+                        obscureAmounts: privacyController.obscureAmounts,
+                        onTogglePrivacy: () {
+                          privacyController.setObscureAmounts(
+                              !privacyController.obscureAmounts);
+                        },
+                        isTimerActive:
+                            privacyController.isAutoHideTimerActive,
+                        remainingSeconds:
+                            privacyController.remainingSeconds,
+                        onCancelTimer:
+                            privacyController.cancelAutoHideTimer,
                       ),
                     ),
                   ),
 
-                  // Hero Card (Net Cashflow + Savings Rate)
+                  // Time-Filtered Overview & Analytics Group Panel
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: HeroCard(
-                        netBalance: netBalance,
-                        totalIncome: totalIncome,
-                        totalExpense: totalExpense,
-                        savingsRate: savingsRate,
-                        shouldHideAmounts: privacyController.obscureAmounts,
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      child: Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E293B),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                              color: const Color(0xFF334155).withValues(alpha: 0.5)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            MonthSwitcher(
+                              timeframe: timeframe,
+                              timeframeDisplay: getTimeframeDisplay(context),
+                              onOpenTimeframeSheet: _openTimeframeSheet,
+                              onPreviousMonth: previousMonth,
+                              onNextMonth: nextMonth,
+                              accountFilterDisplay: getAccountFilterDisplay(context),
+                              isAccountFiltered: selectedAccountFilterId != null,
+                              onOpenAccountSheet: _openAccountSheet,
+                            ),
+                            const SizedBox(height: 10),
+                            HeroCard(
+                              netBalance: netBalance,
+                              totalIncome: totalIncome,
+                              totalExpense: totalExpense,
+                              savingsRate: savingsRate,
+                              shouldHideAmounts: privacyController.obscureAmounts,
+                              timeframeDisplay: getTimeframeDisplay(context),
+                            ),
+                             const SizedBox(height: 14),
+                            AnalyticsCard(
+                              transactions: filteredTransactions,
+                              categories: categories,
+                              typeFilter: selectedTypeFilter,
+                              onTypeChanged: (type) {
+                                setState(() {
+                                  selectedTypeFilter = type;
+                                });
+                                applyFilters();
+                              },
+                              timeframe: timeframe,
+                              chartView: chartView,
+                              onToggleChartView: (v) {
+                                setState(() {
+                                  chartView = v;
+                                });
+                              },
+                              touchedIndex: touchedChartIndex,
+                              onTouchIndexChanged: (idx) {
+                                setState(() {
+                                  touchedChartIndex = idx;
+                                });
+                              },
+                              shouldHideAmounts: privacyController.obscureAmounts,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
 
-                  // Account Carousel
-                  SliverToBoxAdapter(
-                    child: AccountCarousel(
-                      accounts: accounts,
-                      selectedAccountId: selectedAccountFilterId,
-                      onAccountTapped: (acc) {
-                        setState(() {
-                          selectedAccountFilterId =
-                              selectedAccountFilterId == acc.id
-                                  ? null
-                                  : acc.id;
-                        });
-                        applyFilters();
-                      },
-                      onClearAccountFilter: () {
-                        setState(() {
-                          selectedAccountFilterId = null;
-                        });
-                        applyFilters();
-                      },
-                      shouldHideAmounts: privacyController.obscureAmounts,
-                    ),
-                  ),
-
-                  // Analytics Card + Type Filter Chips
+                  // Accounts Group Panel
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          TypeFilterChips(
-                            selectedType: selectedTypeFilter,
-                            onTypeChanged: (type) {
-                              setState(() {
-                                selectedTypeFilter = type;
-                              });
-                              applyFilters();
-                            },
-                          ),
-                          const SizedBox(height: 16),
-                          AnalyticsCard(
-                            transactions: filteredTransactions,
-                            categories: categories,
-                            typeFilter: selectedTypeFilter,
-                            timeframe: timeframe,
-                            chartView: chartView,
-                            onToggleChartView: (v) {
-                              setState(() {
-                                chartView = v;
-                              });
-                            },
-                            touchedIndex: touchedChartIndex,
-                            onTouchIndexChanged: (idx) {
-                              setState(() {
-                                touchedChartIndex = idx;
-                              });
-                            },
-                            shouldHideAmounts: privacyController.obscureAmounts,
-                          ),
-                          const SizedBox(height: 24),
-                          const Text(
-                            'Transactions',
-                            style: TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 12),
-                          DashboardSearchBar(
-                            controller: searchController,
-                            focusNode: searchFocusNode,
-                            onClear: unfocusSearch,
-                          ),
-                        ],
+                      padding: const EdgeInsets.fromLTRB(6, 12, 6, 0),
+                      child: Container(
+                        clipBehavior: Clip.antiAlias,
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E293B),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                              color: const Color(0xFF334155).withValues(alpha: 0.5)),
+                        ),
+                        child: AccountCarousel(
+                          accounts: accounts,
+                          shouldHideAmounts: privacyController.obscureAmounts,
+                        ),
                       ),
                     ),
                   ),
 
-                  // Transaction Ledger List
-                  LedgerList(
-                    transactions: filteredTransactions,
-                    accounts: accounts,
-                    categories: categories,
-                    shouldHideAmounts: privacyController.obscureAmounts,
-                    onTransactionTapped: (tx) => _openTransactionForm(tx),
+                  // Latest Transactions Group Panel
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(6, 12, 6, 0),
+                      child: Container(
+                        clipBehavior: Clip.antiAlias,
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E293B),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                              color: const Color(0xFF334155).withValues(alpha: 0.5)),
+                        ),
+                        child: Builder(
+                          builder: (context) {
+                            final strings = AppLocalizations.of(context)!;
+                            final latest5Transactions =
+                                allTransactions.take(5).toList();
+
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Text(
+                                  strings.dashboardLatestTransactions,
+                                  style: const TextStyle(
+                                      fontSize: 18, fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(height: 8),
+                                if (latest5Transactions.isEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 24),
+                                    child: Center(
+                                      child: Text(
+                                        strings.dashboardNoTransactions,
+                                        style: const TextStyle(color: Colors.white54),
+                                      ),
+                                    ),
+                                  )
+                                else ...[
+                                  ListView.separated(
+                                    shrinkWrap: true,
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    itemCount: latest5Transactions.length,
+                                    separatorBuilder: (context, index) =>
+                                        const SizedBox(height: 8),
+                                    itemBuilder: (context, index) {
+                                      final tx = latest5Transactions[index];
+                                      return LedgerItem(
+                                        tx: tx,
+                                        accounts: accounts,
+                                        categories: categories,
+                                        shouldHideAmounts:
+                                            privacyController.obscureAmounts,
+                                        onTap: () => _openTransactionForm(tx),
+                                      );
+                                    },
+                                  ),
+                                  if (allTransactions.length > 5) ...[
+                                    const SizedBox(height: 10),
+                                    Center(
+                                      child: TextButton.icon(
+                                        onPressed: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  const TransactionsScreen(),
+                                            ),
+                                          ).then((_) => refreshData());
+                                        },
+                                        icon: const Icon(
+                                          Icons.arrow_forward_rounded,
+                                          color: Color(0xFF6366F1),
+                                          size: 16,
+                                        ),
+                                        label: Text(
+                                          strings.dashboardShowMore,
+                                          style: const TextStyle(
+                                            color: Color(0xFF6366F1),
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ],
+                            );
+                          },
+                        ),
+                      ),
+                    ),
                   ),
 
                   // Bottom padding for navigation bar
