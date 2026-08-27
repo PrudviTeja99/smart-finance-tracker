@@ -57,7 +57,7 @@ class NotificationHandler {
 
   static Future<void> openAutoStartSettings() async {
     try {
-      await const MethodChannel('com.example.finance_tracker/app_info')
+      await const MethodChannel('bpt.studiohq.smart_finance_tracker/app_info')
           .invokeMethod('openAutoStartSettings');
     } catch (e) {
       debugPrint('Failed to open auto start settings: $e');
@@ -68,7 +68,7 @@ class NotificationHandler {
 
   static Future<void> openAppSystemSettings() async {
     try {
-      await const MethodChannel('com.example.finance_tracker/app_info')
+      await const MethodChannel('bpt.studiohq.smart_finance_tracker/app_info')
           .invokeMethod('openAppSettings');
     } catch (e) {
       debugPrint('Failed to open app system settings: $e');
@@ -77,7 +77,7 @@ class NotificationHandler {
 
   static Future<void> requestBatteryExemption() async {
     try {
-      await const MethodChannel('com.example.finance_tracker/app_info')
+      await const MethodChannel('bpt.studiohq.smart_finance_tracker/app_info')
           .invokeMethod('requestIgnoreBatteryOptimizations');
     } catch (e) {
       debugPrint('Failed to request battery exemption: $e');
