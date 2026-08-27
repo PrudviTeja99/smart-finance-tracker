@@ -1,4 +1,4 @@
-package com.example.finance_tracker
+package bpt.studiohq.smart_finance_tracker
 
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -12,7 +12,7 @@ import io.flutter.plugin.common.MethodChannel
 import java.io.ByteArrayOutputStream
 
 class MainActivity : FlutterActivity() {
-    private val CHANNEL = "com.example.finance_tracker/app_info"
+    private val CHANNEL = "bpt.studiohq.smart_finance_tracker/app_info"
 
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)

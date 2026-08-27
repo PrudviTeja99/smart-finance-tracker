@@ -23,7 +23,7 @@ class AppIconCacheService {
   final Map<String, String> _appNameCache = {};
   final Set<String> _pendingFetches = {};
 
-  static const _appInfoChannel = MethodChannel('com.example.finance_tracker/app_info');
+  static const _appInfoChannel = MethodChannel('bpt.studiohq.smart_finance_tracker/app_info');
   Directory? _cacheDir;
 
   /// Initialize the cache directory (called on app startup or lazily)
