@@ -1550,4 +1550,28 @@ class AppLocalizationsTe extends AppLocalizations {
   String barChartWeekBreakdown(int weekNum, String dateRange) {
     return 'వారం $weekNum వివరాలు ($dateRange)';
   }
+
+  @override
+  String get settingsChartTrendLinesTitle => 'చార్ట్ ట్రెండ్ లైన్‌లు';
+
+  @override
+  String get settingsExpenseTrendLineTitle => 'ఖర్చుల ట్రెండ్ లైన్';
+
+  @override
+  String get settingsExpenseTrendLineSubtitle =>
+      'ఖర్చుల బార్‌లను కలుపుతూ వక్రరేఖను చూపించు';
+
+  @override
+  String get settingsIncomeTrendLineTitle => 'ఆదాయం ట్రెండ్ లైన్';
+
+  @override
+  String get settingsIncomeTrendLineSubtitle =>
+      'ఆదాయం బార్‌లను కలుపుతూ వక్రరేఖను చూపించు';
+
+  @override
+  String get settingsTransferTrendLineTitle => 'బదిలీల ట్రెండ్ లైన్';
+
+  @override
+  String get settingsTransferTrendLineSubtitle =>
+      'బదిలీల బార్‌లను కలుపుతూ వక్రరేఖను చూపించు';
 }

@@ -2767,6 +2767,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Week {weekNum} Breakdown ({dateRange})'**
   String barChartWeekBreakdown(int weekNum, String dateRange);
+
+  /// No description provided for @settingsChartTrendLinesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Chart Trend Lines'**
+  String get settingsChartTrendLinesTitle;
+
+  /// No description provided for @settingsExpenseTrendLineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Expense Trend Line'**
+  String get settingsExpenseTrendLineTitle;
+
+  /// No description provided for @settingsExpenseTrendLineSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Show curved line connecting expense bar tops'**
+  String get settingsExpenseTrendLineSubtitle;
+
+  /// No description provided for @settingsIncomeTrendLineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Income Trend Line'**
+  String get settingsIncomeTrendLineTitle;
+
+  /// No description provided for @settingsIncomeTrendLineSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Show curved line connecting income bar tops'**
+  String get settingsIncomeTrendLineSubtitle;
+
+  /// No description provided for @settingsTransferTrendLineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer Trend Line'**
+  String get settingsTransferTrendLineTitle;
+
+  /// No description provided for @settingsTransferTrendLineSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Show curved line connecting transfer bar tops'**
+  String get settingsTransferTrendLineSubtitle;
 }
 
 class _AppLocalizationsDelegate
