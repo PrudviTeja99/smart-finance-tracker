@@ -16,6 +16,9 @@ class AppSettings {
   static bool batteryExemptionEnabled = false;
   static List<String> allowedNotificationApps = [];
 
+  // Developer Mode (Default OFF)
+  static bool developerOptionsEnabled = false;
+
   // Chart Trend Line Preferences (Default: Expense ON, Income OFF, Transfer OFF)
   static bool showExpenseTrendLine = true;
   static bool showIncomeTrendLine = false;
@@ -31,8 +34,10 @@ class AppSettings {
     appLanguageCode = prefs.getString('app_language_code') ?? 'en';
     smartTrackingEnabled = prefs.getBool('smart_tracking_enabled') ?? true;
     autoStartEnabled = prefs.getBool('auto_start_enabled') ?? false;
-    batteryExemptionEnabled = prefs.getBool('battery_exemption_enabled') ?? false;
-    final userDisabledAutoDelete = prefs.getBool('auto_delete_user_disabled') ?? false;
+    batteryExemptionEnabled =
+        prefs.getBool('battery_exemption_enabled') ?? false;
+    final userDisabledAutoDelete =
+        prefs.getBool('auto_delete_user_disabled') ?? false;
     if (smartTrackingEnabled && !userDisabledAutoDelete) {
       autoDeleteArchive = true;
       autoDeleteValue = prefs.getInt('auto_delete_value') ?? 1;
@@ -54,6 +59,14 @@ class AppSettings {
     showExpenseTrendLine = prefs.getBool('show_expense_trend_line') ?? true;
     showIncomeTrendLine = prefs.getBool('show_income_trend_line') ?? false;
     showTransferTrendLine = prefs.getBool('show_transfer_trend_line') ?? false;
+    developerOptionsEnabled =
+        prefs.getBool('developer_options_enabled') ?? false;
+  }
+
+  static Future<void> setDeveloperOptionsEnabled(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('developer_options_enabled', enabled);
+    developerOptionsEnabled = enabled;
   }
 
   static Future<void> setSnackBarDuration(int ms) async {
@@ -128,7 +141,8 @@ class AppSettings {
     await prefs.setBool('smart_tracking_enabled', enabled);
     smartTrackingEnabled = enabled;
 
-    final userDisabledAutoDelete = prefs.getBool('auto_delete_user_disabled') ?? false;
+    final userDisabledAutoDelete =
+        prefs.getBool('auto_delete_user_disabled') ?? false;
 
     if (enabled) {
       if (!userDisabledAutoDelete) {

@@ -143,7 +143,7 @@ class BackupService {
 
     final backupData = {
       'version': 2,
-      'exported_at': DateTime.now().toIso8601String(),
+      'exported_at': DateTime.now().millisecondsSinceEpoch,
       'accounts': accounts,
       'categories': categories,
       'transactions': transactions,
@@ -196,8 +196,9 @@ class BackupService {
         // 1. Ensure accounts exist
         if (decoded.containsKey('accounts')) {
           final existingAccs = await txn.query('accounts');
-          final existingAccNames =
-              existingAccs.map((a) => a['name'].toString().toLowerCase()).toSet();
+          final existingAccNames = existingAccs
+              .map((a) => a['name'].toString().toLowerCase())
+              .toSet();
 
           for (var acc in (decoded['accounts'] as List)) {
             final accMap = Map<String, dynamic>.from(acc as Map);
@@ -212,8 +213,9 @@ class BackupService {
         // 2. Ensure categories exist
         if (decoded.containsKey('categories')) {
           final existingCats = await txn.query('categories');
-          final existingCatNames =
-              existingCats.map((c) => c['name'].toString().toLowerCase()).toSet();
+          final existingCatNames = existingCats
+              .map((c) => c['name'].toString().toLowerCase())
+              .toSet();
 
           for (var cat in (decoded['categories'] as List)) {
             final catMap = Map<String, dynamic>.from(cat as Map);
@@ -229,8 +231,9 @@ class BackupService {
         final currentAccounts = await txn.query('accounts');
         final currentCategories = await txn.query('categories');
 
-        int defaultAccId =
-            currentAccounts.isNotEmpty ? (currentAccounts.first['id'] as int) : 1;
+        int defaultAccId = currentAccounts.isNotEmpty
+            ? (currentAccounts.first['id'] as int)
+            : 1;
         int defaultCatId = currentCategories.isNotEmpty
             ? (currentCategories.first['id'] as int)
             : 1;
@@ -276,7 +279,10 @@ class BackupService {
   static Future<bool> restoreBackupJSON(String jsonContent) async {
     try {
       final decoded = jsonDecode(jsonContent) as Map<String, dynamic>;
-      if (decoded['version'] != 2) return false;
+      if (!decoded.containsKey('transactions') &&
+          !decoded.containsKey('accounts')) {
+        return false;
+      }
 
       final dbService = DatabaseService.instance;
       final db = await dbService.database;
@@ -288,19 +294,28 @@ class BackupService {
         await txn.delete('classifier_state');
         await txn.delete('notification_logs');
 
-        final accountsList = decoded['accounts'] as List;
-        for (var account in accountsList) {
-          await txn.insert('accounts', Map<String, dynamic>.from(account as Map));
+        if (decoded.containsKey('accounts')) {
+          final accountsList = decoded['accounts'] as List;
+          for (var account in accountsList) {
+            await txn.insert(
+                'accounts', Map<String, dynamic>.from(account as Map));
+          }
         }
 
-        final categoriesList = decoded['categories'] as List;
-        for (var category in categoriesList) {
-          await txn.insert('categories', Map<String, dynamic>.from(category as Map));
+        if (decoded.containsKey('categories')) {
+          final categoriesList = decoded['categories'] as List;
+          for (var category in categoriesList) {
+            await txn.insert(
+                'categories', Map<String, dynamic>.from(category as Map));
+          }
         }
 
-        final transactionsList = decoded['transactions'] as List;
-        for (var tx in transactionsList) {
-          await txn.insert('transactions', Map<String, dynamic>.from(tx as Map));
+        if (decoded.containsKey('transactions')) {
+          final transactionsList = decoded['transactions'] as List;
+          for (var tx in transactionsList) {
+            await txn.insert(
+                'transactions', Map<String, dynamic>.from(tx as Map));
+          }
         }
 
         if (decoded.containsKey('classifier_state')) {
@@ -370,7 +385,8 @@ class BackupService {
         String dateStr = cells[0];
         String timeStr = cells.length > 1 ? cells[1] : '00:00:00';
         String appName = cells.length > 2 ? cells[2] : 'Manual';
-        double amount = double.tryParse(cells.length > 3 ? cells[3] : '0') ?? 0.0;
+        double amount =
+            double.tryParse(cells.length > 3 ? cells[3] : '0') ?? 0.0;
         String type = cells.length > 4 ? cells[4].toLowerCase() : 'debit';
         String accName = cells.length > 5 ? cells[5] : '';
         String toAccName = cells.length > 6 ? cells[6] : '';

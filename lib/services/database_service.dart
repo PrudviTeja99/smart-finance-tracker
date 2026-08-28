@@ -25,7 +25,7 @@ class DatabaseService {
 
     final db = await openDatabase(
       path,
-      version: 4,
+      version: 5,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -42,7 +42,7 @@ class DatabaseService {
   Future<void> _createDB(Database db, int version) async {
     // 1. Create accounts table
     await db.execute('''
-      CREATE TABLE accounts (
+      CREATE TABLE IF NOT EXISTS accounts (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         type TEXT NOT NULL,
@@ -53,7 +53,7 @@ class DatabaseService {
 
     // 2. Create categories table
     await db.execute('''
-      CREATE TABLE categories (
+      CREATE TABLE IF NOT EXISTS categories (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         color INTEGER NOT NULL,
@@ -63,7 +63,7 @@ class DatabaseService {
 
     // 3. Create transactions table
     await db.execute('''
-      CREATE TABLE transactions (
+      CREATE TABLE IF NOT EXISTS transactions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         app_name TEXT,
         title TEXT NOT NULL,
@@ -74,7 +74,7 @@ class DatabaseService {
         to_account_id INTEGER,
         category_id INTEGER NOT NULL,
         description TEXT NOT NULL,
-        date TEXT NOT NULL,
+        timestamp INTEGER NOT NULL,
         status TEXT NOT NULL,
         notification_log_id INTEGER,
         FOREIGN KEY (account_id) REFERENCES accounts (id),
@@ -83,15 +83,15 @@ class DatabaseService {
       )
     ''');
 
-    // Create Index on date for range filtering performance
-    await db
-        .execute('CREATE INDEX idx_transactions_date ON transactions (date);');
+    // Create Index on timestamp for range filtering performance
     await db.execute(
-        'CREATE INDEX idx_transactions_status ON transactions (status);');
+        'CREATE INDEX IF NOT EXISTS idx_transactions_timestamp ON transactions (timestamp);');
+    await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_transactions_status ON transactions (status);');
 
     // 4. Create classifier_state table to store model training weights
     await db.execute('''
-      CREATE TABLE classifier_state (
+      CREATE TABLE IF NOT EXISTS classifier_state (
         key TEXT PRIMARY KEY,
         value TEXT NOT NULL
       )
@@ -136,7 +136,7 @@ class DatabaseService {
     await _seedDefaultData(db);
   }
 
-  Future<void> _seedDefaultData(Database db) async {
+  Future<void> _seedDefaultData(DatabaseExecutor db) async {
     // Seed default accounts
     final defaultAccounts = [
       AccountModel(
@@ -254,20 +254,20 @@ class DatabaseService {
 
   static Future<void> _createNotificationLogsTable(Database db) async {
     await db.execute('''
-      CREATE TABLE notification_logs (
+      CREATE TABLE IF NOT EXISTS notification_logs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         app_name TEXT,
         package_name TEXT,
         title TEXT,
         body TEXT,
-        date TEXT NOT NULL,
+        timestamp INTEGER NOT NULL,
         status TEXT NOT NULL DEFAULT 'unclassified'
       )
     ''');
     await db.execute(
-        'CREATE INDEX idx_notification_logs_status ON notification_logs (status);');
+        'CREATE INDEX IF NOT EXISTS idx_notification_logs_status ON notification_logs (status);');
     await db.execute(
-        'CREATE INDEX idx_notification_logs_date ON notification_logs (date);');
+        'CREATE INDEX IF NOT EXISTS idx_notification_logs_timestamp ON notification_logs (timestamp);');
   }
 
   Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
@@ -315,6 +315,17 @@ class DatabaseService {
           ON raw_notification_queue(package_name, body, timestamp)
       ''');
     }
+
+    if (oldVersion < 5) {
+      await db.execute('DROP TABLE IF EXISTS transactions;');
+      await db.execute('DROP TABLE IF EXISTS notification_logs;');
+      await db.execute('DROP TABLE IF EXISTS raw_notification_queue;');
+      await db.execute('DROP TABLE IF EXISTS model_audit_log;');
+      await db.execute('DROP TABLE IF EXISTS accounts;');
+      await db.execute('DROP TABLE IF EXISTS categories;');
+      await db.execute('DROP TABLE IF EXISTS classifier_state;');
+      await _createDB(db, 5);
+    }
   }
 
   // --- CLASSIFIER STATE METHODS ---
@@ -358,14 +369,14 @@ class DatabaseService {
     final db = await database;
 
     final windowStart =
-        date.subtract(const Duration(seconds: 60)).toIso8601String();
+        date.subtract(const Duration(seconds: 60)).millisecondsSinceEpoch;
     final windowEnd =
-        date.add(const Duration(seconds: 60)).toIso8601String();
+        date.add(const Duration(seconds: 60)).millisecondsSinceEpoch;
 
     final existingId = Sqflite.firstIntValue(await db.rawQuery('''
       SELECT id FROM notification_logs
       WHERE body = ? AND package_name = ?
-        AND date BETWEEN ? AND ?
+        AND timestamp BETWEEN ? AND ?
       LIMIT 1
     ''', [body, packageName, windowStart, windowEnd]));
 
@@ -376,7 +387,7 @@ class DatabaseService {
       'package_name': packageName,
       'title': title,
       'body': body,
-      'date': date.toIso8601String(),
+      'timestamp': date.millisecondsSinceEpoch,
       'status': status,
     });
   }
@@ -387,7 +398,7 @@ class DatabaseService {
       'notification_logs',
       where: 'status = ?',
       whereArgs: [status],
-      orderBy: 'date DESC',
+      orderBy: 'timestamp DESC',
     );
   }
 
@@ -395,7 +406,7 @@ class DatabaseService {
     final db = await database;
     return await db.query(
       'notification_logs',
-      orderBy: 'date DESC',
+      orderBy: 'timestamp DESC',
     );
   }
 
@@ -451,7 +462,8 @@ class DatabaseService {
   Future<List<AccountModel>> getAllAccounts() async {
     final db = await database;
     final result = await db.query('accounts', orderBy: 'id ASC');
-    final rawAccounts = result.map((json) => AccountModel.fromMap(json)).toList();
+    final rawAccounts =
+        result.map((json) => AccountModel.fromMap(json)).toList();
 
     final accountsWithBalances = <AccountModel>[];
     for (var acc in rawAccounts) {
@@ -617,7 +629,7 @@ class DatabaseService {
       'transactions',
       where: 'status = ?',
       whereArgs: ['pending'],
-      orderBy: 'date DESC',
+      orderBy: 'timestamp DESC',
     );
     return result.map((json) => TransactionModel.fromMap(json)).toList();
   }
@@ -632,19 +644,19 @@ class DatabaseService {
     List<dynamic> whereArgs = [];
 
     if (startDate != null) {
-      whereClause += " AND date >= ?";
-      whereArgs.add(startDate.toIso8601String());
+      whereClause += " AND timestamp >= ?";
+      whereArgs.add(startDate.millisecondsSinceEpoch);
     }
     if (endDate != null) {
-      whereClause += " AND date <= ?";
-      whereArgs.add(endDate.toIso8601String());
+      whereClause += " AND timestamp <= ?";
+      whereArgs.add(endDate.millisecondsSinceEpoch);
     }
 
     final result = await db.query(
       'transactions',
       where: whereClause,
       whereArgs: whereArgs,
-      orderBy: 'date DESC',
+      orderBy: 'timestamp DESC',
     );
     return result.map((json) => TransactionModel.fromMap(json)).toList();
   }
@@ -704,11 +716,10 @@ class DatabaseService {
         cutoff = now.subtract(Duration(days: value));
         break;
     }
-    final cutoffIso = cutoff.toIso8601String();
     return await db.delete(
       'notification_logs',
-      where: "status = 'archived' AND date < ?",
-      whereArgs: [cutoffIso],
+      where: "status = 'archived' AND timestamp < ?",
+      whereArgs: [cutoff.millisecondsSinceEpoch],
     );
   }
 
@@ -734,6 +745,23 @@ class DatabaseService {
       'raw_notification_queue',
       where: "status = 'processed'",
     );
+  }
+
+  /// Completely erase all user data across all tables and re-seed default data (Developer feature).
+  Future<void> eraseAllData() async {
+    final db = await database;
+    await db.transaction((txn) async {
+      await txn.delete('transactions');
+      await txn.delete('notification_logs');
+      await txn.delete('raw_notification_queue');
+      await txn.delete('model_audit_log');
+      await txn.delete('classifier_state');
+      await txn.delete('accounts');
+      await txn.delete('categories');
+
+      await _seedDefaultData(txn);
+    });
+    _notifyDashboardDataChanged();
   }
 
   // --- RAW NOTIFICATION QUEUE (Zero-Battery Background Ingestion) ---
@@ -892,7 +920,8 @@ class DatabaseService {
       final action = row['action_type'] as String;
       final count = row['cnt'] as int;
       if (action == 'auto_drafted') autoDrafted = count;
-      if (action == 'auto_archived' || action == 'auto_dismissed') autoArchived += count;
+      if (action == 'auto_archived' || action == 'auto_dismissed')
+        autoArchived += count;
     }
 
     return {'auto_drafted': autoDrafted, 'auto_archived': autoArchived};

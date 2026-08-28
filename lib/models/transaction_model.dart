@@ -41,7 +41,7 @@ class TransactionModel {
       'to_account_id': toAccountId,
       'category_id': categoryId,
       'description': description,
-      'date': date.toIso8601String(),
+      'timestamp': date.millisecondsSinceEpoch,
       'status': status,
       'notification_log_id': notificationLogId,
     };
@@ -59,7 +59,8 @@ class TransactionModel {
       toAccountId: map['to_account_id'] as int?,
       categoryId: map['category_id'] as int,
       description: map['description'] as String,
-      date: DateTime.parse(map['date'] as String),
+      date: DateTime.fromMillisecondsSinceEpoch(
+          (map['timestamp'] as num).toInt()),
       status: map['status'] as String,
       notificationLogId: map['notification_log_id'] as int?,
     );

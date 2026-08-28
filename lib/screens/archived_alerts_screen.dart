@@ -74,13 +74,13 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
     }
   }
 
-
-
   Future<void> _restoreAlert(int logId) async {
     final strings = AppLocalizations.of(context)!;
-    await DatabaseService.instance.updateNotificationLogStatus(logId, 'unclassified');
+    await DatabaseService.instance
+        .updateNotificationLogStatus(logId, 'unclassified');
     if (!mounted) return;
-    AppSnackBar.show(context, strings.archivedAlertsRestoredSuccess, type: SnackBarType.success);
+    AppSnackBar.show(context, strings.archivedAlertsRestoredSuccess,
+        type: SnackBarType.success);
     _loadArchivedLogs();
   }
 
@@ -88,7 +88,8 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
     final strings = AppLocalizations.of(context)!;
     await DatabaseService.instance.deleteNotificationLog(logId);
     if (!mounted) return;
-    AppSnackBar.show(context, strings.archivedAlertsDeletedSuccess, type: SnackBarType.success);
+    AppSnackBar.show(context, strings.archivedAlertsDeletedSuccess,
+        type: SnackBarType.success);
     _loadArchivedLogs();
   }
 
@@ -128,16 +129,23 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(strings.archivedAlertsDeleteSelectedTitle, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        content: Text(strings.archivedAlertsDeleteSelectedConfirm(_selectedLogIds.length), style: const TextStyle(color: Colors.white70)),
+        title: Text(strings.archivedAlertsDeleteSelectedTitle,
+            style: const TextStyle(
+                color: Colors.white, fontWeight: FontWeight.bold)),
+        content: Text(
+            strings.archivedAlertsDeleteSelectedConfirm(_selectedLogIds.length),
+            style: const TextStyle(color: Colors.white70)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text(strings.inboxCancel, style: const TextStyle(color: Colors.white38)),
+            child: Text(strings.inboxCancel,
+                style: const TextStyle(color: Colors.white38)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(strings.archivedAlertsDelete, style: const TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.bold)),
+            child: Text(strings.archivedAlertsDelete,
+                style: const TextStyle(
+                    color: Color(0xFFEF4444), fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -149,7 +157,9 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
         await DatabaseService.instance.deleteNotificationLog(id);
       }
       if (!mounted) return;
-      AppSnackBar.show(context, strings.archivedAlertsBatchDeletedSuccess(ids.length), type: SnackBarType.success);
+      AppSnackBar.show(
+          context, strings.archivedAlertsBatchDeletedSuccess(ids.length),
+          type: SnackBarType.success);
       setState(() {
         _isSelectionMode = false;
         _selectedLogIds.clear();
@@ -164,10 +174,13 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
 
     final ids = _selectedLogIds.toList();
     for (var id in ids) {
-      await DatabaseService.instance.updateNotificationLogStatus(id, 'unclassified');
+      await DatabaseService.instance
+          .updateNotificationLogStatus(id, 'unclassified');
     }
     if (!mounted) return;
-    AppSnackBar.show(context, strings.archivedAlertsRestoredSelectedSuccess(ids.length), type: SnackBarType.success);
+    AppSnackBar.show(
+        context, strings.archivedAlertsRestoredSelectedSuccess(ids.length),
+        type: SnackBarType.success);
     setState(() {
       _isSelectionMode = false;
       _selectedLogIds.clear();
@@ -182,16 +195,22 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(strings.archivedAlertsClearAllTitle, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        content: Text(strings.archivedAlertsClearAllConfirm, style: const TextStyle(color: Colors.white70)),
+        title: Text(strings.archivedAlertsClearAllTitle,
+            style: const TextStyle(
+                color: Colors.white, fontWeight: FontWeight.bold)),
+        content: Text(strings.archivedAlertsClearAllConfirm,
+            style: const TextStyle(color: Colors.white70)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text(strings.inboxCancel, style: const TextStyle(color: Colors.white38)),
+            child: Text(strings.inboxCancel,
+                style: const TextStyle(color: Colors.white38)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(strings.inboxClearAllAlerts, style: const TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.bold)),
+            child: Text(strings.inboxClearAllAlerts,
+                style: const TextStyle(
+                    color: Color(0xFFEF4444), fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -200,7 +219,8 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
     if (confirmed == true) {
       await DatabaseService.instance.clearNotificationLogs(status: 'archived');
       if (mounted) {
-        AppSnackBar.show(context, strings.archivedAlertsClearAllSuccess, type: SnackBarType.success);
+        AppSnackBar.show(context, strings.archivedAlertsClearAllSuccess,
+            type: SnackBarType.success);
       }
       _loadArchivedLogs();
     }
@@ -238,18 +258,21 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
     int totalCount = 0;
 
     for (var pkg in selectedPkgs) {
-      final logsForPkg = _archivedLogs.where((l) => l['package_name'] == pkg).toList();
+      final logsForPkg =
+          _archivedLogs.where((l) => l['package_name'] == pkg).toList();
       totalCount += logsForPkg.length;
       for (var log in logsForPkg) {
         final id = log['id'] as int;
-        await DatabaseService.instance.updateNotificationLogStatus(id, 'unclassified');
+        await DatabaseService.instance
+            .updateNotificationLogStatus(id, 'unclassified');
       }
     }
 
     if (mounted) {
       AppSnackBar.show(
         context,
-        strings.archivedAlertsRestoredAppCategoriesSuccess(totalCount, selectedPkgs.length),
+        strings.archivedAlertsRestoredAppCategoriesSuccess(
+            totalCount, selectedPkgs.length),
         type: SnackBarType.success,
       );
       setState(() {
@@ -259,8 +282,6 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
     }
     _loadArchivedLogs();
   }
-
-
 
   Future<void> _deleteSelectedAppCategoriesPermanently() async {
     if (_selectedAppPackages.isEmpty) return;
@@ -277,19 +298,26 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(strings.archivedAlertsDeleteAppCategoriesTitle(totalCount), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text(strings.archivedAlertsDeleteAppCategoriesTitle(totalCount),
+            style: const TextStyle(
+                color: Colors.white, fontWeight: FontWeight.bold)),
         content: Text(
-          strings.archivedAlertsDeleteAppCategoriesConfirm(totalCount, selectedPkgs.length),
-          style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+          strings.archivedAlertsDeleteAppCategoriesConfirm(
+              totalCount, selectedPkgs.length),
+          style:
+              const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text(strings.inboxCancel, style: const TextStyle(color: Colors.white38)),
+            child: Text(strings.inboxCancel,
+                style: const TextStyle(color: Colors.white38)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(strings.archivedAlertsDelete, style: const TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.bold)),
+            child: Text(strings.archivedAlertsDelete,
+                style: const TextStyle(
+                    color: Color(0xFFEF4444), fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -297,7 +325,8 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
 
     if (confirmed == true) {
       for (var pkg in selectedPkgs) {
-        final logsForPkg = _archivedLogs.where((l) => l['package_name'] == pkg).toList();
+        final logsForPkg =
+            _archivedLogs.where((l) => l['package_name'] == pkg).toList();
         for (var log in logsForPkg) {
           final id = log['id'] as int;
           await DatabaseService.instance.deleteNotificationLog(id);
@@ -305,7 +334,9 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
       }
 
       if (mounted) {
-        AppSnackBar.show(context, strings.archivedAlertsDeletedAppCategoriesSuccess(totalCount), type: SnackBarType.neutral);
+        AppSnackBar.show(context,
+            strings.archivedAlertsDeletedAppCategoriesSuccess(totalCount),
+            type: SnackBarType.neutral);
         setState(() {
           _isAppCategorySelectionMode = false;
           _selectedAppPackages.clear();
@@ -315,14 +346,16 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
     }
   }
 
-  void _showDetailsBottomSheet(Map<String, dynamic> log, String resolvedAppName) {
+  void _showDetailsBottomSheet(
+      Map<String, dynamic> log, String resolvedAppName) {
     final strings = AppLocalizations.of(context)!;
     final title = log['title'] as String? ?? '';
     final body = log['body'] as String? ?? '';
     final packageName = log['package_name'] as String? ?? '';
-    final dateStr = log['date'] as String? ?? '';
-    final date = DateTime.tryParse(dateStr);
-    final formattedDate = date != null ? DateFormat('dd MMM yyyy, hh:mm a').format(date) : '';
+    final ts = log['timestamp'] as int?;
+    final date = ts != null ? DateTime.fromMillisecondsSinceEpoch(ts) : null;
+    final formattedDate =
+        date != null ? DateFormat('dd MMM yyyy, hh:mm a').format(date) : '';
 
     showModalBottomSheet(
       context: context,
@@ -336,115 +369,132 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
           child: Padding(
             padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
             child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: 20),
-                  decoration: BoxDecoration(
-                    color: Colors.white24,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              Row(
-                children: [
-                  _buildAppIconWidget(packageName, resolvedAppName, size: 28),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          resolvedAppName,
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
-                        ),
-                        Text(
-                          packageName,
-                          style: const TextStyle(color: Colors.white38, fontSize: 10),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.white24,
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white54),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              const Divider(color: Colors.white10, height: 1),
-              const SizedBox(height: 16),
-              if (title.isNotEmpty) ...[
-                Text(
-                  title,
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
                 ),
-                const SizedBox(height: 8),
-              ],
-              Text(
-                body,
-                style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.5),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Received: $formattedDate',
-                style: const TextStyle(color: Colors.white38, fontSize: 11),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFFEF4444),
-                      side: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
-                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    ),
-                    onPressed: () async {
-                      Navigator.pop(context);
-                      await _deleteAlert(log['id'] as int);
-                    },
-                    icon: const Icon(Icons.delete_outline_rounded, size: 18),
-                    label: Text(strings.archivedAlertsDelete, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6366F1),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                Row(
+                  children: [
+                    _buildAppIconWidget(packageName, resolvedAppName, size: 28),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            resolvedAppName,
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15),
+                          ),
+                          Text(
+                            packageName,
+                            style: const TextStyle(
+                                color: Colors.white38, fontSize: 10),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _restoreAlert(log['id'] as int);
-                      },
-                      icon: const Icon(Icons.settings_backup_restore_rounded, size: 18),
-                      label: Text(strings.archivedAlertsRestore, style: const TextStyle(fontWeight: FontWeight.bold)),
                     ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white54),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                const Divider(color: Colors.white10, height: 1),
+                const SizedBox(height: 16),
+                if (title.isNotEmpty) ...[
+                  Text(
+                    title,
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14),
                   ),
+                  const SizedBox(height: 8),
                 ],
-              ),
-            ],
+                Text(
+                  body,
+                  style: const TextStyle(
+                      color: Colors.white70, fontSize: 13, height: 1.5),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Received: $formattedDate',
+                  style: const TextStyle(color: Colors.white38, fontSize: 11),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFFEF4444),
+                        side: const BorderSide(
+                            color: Color(0xFFEF4444), width: 1.5),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 14, horizontal: 20),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16)),
+                      ),
+                      onPressed: () async {
+                        Navigator.pop(context);
+                        await _deleteAlert(log['id'] as int);
+                      },
+                      icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                      label: Text(strings.archivedAlertsDelete,
+                          style: const TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF6366F1),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16)),
+                        ),
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _restoreAlert(log['id'] as int);
+                        },
+                        icon: const Icon(Icons.settings_backup_restore_rounded,
+                            size: 18),
+                        label: Text(strings.archivedAlertsRestore,
+                            style:
+                                const TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  ).then((_) {
+    ).then((_) {
       if (mounted) {
         _searchFocusNode.unfocus();
       }
     });
   }
 
-  Widget _buildAppIconWidget(String packageName, String fallbackName, {double size = 20}) {
+  Widget _buildAppIconWidget(String packageName, String fallbackName,
+      {double size = 20}) {
     return AppIconCacheService.instance.buildAppIconWidget(
       packageName,
       fallbackName,
@@ -465,7 +515,9 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
       final body = (log['body'] as String? ?? '').toLowerCase();
       final appName = (log['app_name'] as String? ?? '').toLowerCase();
       final packageName = (log['package_name'] as String? ?? '').toLowerCase();
-      final cachedAppName = AppIconCacheService.instance.getCachedAppName(log['package_name'] as String? ?? '').toLowerCase();
+      final cachedAppName = AppIconCacheService.instance
+          .getCachedAppName(log['package_name'] as String? ?? '')
+          .toLowerCase();
 
       return title.contains(query) ||
           body.contains(query) ||
@@ -485,11 +537,9 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
 
     final sortedPackages = groups.keys.toList()
       ..sort((a, b) {
-        final dateStrA = groups[a]!.first['date'] as String? ?? '';
-        final dateStrB = groups[b]!.first['date'] as String? ?? '';
-        final dateA = DateTime.tryParse(dateStrA) ?? DateTime(1970);
-        final dateB = DateTime.tryParse(dateStrB) ?? DateTime(1970);
-        return dateB.compareTo(dateA);
+        final tsA = groups[a]!.first['timestamp'] as int? ?? 0;
+        final tsB = groups[b]!.first['timestamp'] as int? ?? 0;
+        return tsB.compareTo(tsA);
       });
 
     return PopScope(
@@ -516,18 +566,21 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
                 ),
                 title: Text(
                   strings.inboxSelectedCount(_selectedLogIds.length),
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 16),
                 ),
                 backgroundColor: const Color(0xFF1E293B),
                 elevation: 0,
                 actions: [
                   IconButton(
-                    icon: const Icon(Icons.settings_backup_restore_rounded, color: Color(0xFF818CF8)),
+                    icon: const Icon(Icons.settings_backup_restore_rounded,
+                        color: Color(0xFF818CF8)),
                     onPressed: _restoreSelected,
                     tooltip: strings.archivedAlertsRestoreSelected,
                   ),
                   IconButton(
-                    icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4444)),
+                    icon: const Icon(Icons.delete_outline_rounded,
+                        color: Color(0xFFEF4444)),
                     onPressed: _deleteSelected,
                     tooltip: strings.archivedAlertsDeleteSelected,
                   ),
@@ -537,7 +590,8 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
             : _isAppCategorySelectionMode
                 ? AppBar(
                     leading: IconButton(
-                      icon: const Icon(Icons.close_rounded, color: Colors.white),
+                      icon:
+                          const Icon(Icons.close_rounded, color: Colors.white),
                       onPressed: () {
                         setState(() {
                           _isAppCategorySelectionMode = false;
@@ -546,20 +600,25 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
                       },
                     ),
                     title: Text(
-                      strings.archivedAlertsAppsSelected(_selectedAppPackages.length),
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      strings.archivedAlertsAppsSelected(
+                          _selectedAppPackages.length),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 16),
                     ),
                     backgroundColor: const Color(0xFF1E293B),
                     elevation: 0,
                     actions: [
                       IconButton(
-                        icon: const Icon(Icons.restore_rounded, color: Color(0xFF10B981)),
+                        icon: const Icon(Icons.restore_rounded,
+                            color: Color(0xFF10B981)),
                         tooltip: strings.archivedAlertsRestoreSelectedApps,
                         onPressed: _restoreSelectedAppCategories,
                       ),
                       IconButton(
-                        icon: const Icon(Icons.delete_forever_rounded, color: Color(0xFFEF4444)),
-                        tooltip: strings.archivedAlertsDeleteSelectedAppsPermanently,
+                        icon: const Icon(Icons.delete_forever_rounded,
+                            color: Color(0xFFEF4444)),
+                        tooltip:
+                            strings.archivedAlertsDeleteSelectedAppsPermanently,
                         onPressed: _deleteSelectedAppCategoriesPermanently,
                       ),
                     ],
@@ -567,18 +626,24 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
                 : AppBar(
                     title: Row(
                       children: [
-                        Text(strings.archivedAlertsTitle, style: const TextStyle(fontWeight: FontWeight.bold)),
+                        Text(strings.archivedAlertsTitle,
+                            style:
+                                const TextStyle(fontWeight: FontWeight.bold)),
                         if (!_isLoading && _archivedLogs.isNotEmpty) ...[
                           const SizedBox(width: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
                               color: Colors.white10,
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Text(
                               '${_archivedLogs.length}',
-                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white70),
+                              style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white70),
                             ),
                           ),
                         ],
@@ -589,7 +654,8 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
                     actions: [
                       if (!_isLoading && _archivedLogs.isNotEmpty) ...[
                         IconButton(
-                          icon: const Icon(Icons.checklist_rounded, color: Colors.white70),
+                          icon: const Icon(Icons.checklist_rounded,
+                              color: Colors.white70),
                           onPressed: () {
                             setState(() {
                               _isAppCategorySelectionMode = true;
@@ -599,129 +665,153 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
                           tooltip: strings.archivedAlertsSelectApps,
                         ),
                         IconButton(
-                          icon: const Icon(Icons.delete_sweep_rounded, color: Colors.white70),
+                          icon: const Icon(Icons.delete_sweep_rounded,
+                              color: Colors.white70),
                           onPressed: _clearAllArchives,
                           tooltip: strings.inboxClearAllAlerts,
                         ),
                       ],
                     ],
                   ),
-      body: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: Column(
-          children: [
-            // Dummy focus node to absorb automatic focus when modal bottom sheets are popped
-            const Focus(
-              autofocus: true,
-              child: SizedBox.shrink(),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: TextField(
-                controller: _searchController,
-                focusNode: _searchFocusNode,
-                autofocus: false,
-                style: const TextStyle(color: Colors.white, fontSize: 14),
-                decoration: InputDecoration(
-                  hintText: strings.archivedAlertsSearchHint,
-                  hintStyle: const TextStyle(color: Colors.white30, fontSize: 14),
-                  prefixIcon: const Icon(Icons.search, color: Colors.white30, size: 20),
-                  suffixIcon: _searchQuery.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear, color: Colors.white54, size: 18),
-                          onPressed: () {
-                            setState(() {
-                              _searchController.clear();
-                              _searchQuery = '';
-                            });
-                          },
-                        )
-                      : null,
-                  filled: true,
-                  fillColor: Colors.black26,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(color: Colors.white10, width: 1),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(color: Colors.white10, width: 1),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(color: Color(0xFF6366F1), width: 1.5),
-                  ),
-                ),
-                onChanged: (val) {
-                  setState(() {
-                    _searchQuery = val;
-                  });
-                },
+        body: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: Column(
+            children: [
+              // Dummy focus node to absorb automatic focus when modal bottom sheets are popped
+              const Focus(
+                autofocus: true,
+                child: SizedBox.shrink(),
               ),
-            ),
-            Expanded(
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(Color(0xFF6366F1))))
-                  : sortedPackages.isEmpty
-                      ? _buildEmptyState()
-                      : ListView.builder(
-                          controller: _scrollController,
-                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
-                          itemCount: (sortedPackages.length < _maxDisplay
-                                  ? sortedPackages.length
-                                  : _maxDisplay) +
-                              (sortedPackages.length > _maxDisplay ? 1 : 0),
-                          itemBuilder: (context, index) {
-                            final visibleCount = sortedPackages.length < _maxDisplay
-                                ? sortedPackages.length
-                                : _maxDisplay;
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: TextField(
+                  controller: _searchController,
+                  focusNode: _searchFocusNode,
+                  autofocus: false,
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  decoration: InputDecoration(
+                    hintText: strings.archivedAlertsSearchHint,
+                    hintStyle:
+                        const TextStyle(color: Colors.white30, fontSize: 14),
+                    prefixIcon: const Icon(Icons.search,
+                        color: Colors.white30, size: 20),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear,
+                                color: Colors.white54, size: 18),
+                            onPressed: () {
+                              setState(() {
+                                _searchController.clear();
+                                _searchQuery = '';
+                              });
+                            },
+                          )
+                        : null,
+                    filled: true,
+                    fillColor: Colors.black26,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide:
+                          const BorderSide(color: Colors.white10, width: 1),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide:
+                          const BorderSide(color: Colors.white10, width: 1),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(
+                          color: Color(0xFF6366F1), width: 1.5),
+                    ),
+                  ),
+                  onChanged: (val) {
+                    setState(() {
+                      _searchQuery = val;
+                    });
+                  },
+                ),
+              ),
+              Expanded(
+                child: _isLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(
+                            valueColor:
+                                AlwaysStoppedAnimation(Color(0xFF6366F1))))
+                    : sortedPackages.isEmpty
+                        ? _buildEmptyState()
+                        : ListView.builder(
+                            controller: _scrollController,
+                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
+                            itemCount: (sortedPackages.length < _maxDisplay
+                                    ? sortedPackages.length
+                                    : _maxDisplay) +
+                                (sortedPackages.length > _maxDisplay ? 1 : 0),
+                            itemBuilder: (context, index) {
+                              final visibleCount =
+                                  sortedPackages.length < _maxDisplay
+                                      ? sortedPackages.length
+                                      : _maxDisplay;
 
-                            if (index == visibleCount) {
-                              return const Padding(
-                                padding: EdgeInsets.symmetric(vertical: 16),
-                                child: Center(
-                                  child: SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Color(0xFF6366F1),
+                              if (index == visibleCount) {
+                                return const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 16),
+                                  child: Center(
+                                    child: SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Color(0xFF6366F1),
+                                      ),
                                     ),
                                   ),
-                                ),
+                                );
+                              }
+
+                              final pkg = sortedPackages[index];
+                              final list = groups[pkg]!;
+                              final fallbackAppName =
+                                  list.first['app_name'] as String? ??
+                                      'Unknown';
+                              final resolvedAppName = AppIconCacheService
+                                  .instance
+                                  .getCachedAppName(pkg,
+                                      defaultFallback: fallbackAppName);
+
+                              final isSelected =
+                                  _selectedAppPackages.contains(pkg);
+
+                              return _ArchivedAppGroupTile(
+                                key: ValueKey(
+                                    'archive_group_${pkg}_${_isAppCategorySelectionMode}_$isSelected'),
+                                pkg: pkg,
+                                resolvedAppName: resolvedAppName,
+                                list: list,
+                                leadingWidget: _buildAppIconWidget(
+                                    pkg, resolvedAppName,
+                                    size: 24),
+                                isSelectionMode: _isAppCategorySelectionMode,
+                                isSelected: isSelected,
+                                onTapHeader: () =>
+                                    _toggleAppPackageSelection(pkg),
+                                onLongPressHeader: () =>
+                                    _enterAppCategorySelectionMode(pkg),
+                                buildLogItem: (log) =>
+                                    _buildArchivedLogItem(log, resolvedAppName),
                               );
-                            }
-
-                            final pkg = sortedPackages[index];
-                            final list = groups[pkg]!;
-                            final fallbackAppName = list.first['app_name'] as String? ?? 'Unknown';
-                            final resolvedAppName = AppIconCacheService.instance.getCachedAppName(pkg, defaultFallback: fallbackAppName);
-
-                            final isSelected = _selectedAppPackages.contains(pkg);
-
-                            return _ArchivedAppGroupTile(
-                              key: ValueKey('archive_group_${pkg}_${_isAppCategorySelectionMode}_$isSelected'),
-                              pkg: pkg,
-                              resolvedAppName: resolvedAppName,
-                              list: list,
-                              leadingWidget: _buildAppIconWidget(pkg, resolvedAppName, size: 24),
-                              isSelectionMode: _isAppCategorySelectionMode,
-                              isSelected: isSelected,
-                              onTapHeader: () => _toggleAppPackageSelection(pkg),
-                              onLongPressHeader: () => _enterAppCategorySelectionMode(pkg),
-                              buildLogItem: (log) => _buildArchivedLogItem(log, resolvedAppName),
-                            );
-                          },
-                        ),
-            ),
-          ],
+                            },
+                          ),
+              ),
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildEmptyState() {
     final strings = AppLocalizations.of(context)!;
@@ -745,15 +835,21 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
             ),
             const SizedBox(height: 24),
             Text(
-              _searchQuery.isNotEmpty ? strings.archivedAlertsNoSearchResults : strings.archivedAlertsNoAlerts,
-              style: const TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
+              _searchQuery.isNotEmpty
+                  ? strings.archivedAlertsNoSearchResults
+                  : strings.archivedAlertsNoAlerts,
+              style: const TextStyle(
+                  fontSize: 18,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
             Text(
               _searchQuery.isNotEmpty
                   ? strings.archivedAlertsNoSearchResultsSubtitle
                   : strings.archivedAlertsEmptyStateSubtitle,
-              style: const TextStyle(fontSize: 12, color: Colors.white38, height: 1.5),
+              style: const TextStyle(
+                  fontSize: 12, color: Colors.white38, height: 1.5),
               textAlign: TextAlign.center,
             ),
           ],
@@ -762,16 +858,16 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
     );
   }
 
-  Widget _buildArchivedLogItem(Map<String, dynamic> log, String resolvedAppName) {
+  Widget _buildArchivedLogItem(
+      Map<String, dynamic> log, String resolvedAppName) {
     final strings = AppLocalizations.of(context)!;
     final title = log['title'] as String? ?? '';
     final body = log['body'] as String? ?? '';
-    final dateStr = log['date'] as String? ?? '';
+    final ts = log['timestamp'] as int?;
     final logId = log['id'] as int;
-    final date = DateTime.tryParse(dateStr);
-    final formattedTime = date != null
-        ? DateFormat('dd MMM, hh:mm a').format(date)
-        : '';
+    final date = ts != null ? DateTime.fromMillisecondsSinceEpoch(ts) : null;
+    final formattedTime =
+        date != null ? DateFormat('dd MMM, hh:mm a').format(date) : '';
 
     final isSelected = _selectedLogIds.contains(logId);
 
@@ -791,153 +887,170 @@ class _ArchivedAlertsScreenState extends State<ArchivedAlertsScreen> {
         ),
       ),
       child: InkWell(
-          onTap: () {
-            if (_isSelectionMode) {
-              _toggleSelection(logId);
-            } else {
-              _showDetailsBottomSheet(log, resolvedAppName);
-            }
-          },
-          onLongPress: () {
-            if (!_isSelectionMode) {
-              _enterSelectionMode(logId);
-            }
-          },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // Checkbox on selection mode, otherwise mail icon
-                _isSelectionMode
-                    ? AnimatedContainer(
-                        duration: const Duration(milliseconds: 150),
-                        padding: const EdgeInsets.all(2),
-                        decoration: BoxDecoration(
-                          color: isSelected ? const Color(0xFF6366F1) : Colors.transparent,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: isSelected ? const Color(0xFF6366F1) : Colors.white30,
-                            width: 1.5,
-                          ),
-                        ),
-                        child: Icon(
-                          Icons.check_rounded,
-                          size: 14,
-                          color: isSelected ? Colors.white : Colors.transparent,
-                        ),
-                      )
-                    : Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.04),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.mail_outline_rounded,
-                          size: 16,
-                          color: Colors.white38,
+        onTap: () {
+          if (_isSelectionMode) {
+            _toggleSelection(logId);
+          } else {
+            _showDetailsBottomSheet(log, resolvedAppName);
+          }
+        },
+        onLongPress: () {
+          if (!_isSelectionMode) {
+            _enterSelectionMode(logId);
+          }
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Checkbox on selection mode, otherwise mail icon
+              _isSelectionMode
+                  ? AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? const Color(0xFF6366F1)
+                            : Colors.transparent,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isSelected
+                              ? const Color(0xFF6366F1)
+                              : Colors.white30,
+                          width: 1.5,
                         ),
                       ),
-                const SizedBox(width: 14),
-                
-                // Alert Text Details
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (title.isNotEmpty) ...[
-                        Text(
-                          title,
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 3),
-                      ],
+                      child: Icon(
+                        Icons.check_rounded,
+                        size: 14,
+                        color: isSelected ? Colors.white : Colors.transparent,
+                      ),
+                    )
+                  : Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.04),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.mail_outline_rounded,
+                        size: 16,
+                        color: Colors.white38,
+                      ),
+                    ),
+              const SizedBox(width: 14),
+
+              // Alert Text Details
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (title.isNotEmpty) ...[
                       Text(
-                        body,
+                        title,
                         style: const TextStyle(
-                          color: Colors.white38,
-                          fontSize: 11,
-                          height: 1.4,
+                          color: Colors.white70,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
                         ),
-                        maxLines: 2,
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
+                      const SizedBox(height: 3),
                     ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                
-                // Right Metadata & Action Button (hidden in selection mode)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
                     Text(
-                      formattedTime,
-                      style: const TextStyle(color: Colors.white24, fontSize: 9),
+                      body,
+                      style: const TextStyle(
+                        color: Colors.white38,
+                        fontSize: 11,
+                        height: 1.4,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 2),
-                    _isSelectionMode
-                        ? const SizedBox(height: 22, width: 22)
-                        : PopupMenuButton<String>(
-                            icon: const Icon(
-                              Icons.more_horiz_rounded,
-                              color: Colors.white38,
-                              size: 22,
-                            ),
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(minWidth: 150),
-                            color: const Color(0xFF1E293B),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              side: const BorderSide(color: Color(0xFF334155), width: 1),
-                            ),
-                            onSelected: (val) {
-                              if (val == 'restore') {
-                                _restoreAlert(logId);
-                              } else if (val == 'delete') {
-                                _deleteAlert(logId);
-                              }
-                            },
-                            itemBuilder: (context) => [
-                              PopupMenuItem(
-                                value: 'restore',
-                                height: 44,
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.settings_backup_restore_rounded, size: 18, color: Color(0xFF818CF8)),
-                                    const SizedBox(width: 10),
-                                    Text(strings.archivedAlertsRestoreAlert, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
-                                  ],
-                                ),
-                              ),
-                              PopupMenuItem(
-                                value: 'delete',
-                                height: 44,
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.delete_outline_rounded, size: 18, color: Color(0xFFEF4444)),
-                                    const SizedBox(width: 10),
-                                    Text(strings.archivedAlertsDeleteAlert, style: const TextStyle(color: Color(0xFFEF4444), fontSize: 13, fontWeight: FontWeight.w600)),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
                   ],
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 12),
+
+              // Right Metadata & Action Button (hidden in selection mode)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    formattedTime,
+                    style: const TextStyle(color: Colors.white24, fontSize: 9),
+                  ),
+                  const SizedBox(height: 2),
+                  _isSelectionMode
+                      ? const SizedBox(height: 22, width: 22)
+                      : PopupMenuButton<String>(
+                          icon: const Icon(
+                            Icons.more_horiz_rounded,
+                            color: Colors.white38,
+                            size: 22,
+                          ),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(minWidth: 150),
+                          color: const Color(0xFF1E293B),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            side: const BorderSide(
+                                color: Color(0xFF334155), width: 1),
+                          ),
+                          onSelected: (val) {
+                            if (val == 'restore') {
+                              _restoreAlert(logId);
+                            } else if (val == 'delete') {
+                              _deleteAlert(logId);
+                            }
+                          },
+                          itemBuilder: (context) => [
+                            PopupMenuItem(
+                              value: 'restore',
+                              height: 44,
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                      Icons.settings_backup_restore_rounded,
+                                      size: 18,
+                                      color: Color(0xFF818CF8)),
+                                  const SizedBox(width: 10),
+                                  Text(strings.archivedAlertsRestoreAlert,
+                                      style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600)),
+                                ],
+                              ),
+                            ),
+                            PopupMenuItem(
+                              value: 'delete',
+                              height: 44,
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.delete_outline_rounded,
+                                      size: 18, color: Color(0xFFEF4444)),
+                                  const SizedBox(width: 10),
+                                  Text(strings.archivedAlertsDeleteAlert,
+                                      style: const TextStyle(
+                                          color: Color(0xFFEF4444),
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600)),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                ],
+              ),
+            ],
           ),
         ),
-      );
+      ),
+    );
   }
 }
 
@@ -982,7 +1095,9 @@ class _ArchivedAppGroupTileState extends State<_ArchivedAppGroupTile> {
             : const Color(0xFF1E293B),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: widget.isSelected ? const Color(0xFF6366F1) : const Color(0xFF334155),
+          color: widget.isSelected
+              ? const Color(0xFF6366F1)
+              : const Color(0xFF334155),
           width: widget.isSelected ? 1.5 : 1.0,
         ),
         boxShadow: [
@@ -1012,17 +1127,22 @@ class _ArchivedAppGroupTileState extends State<_ArchivedAppGroupTile> {
                   duration: const Duration(milliseconds: 150),
                   padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
-                    color: widget.isSelected ? const Color(0xFF6366F1) : Colors.transparent,
+                    color: widget.isSelected
+                        ? const Color(0xFF6366F1)
+                        : Colors.transparent,
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: widget.isSelected ? const Color(0xFF6366F1) : Colors.white30,
+                      color: widget.isSelected
+                          ? const Color(0xFF6366F1)
+                          : Colors.white30,
                       width: 1.5,
                     ),
                   ),
                   child: Icon(
                     Icons.check_rounded,
                     size: 14,
-                    color: widget.isSelected ? Colors.white : Colors.transparent,
+                    color:
+                        widget.isSelected ? Colors.white : Colors.transparent,
                   ),
                 )
               : widget.leadingWidget,
@@ -1045,7 +1165,10 @@ class _ArchivedAppGroupTileState extends State<_ArchivedAppGroupTile> {
                 ),
                 child: Text(
                   '${widget.list.length}',
-                  style: const TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                      color: Colors.white54,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold),
                 ),
               ),
               if (!widget.isSelectionMode) ...[
@@ -1053,7 +1176,8 @@ class _ArchivedAppGroupTileState extends State<_ArchivedAppGroupTile> {
                 AnimatedRotation(
                   turns: _isExpanded ? 0.5 : 0.0,
                   duration: const Duration(milliseconds: 200),
-                  child: const Icon(Icons.keyboard_arrow_down_rounded, size: 20, color: Colors.white30),
+                  child: const Icon(Icons.keyboard_arrow_down_rounded,
+                      size: 20, color: Colors.white30),
                 ),
               ],
             ],

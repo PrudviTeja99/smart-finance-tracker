@@ -2875,6 +2875,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Bar'**
   String get chartViewBar;
+
+  /// No description provided for @settingsEraseAllDataTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Erase All App Data'**
+  String get settingsEraseAllDataTitle;
+
+  /// No description provided for @settingsEraseAllDataSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Wipe all tables & reset database to default'**
+  String get settingsEraseAllDataSubtitle;
+
+  /// No description provided for @settingsEraseConfirmationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Erase All App Data?'**
+  String get settingsEraseConfirmationTitle;
+
+  /// No description provided for @settingsEraseConfirmationBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This will permanently wipe all transactions, notification logs, audit history, accounts, and categories. The database will be reset to fresh default state.'**
+  String get settingsEraseConfirmationBody;
+
+  /// No description provided for @settingsEraseCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get settingsEraseCancel;
+
+  /// No description provided for @settingsEraseConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Erase Everything'**
+  String get settingsEraseConfirm;
+
+  /// No description provided for @settingsEraseSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'All database tables and app data erased successfully.'**
+  String get settingsEraseSuccess;
+
+  /// No description provided for @settingsEnableDeveloperOptionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Developer Mode'**
+  String get settingsEnableDeveloperOptionsTitle;
+
+  /// No description provided for @settingsEnableDeveloperOptionsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Show developer options section'**
+  String get settingsEnableDeveloperOptionsSubtitle;
 }
 
 class _AppLocalizationsDelegate

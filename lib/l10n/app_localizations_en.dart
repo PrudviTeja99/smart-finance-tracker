@@ -1601,4 +1601,35 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chartViewBar => 'Bar';
+
+  @override
+  String get settingsEraseAllDataTitle => 'Erase All App Data';
+
+  @override
+  String get settingsEraseAllDataSubtitle =>
+      'Wipe all tables & reset database to default';
+
+  @override
+  String get settingsEraseConfirmationTitle => 'Erase All App Data?';
+
+  @override
+  String get settingsEraseConfirmationBody =>
+      'This will permanently wipe all transactions, notification logs, audit history, accounts, and categories. The database will be reset to fresh default state.';
+
+  @override
+  String get settingsEraseCancel => 'Cancel';
+
+  @override
+  String get settingsEraseConfirm => 'Erase Everything';
+
+  @override
+  String get settingsEraseSuccess =>
+      'All database tables and app data erased successfully.';
+
+  @override
+  String get settingsEnableDeveloperOptionsTitle => 'Developer Mode';
+
+  @override
+  String get settingsEnableDeveloperOptionsSubtitle =>
+      'Show developer options section';
 }

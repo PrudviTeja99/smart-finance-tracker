@@ -137,10 +137,12 @@ class _SettingsScreenState extends State<SettingsScreen>
           icon: const Icon(Icons.warning_amber_rounded,
               color: Color(0xFFF59E0B), size: 36),
           title: Text(strings.settingsDisableSmartTrackingTitle,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+              style:
+                  const TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
           content: Text(
             strings.settingsDisableSmartTrackingDescription,
-            style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.5),
+            style: const TextStyle(
+                color: Colors.white70, fontSize: 13, height: 1.5),
           ),
           actions: [
             TextButton(
@@ -241,9 +243,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                 title: Text(strings.settingsExportJsonTitle,
                     style: const TextStyle(
                         fontWeight: FontWeight.bold, color: Colors.white)),
-                subtitle: Text(
-                    strings.settingsExportJsonSubtitle,
-                    style: const TextStyle(fontSize: 11, color: Colors.white54)),
+                subtitle: Text(strings.settingsExportJsonSubtitle,
+                    style:
+                        const TextStyle(fontSize: 11, color: Colors.white54)),
                 onTap: () {
                   Navigator.pop(context);
                   _showExportDestinationSheet(ExportFormat.json);
@@ -268,9 +270,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                 title: Text(strings.settingsExportCsvTitle,
                     style: const TextStyle(
                         fontWeight: FontWeight.bold, color: Colors.white)),
-                subtitle: Text(
-                    strings.settingsExportCsvSubtitle,
-                    style: const TextStyle(fontSize: 11, color: Colors.white54)),
+                subtitle: Text(strings.settingsExportCsvSubtitle,
+                    style:
+                        const TextStyle(fontSize: 11, color: Colors.white54)),
                 onTap: () {
                   Navigator.pop(context);
                   _showExportDestinationSheet(ExportFormat.csv);
@@ -342,9 +344,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                 title: Text(strings.settingsSaveLocally,
                     style: const TextStyle(
                         fontWeight: FontWeight.bold, color: Colors.white)),
-                subtitle: Text(
-                    strings.settingsSaveLocallySubtitle,
-                    style: const TextStyle(fontSize: 11, color: Colors.white54)),
+                subtitle: Text(strings.settingsSaveLocallySubtitle,
+                    style:
+                        const TextStyle(fontSize: 11, color: Colors.white54)),
                 onTap: () async {
                   Navigator.pop(context);
                   String? path;
@@ -357,11 +359,11 @@ class _SettingsScreenState extends State<SettingsScreen>
                   }
                   if (mounted) {
                     if (path != null) {
-                      AppSnackBar.show(context, strings.settingsFileSavedTo(path),
+                      AppSnackBar.show(
+                          context, strings.settingsFileSavedTo(path),
                           type: SnackBarType.success);
                     } else {
-                      AppSnackBar.show(
-                          context, strings.settingsExportCanceled,
+                      AppSnackBar.show(context, strings.settingsExportCanceled,
                           type: SnackBarType.neutral);
                     }
                   }
@@ -386,9 +388,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                 title: Text(strings.settingsShareViaApps,
                     style: const TextStyle(
                         fontWeight: FontWeight.bold, color: Colors.white)),
-                subtitle: Text(
-                    strings.settingsShareViaAppsSubtitle,
-                    style: const TextStyle(fontSize: 11, color: Colors.white54)),
+                subtitle: Text(strings.settingsShareViaAppsSubtitle,
+                    style:
+                        const TextStyle(fontSize: 11, color: Colors.white54)),
                 onTap: () async {
                   Navigator.pop(context);
                   if (format == ExportFormat.json) {
@@ -425,8 +427,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       if (!isJson && !isCsv) {
         if (mounted) {
           final strings = AppLocalizations.of(context)!;
-          AppSnackBar.show(context,
-              strings.settingsInvalidFileFormat,
+          AppSnackBar.show(context, strings.settingsInvalidFileFormat,
               type: SnackBarType.warning);
         }
         return;
@@ -497,9 +498,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                   title: Text(strings.settingsAppendToExisting,
                       style: const TextStyle(
                           fontWeight: FontWeight.bold, color: Colors.white)),
-                  subtitle: Text(
-                      strings.settingsAppendSubtitle,
-                      style: const TextStyle(fontSize: 11, color: Colors.white54)),
+                  subtitle: Text(strings.settingsAppendSubtitle,
+                      style:
+                          const TextStyle(fontSize: 11, color: Colors.white54)),
                   onTap: () {
                     Navigator.pop(context);
                     _executeImport(content,
@@ -526,9 +527,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                       style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Color(0xFFFCA5A5))),
-                  subtitle: Text(
-                      strings.settingsOverrideSubtitle,
-                      style: const TextStyle(fontSize: 11, color: Colors.white54)),
+                  subtitle: Text(strings.settingsOverrideSubtitle,
+                      style:
+                          const TextStyle(fontSize: 11, color: Colors.white54)),
                   onTap: () async {
                     Navigator.pop(context);
                     final confirm = await showDialog<bool>(
@@ -619,7 +620,9 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   void _showDurationPickerSheet() {
     int tempValue = AppSettings.autoDeleteValue;
-    String tempUnit = AppSettings.autoDeleteUnit == 'years' ? 'months' : AppSettings.autoDeleteUnit;
+    String tempUnit = AppSettings.autoDeleteUnit == 'years'
+        ? 'months'
+        : AppSettings.autoDeleteUnit;
 
     final units = ['days', 'months'];
     final unitIndex = units.indexOf(tempUnit).clamp(0, 1);
@@ -877,29 +880,39 @@ class _SettingsScreenState extends State<SettingsScreen>
                 icon: Icons.tune_rounded,
                 children: [
                   ListTile(
-                    leading: _buildLeadingIcon(Icons.account_balance_wallet_rounded, color: const Color(0xFF3B82F6)),
+                    leading: _buildLeadingIcon(
+                        Icons.account_balance_wallet_rounded,
+                        color: const Color(0xFF3B82F6)),
                     title: Text(strings.settingsManageAccounts,
                         style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text(strings.settingsActiveAccounts(_accounts.length),
+                    subtitle: Text(
+                        strings.settingsActiveAccounts(_accounts.length),
                         style: const TextStyle(fontSize: 11)),
                     trailing: const Icon(Icons.arrow_forward_ios_rounded,
                         size: 16, color: Colors.white54),
                     onTap: _showManageAccountsSheet,
                   ),
-                  Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
+                  Divider(
+                      color: const Color(0xFF334155).withValues(alpha: 0.4),
+                      height: 1),
                   ListTile(
-                    leading: _buildLeadingIcon(Icons.category_rounded, color: const Color(0xFFA855F7)),
+                    leading: _buildLeadingIcon(Icons.category_rounded,
+                        color: const Color(0xFFA855F7)),
                     title: Text(strings.settingsManageCategories,
                         style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text(strings.settingsActiveCategories(_categories.length),
+                    subtitle: Text(
+                        strings.settingsActiveCategories(_categories.length),
                         style: const TextStyle(fontSize: 11)),
                     trailing: const Icon(Icons.arrow_forward_ios_rounded,
                         size: 16, color: Colors.white54),
                     onTap: _showManageCategoriesSheet,
                   ),
-                  Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
+                  Divider(
+                      color: const Color(0xFF334155).withValues(alpha: 0.4),
+                      height: 1),
                   ListTile(
-                    leading: _buildLeadingIcon(Icons.language_rounded, color: const Color(0xFF14B8A6)),
+                    leading: _buildLeadingIcon(Icons.language_rounded,
+                        color: const Color(0xFF14B8A6)),
                     title: Text(strings.settingsAppLanguage,
                         style: const TextStyle(fontWeight: FontWeight.bold)),
                     subtitle: Text(
@@ -910,14 +923,19 @@ class _SettingsScreenState extends State<SettingsScreen>
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 5),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF6366F1).withValues(alpha: 0.12),
+                            color:
+                                const Color(0xFF6366F1).withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.25)),
+                            border: Border.all(
+                                color: const Color(0xFF6366F1)
+                                    .withValues(alpha: 0.25)),
                           ),
                           child: Text(
-                            AppLanguageService.instance.selectedLanguage.code == 'te'
+                            AppLanguageService.instance.selectedLanguage.code ==
+                                    'te'
                                 ? strings.languageTelugu
                                 : strings.languageEnglish,
                             style: const TextStyle(
@@ -928,14 +946,18 @@ class _SettingsScreenState extends State<SettingsScreen>
                           ),
                         ),
                         const SizedBox(width: 6),
-                        const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.white38),
+                        const Icon(Icons.arrow_forward_ios_rounded,
+                            size: 14, color: Colors.white38),
                       ],
                     ),
                     onTap: _showLanguageSelectionSheet,
                   ),
-                  Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
+                  Divider(
+                      color: const Color(0xFF334155).withValues(alpha: 0.4),
+                      height: 1),
                   ListTile(
-                    leading: _buildLeadingIcon(Icons.monetization_on_rounded, color: const Color(0xFF10B981)),
+                    leading: _buildLeadingIcon(Icons.monetization_on_rounded,
+                        color: const Color(0xFF10B981)),
                     title: Text(strings.settingsCurrencySymbol,
                         style: const TextStyle(fontWeight: FontWeight.bold)),
                     subtitle: Text(strings.settingsCurrencySymbolSubtitle,
@@ -944,11 +966,15 @@ class _SettingsScreenState extends State<SettingsScreen>
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 5),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF6366F1).withValues(alpha: 0.12),
+                            color:
+                                const Color(0xFF6366F1).withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.25)),
+                            border: Border.all(
+                                color: const Color(0xFF6366F1)
+                                    .withValues(alpha: 0.25)),
                           ),
                           child: Text(
                             AppSettings.currencySymbol == '₹'
@@ -970,14 +996,18 @@ class _SettingsScreenState extends State<SettingsScreen>
                           ),
                         ),
                         const SizedBox(width: 6),
-                        const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.white38),
+                        const Icon(Icons.arrow_forward_ios_rounded,
+                            size: 14, color: Colors.white38),
                       ],
                     ),
                     onTap: _showCurrencySelectionSheet,
                   ),
-                  Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
+                  Divider(
+                      color: const Color(0xFF334155).withValues(alpha: 0.4),
+                      height: 1),
                   ListTile(
-                    leading: _buildLeadingIcon(Icons.pin_rounded, color: const Color(0xFFF59E0B)),
+                    leading: _buildLeadingIcon(Icons.pin_rounded,
+                        color: const Color(0xFFF59E0B)),
                     title: Text(strings.settingsNumberFormat,
                         style: const TextStyle(fontWeight: FontWeight.bold)),
                     subtitle: Text(strings.settingsNumberFormatSubtitle,
@@ -986,11 +1016,15 @@ class _SettingsScreenState extends State<SettingsScreen>
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 5),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF6366F1).withValues(alpha: 0.12),
+                            color:
+                                const Color(0xFF6366F1).withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.25)),
+                            border: Border.all(
+                                color: const Color(0xFF6366F1)
+                                    .withValues(alpha: 0.25)),
                           ),
                           child: Text(
                             AppSettings.numberLocale == 'en_IN'
@@ -1010,12 +1044,15 @@ class _SettingsScreenState extends State<SettingsScreen>
                           ),
                         ),
                         const SizedBox(width: 6),
-                        const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.white38),
+                        const Icon(Icons.arrow_forward_ios_rounded,
+                            size: 14, color: Colors.white38),
                       ],
                     ),
                     onTap: _showNumberFormatSelectionSheet,
                   ),
-                  Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
+                  Divider(
+                      color: const Color(0xFF334155).withValues(alpha: 0.4),
+                      height: 1),
                   SwitchListTile(
                     title: Text(strings.settingsAutoHideBalances,
                         style: const TextStyle(
@@ -1024,16 +1061,20 @@ class _SettingsScreenState extends State<SettingsScreen>
                         style: const TextStyle(fontSize: 11)),
                     value: AppSettings.autoHideEnabled,
                     activeColor: const Color(0xFF6366F1),
-                    secondary: _buildLeadingIcon(Icons.visibility_off_rounded, color: const Color(0xFFF43F5E)),
+                    secondary: _buildLeadingIcon(Icons.visibility_off_rounded,
+                        color: const Color(0xFFF43F5E)),
                     onChanged: (val) async {
                       await AppSettings.setAutoHideEnabled(val);
                       setState(() {});
                     },
                   ),
                   if (AppSettings.autoHideEnabled) ...[
-                    Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
+                    Divider(
+                        color: const Color(0xFF334155).withValues(alpha: 0.4),
+                        height: 1),
                     ListTile(
-                      leading: _buildLeadingIcon(Icons.timer_rounded, color: const Color(0xFF6366F1)),
+                      leading: _buildLeadingIcon(Icons.timer_rounded,
+                          color: const Color(0xFF6366F1)),
                       title: Text(strings.settingsHideDuration,
                           style: const TextStyle(fontWeight: FontWeight.bold)),
                       subtitle: Text(strings.settingsAutoHideBalancesSubtitle,
@@ -1042,11 +1083,15 @@ class _SettingsScreenState extends State<SettingsScreen>
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 5),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF6366F1).withValues(alpha: 0.12),
+                              color: const Color(0xFF6366F1)
+                                  .withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.25)),
+                              border: Border.all(
+                                  color: const Color(0xFF6366F1)
+                                      .withValues(alpha: 0.25)),
                             ),
                             child: Text(
                               '${AppSettings.autoHideSeconds} ${AppSettings.autoHideSeconds == 1 ? "second" : "seconds"}',
@@ -1058,7 +1103,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                             ),
                           ),
                           const SizedBox(width: 6),
-                          const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.white38),
+                          const Icon(Icons.arrow_forward_ios_rounded,
+                              size: 14, color: Colors.white38),
                         ],
                       ),
                       onTap: _showHideDurationSelectionSheet,
@@ -1074,9 +1120,13 @@ class _SettingsScreenState extends State<SettingsScreen>
                 icon: Icons.show_chart_rounded,
                 children: [
                   SwitchListTile(
-                    secondary: _buildLeadingIcon(Icons.trending_down_rounded, color: const Color(0xFFEF4444)),
-                    title: Text(strings.settingsExpenseTrendLineTitle, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                    subtitle: Text(strings.settingsExpenseTrendLineSubtitle, style: const TextStyle(fontSize: 11)),
+                    secondary: _buildLeadingIcon(Icons.trending_down_rounded,
+                        color: const Color(0xFFEF4444)),
+                    title: Text(strings.settingsExpenseTrendLineTitle,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 14)),
+                    subtitle: Text(strings.settingsExpenseTrendLineSubtitle,
+                        style: const TextStyle(fontSize: 11)),
                     value: AppSettings.showExpenseTrendLine,
                     activeColor: const Color(0xFFEF4444),
                     onChanged: (val) async {
@@ -1084,11 +1134,17 @@ class _SettingsScreenState extends State<SettingsScreen>
                       setState(() {});
                     },
                   ),
-                  Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
+                  Divider(
+                      color: const Color(0xFF334155).withValues(alpha: 0.4),
+                      height: 1),
                   SwitchListTile(
-                    secondary: _buildLeadingIcon(Icons.trending_up_rounded, color: const Color(0xFF10B981)),
-                    title: Text(strings.settingsIncomeTrendLineTitle, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                    subtitle: Text(strings.settingsIncomeTrendLineSubtitle, style: const TextStyle(fontSize: 11)),
+                    secondary: _buildLeadingIcon(Icons.trending_up_rounded,
+                        color: const Color(0xFF10B981)),
+                    title: Text(strings.settingsIncomeTrendLineTitle,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 14)),
+                    subtitle: Text(strings.settingsIncomeTrendLineSubtitle,
+                        style: const TextStyle(fontSize: 11)),
                     value: AppSettings.showIncomeTrendLine,
                     activeColor: const Color(0xFF10B981),
                     onChanged: (val) async {
@@ -1096,11 +1152,17 @@ class _SettingsScreenState extends State<SettingsScreen>
                       setState(() {});
                     },
                   ),
-                  Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
+                  Divider(
+                      color: const Color(0xFF334155).withValues(alpha: 0.4),
+                      height: 1),
                   SwitchListTile(
-                    secondary: _buildLeadingIcon(Icons.swap_horiz_rounded, color: const Color(0xFF38BDF8)),
-                    title: Text(strings.settingsTransferTrendLineTitle, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                    subtitle: Text(strings.settingsTransferTrendLineSubtitle, style: const TextStyle(fontSize: 11)),
+                    secondary: _buildLeadingIcon(Icons.swap_horiz_rounded,
+                        color: const Color(0xFF38BDF8)),
+                    title: Text(strings.settingsTransferTrendLineTitle,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 14)),
+                    subtitle: Text(strings.settingsTransferTrendLineSubtitle,
+                        style: const TextStyle(fontSize: 11)),
                     value: AppSettings.showTransferTrendLine,
                     activeColor: const Color(0xFF38BDF8),
                     onChanged: (val) async {
@@ -1122,24 +1184,28 @@ class _SettingsScreenState extends State<SettingsScreen>
                 icon: Icons.sync_rounded,
                 children: [
                   ListTile(
-                    leading: _buildLeadingIcon(Icons.upload_rounded, color: const Color(0xFF0EA5E9)),
+                    leading: _buildLeadingIcon(Icons.upload_rounded,
+                        color: const Color(0xFF0EA5E9)),
                     title: Text(strings.settingsExportDataBackup,
                         style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text(
-                        strings.settingsExportSubtitle,
-                        style: const TextStyle(fontSize: 11, color: Colors.white54)),
+                    subtitle: Text(strings.settingsExportSubtitle,
+                        style: const TextStyle(
+                            fontSize: 11, color: Colors.white54)),
                     trailing: const Icon(Icons.arrow_forward_ios_rounded,
                         size: 16, color: Colors.white54),
                     onTap: _showExportFormatSheet,
                   ),
-                  Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
+                  Divider(
+                      color: const Color(0xFF334155).withValues(alpha: 0.4),
+                      height: 1),
                   ListTile(
-                    leading: _buildLeadingIcon(Icons.download_rounded, color: const Color(0xFF10B981)),
+                    leading: _buildLeadingIcon(Icons.download_rounded,
+                        color: const Color(0xFF10B981)),
                     title: Text(strings.settingsImportDataRestore,
                         style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text(
-                        strings.settingsImportSubtitle,
-                        style: const TextStyle(fontSize: 11, color: Colors.white54)),
+                    subtitle: Text(strings.settingsImportSubtitle,
+                        style: const TextStyle(
+                            fontSize: 11, color: Colors.white54)),
                     trailing: const Icon(Icons.arrow_forward_ios_rounded,
                         size: 16, color: Colors.white54),
                     onTap: _handleImportWorkflow,
@@ -1151,10 +1217,11 @@ class _SettingsScreenState extends State<SettingsScreen>
               // 3. Advanced Settings (Bottom)
               _buildAdvancedSettingsCard(),
 
-              const SizedBox(height: 16),
-
               // 4. Developer Options (Bottom)
-              _buildDeveloperOptionsCard(),
+              if (AppSettings.developerOptionsEnabled) ...[
+                const SizedBox(height: 16),
+                _buildDeveloperOptionsCard(),
+              ],
             ],
           ),
         ],
@@ -1369,7 +1436,8 @@ class _SettingsScreenState extends State<SettingsScreen>
     );
   }
 
-  Widget _buildLeadingIcon(IconData icon, {Color color = const Color(0xFF818CF8), Color? bg}) {
+  Widget _buildLeadingIcon(IconData icon,
+      {Color color = const Color(0xFF818CF8), Color? bg}) {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
@@ -1413,7 +1481,8 @@ class _SettingsScreenState extends State<SettingsScreen>
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFF334155).withValues(alpha: 0.5)),
+              border: Border.all(
+                  color: const Color(0xFF334155).withValues(alpha: 0.5)),
             ),
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
@@ -1491,8 +1560,10 @@ class _SettingsScreenState extends State<SettingsScreen>
                       const SizedBox(width: 4),
                       Text(
                         isEnabled
-                            ? AppLocalizations.of(context)!.settingsStatusEnabled
-                            : AppLocalizations.of(context)!.settingsStatusDisabled,
+                            ? AppLocalizations.of(context)!
+                                .settingsStatusEnabled
+                            : AppLocalizations.of(context)!
+                                .settingsStatusDisabled,
                         style: TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.bold,
@@ -1564,8 +1635,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                   ),
                   const SizedBox(height: 12),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
                       color: const Color(0xFF6366F1).withValues(alpha: 0.18),
                       borderRadius: BorderRadius.circular(8),
@@ -1611,14 +1682,15 @@ class _SettingsScreenState extends State<SettingsScreen>
         // Smart Tracking Toggle
         SwitchListTile(
           title: Text(strings.settingsSmartTracking,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-          subtitle: Text(
-              strings.settingsSmartTrackingSubtitle,
+              style:
+                  const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          subtitle: Text(strings.settingsSmartTrackingSubtitle,
               style: const TextStyle(fontSize: 11)),
           activeColor: const Color(0xFF6366F1),
           value: _isServiceEnabled,
           onChanged: _toggleService,
-          secondary: _buildLeadingIcon(Icons.receipt_long_rounded, color: const Color(0xFF0EA5E9)),
+          secondary: _buildLeadingIcon(Icons.receipt_long_rounded,
+              color: const Color(0xFF0EA5E9)),
         ),
 
         // Reliability Recommendations - Collapsible when both permissions are satisfied
@@ -1630,8 +1702,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                 _userToggledReliabilityExpand ?? !allReliabilityEnabled;
 
             return Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -1734,8 +1805,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                         isHighlyRecommended: true,
                         isEnabled: _hasAutoStartOpened,
                         title: strings.settingsEnableAutoStartTitle,
-                        description:
-                            strings.settingsEnableAutoStartDescription,
+                        description: strings.settingsEnableAutoStartDescription,
                         buttonText: strings.settingsEnableAutoStartBtn,
                         onTap: () async {
                           await NotificationHandler.openAutoStartSettings();
@@ -1771,8 +1841,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                                           fontWeight: FontWeight.bold)),
                                 ),
                                 TextButton(
-                                  onPressed: () =>
-                                      Navigator.pop(context, true),
+                                  onPressed: () => Navigator.pop(context, true),
                                   child: Text(strings.settingsYesEnabled,
                                       style: const TextStyle(
                                           color: Color(0xFF10B981),
@@ -1800,18 +1869,16 @@ class _SettingsScreenState extends State<SettingsScreen>
                         },
                       ),
                       Divider(
-                          color:
-                              const Color(0xFF334155).withValues(alpha: 0.4),
+                          color: const Color(0xFF334155).withValues(alpha: 0.4),
                           height: 16),
                       _buildReliabilityAction(
                         icon: Icons.battery_saver_rounded,
                         isHighlyRecommended: true,
                         isEnabled: _hasBatteryExemption,
                         title: strings.settingsEnableUnrestrictedRunTitle,
-                        description: strings
-                            .settingsEnableUnrestrictedRunDescription,
-                        buttonText:
-                            strings.settingsEnableUnrestrictedRunBtn,
+                        description:
+                            strings.settingsEnableUnrestrictedRunDescription,
+                        buttonText: strings.settingsEnableUnrestrictedRunBtn,
                         onTap: () async {
                           await NotificationHandler.requestBatteryExemption();
                           final isExempt = await NotificationHandler
@@ -1830,10 +1897,10 @@ class _SettingsScreenState extends State<SettingsScreen>
             );
           }),
           Divider(
-              color: const Color(0xFF334155).withValues(alpha: 0.4),
-              height: 1),
+              color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
         ] else
-          Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
+          Divider(
+              color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
 
         // Auto-Delete Archived Alerts
         Opacity(
@@ -1845,8 +1912,8 @@ class _SettingsScreenState extends State<SettingsScreen>
               children: [
                 SwitchListTile(
                   title: Text(strings.settingsAutoDeleteArchivedAlerts,
-                      style:
-                          const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 14)),
                   subtitle: Text(
                     _isServiceEnabled
                         ? strings.settingsAutoDeleteSubtitle
@@ -1855,7 +1922,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                   ),
                   value: AppSettings.autoDeleteArchive,
                   activeColor: const Color(0xFF6366F1),
-                  secondary: _buildLeadingIcon(Icons.auto_delete_rounded, color: const Color(0xFFF97316)),
+                  secondary: _buildLeadingIcon(Icons.auto_delete_rounded,
+                      color: const Color(0xFFF97316)),
                   onChanged: (val) async {
                     if (!val) {
                       final confirmed = await showDialog<bool>(
@@ -1953,7 +2021,8 @@ class _SettingsScreenState extends State<SettingsScreen>
           ),
         ),
 
-        Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
+        Divider(
+            color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
 
         // View Archived Alerts
         Opacity(
@@ -1961,9 +2030,11 @@ class _SettingsScreenState extends State<SettingsScreen>
           child: AbsorbPointer(
             absorbing: !_isServiceEnabled,
             child: ListTile(
-              leading: _buildLeadingIcon(Icons.archive_rounded, color: const Color(0xFFF59E0B)),
+              leading: _buildLeadingIcon(Icons.archive_rounded,
+                  color: const Color(0xFFF59E0B)),
               title: Text(strings.settingsViewArchivedAlerts,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 14)),
               subtitle: Text(
                 _isServiceEnabled
                     ? strings.settingsViewArchivedAlertsSubtitle
@@ -1993,11 +2064,12 @@ class _SettingsScreenState extends State<SettingsScreen>
       children: [
         // Train Your Model
         ListTile(
-          leading: _buildLeadingIcon(Icons.psychology_rounded, color: const Color(0xFF8B5CF6)),
+          leading: _buildLeadingIcon(Icons.psychology_rounded,
+              color: const Color(0xFF8B5CF6)),
           title: Text(strings.settingsTrainYourModel,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-          subtitle: Text(
-              strings.settingsTrainYourModelSubtitle,
+              style:
+                  const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          subtitle: Text(strings.settingsTrainYourModelSubtitle,
               style: const TextStyle(fontSize: 11)),
           trailing: const Icon(Icons.arrow_forward_ios_rounded,
               size: 16, color: Colors.white54),
@@ -2010,25 +2082,31 @@ class _SettingsScreenState extends State<SettingsScreen>
           },
         ),
 
-        Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
+        Divider(
+            color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
 
         // SnackBar Display Duration
         ListTile(
-          leading: _buildLeadingIcon(Icons.timer_rounded, color: const Color(0xFFF59E0B)),
+          leading: _buildLeadingIcon(Icons.timer_rounded,
+              color: const Color(0xFFF59E0B)),
           title: Text(strings.settingsSnackBarDuration,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              style:
+                  const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
           subtitle: Text(
-              strings.settingsSnackBarDurationSubtitle((AppSettings.snackBarDurationMs / 1000).toStringAsFixed(1)),
+              strings.settingsSnackBarDurationSubtitle(
+                  (AppSettings.snackBarDurationMs / 1000).toStringAsFixed(1)),
               style: const TextStyle(fontSize: 11)),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
                   color: const Color(0xFF6366F1).withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.25)),
+                  border: Border.all(
+                      color: const Color(0xFF6366F1).withValues(alpha: 0.25)),
                 ),
                 child: Text(
                   '${(AppSettings.snackBarDurationMs / 1000).toStringAsFixed(1)}s',
@@ -2040,10 +2118,28 @@ class _SettingsScreenState extends State<SettingsScreen>
                 ),
               ),
               const SizedBox(width: 6),
-              const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.white38),
+              const Icon(Icons.arrow_forward_ios_rounded,
+                  size: 14, color: Colors.white38),
             ],
           ),
           onTap: _showSnackBarDurationSelectionSheet,
+        ),
+        Divider(
+            color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
+        SwitchListTile(
+          secondary: _buildLeadingIcon(Icons.developer_mode_rounded,
+              color: const Color(0xFF06B6D4)),
+          title: Text(strings.settingsEnableDeveloperOptionsTitle,
+              style:
+                  const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          subtitle: Text(strings.settingsEnableDeveloperOptionsSubtitle,
+              style: const TextStyle(fontSize: 11)),
+          value: AppSettings.developerOptionsEnabled,
+          activeColor: const Color(0xFF06B6D4),
+          onChanged: (val) async {
+            await AppSettings.setDeveloperOptionsEnabled(val);
+            setState(() {});
+          },
         ),
       ],
     );
@@ -2056,9 +2152,11 @@ class _SettingsScreenState extends State<SettingsScreen>
       icon: Icons.bug_report_rounded,
       children: [
         ListTile(
-          leading: _buildLeadingIcon(Icons.terminal_rounded, color: const Color(0xFF06B6D4)),
+          leading: _buildLeadingIcon(Icons.terminal_rounded,
+              color: const Color(0xFF06B6D4)),
           title: Text(strings.settingsLogInspector,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              style:
+                  const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
           subtitle: Text(strings.settingsLogInspectorSubtitle,
               style: const TextStyle(fontSize: 11)),
           trailing: const Icon(Icons.arrow_forward_ios_rounded,
@@ -2071,19 +2169,104 @@ class _SettingsScreenState extends State<SettingsScreen>
             );
           },
         ),
-        Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
+        Divider(
+            color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
         ListTile(
-          leading: _buildLeadingIcon(Icons.playlist_add_rounded, color: const Color(0xFFEC4899)),
+          leading: _buildLeadingIcon(Icons.playlist_add_rounded,
+              color: const Color(0xFFEC4899)),
           title: Text(strings.settingsSimulateNotification,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-          subtitle: Text(
-              strings.settingsSimulateNotificationSubtitle,
+              style:
+                  const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          subtitle: Text(strings.settingsSimulateNotificationSubtitle,
               style: const TextStyle(fontSize: 11)),
           trailing: const Icon(Icons.arrow_forward_ios_rounded,
               size: 16, color: Colors.white54),
           onTap: () => _showSimulateNotificationBottomSheet(),
         ),
+        Divider(
+            color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
+        ListTile(
+          leading: _buildLeadingIcon(Icons.delete_forever_rounded,
+              color: const Color(0xFFEF4444)),
+          title: Text(strings.settingsEraseAllDataTitle,
+              style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: Color(0xFFEF4444))),
+          subtitle: Text(strings.settingsEraseAllDataSubtitle,
+              style: const TextStyle(fontSize: 11)),
+          trailing: const Icon(Icons.arrow_forward_ios_rounded,
+              size: 16, color: Colors.white54),
+          onTap: () => _showEraseAllDataConfirmationDialog(),
+        ),
       ],
+    );
+  }
+
+  void _showEraseAllDataConfirmationDialog() {
+    final strings = AppLocalizations.of(context)!;
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF0F172A),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: const BorderSide(color: Color(0xFF334155), width: 1),
+          ),
+          title: Row(
+            children: [
+              const Icon(Icons.warning_amber_rounded,
+                  color: Color(0xFFEF4444), size: 28),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  strings.settingsEraseConfirmationTitle,
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18),
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            strings.settingsEraseConfirmationBody,
+            style: const TextStyle(
+                color: Colors.white70, fontSize: 14, height: 1.4),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(
+                strings.settingsEraseCancel,
+                style: const TextStyle(
+                    color: Colors.white60, fontWeight: FontWeight.w600),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFEF4444),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: () async {
+                Navigator.pop(dialogContext);
+                await DatabaseService.instance.eraseAllData();
+                if (mounted) {
+                  AppSnackBar.show(context, strings.settingsEraseSuccess,
+                      type: SnackBarType.success);
+                }
+              },
+              child: Text(
+                strings.settingsEraseConfirm,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -2211,7 +2394,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                                       child: Text(
                                         isDrafted
                                             ? strings.settingsAutoDraftedBadge
-                                            : strings.settingsAutoDismissedBadge,
+                                            : strings
+                                                .settingsAutoDismissedBadge,
                                         style: TextStyle(
                                           color: isDrafted
                                               ? const Color(0xFF34D399)
@@ -2229,7 +2413,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                                             fontWeight: FontWeight.w600)),
                                     const Spacer(),
                                     Text(
-                                      strings.settingsConfidencePct((confidence * 100).toInt()),
+                                      strings.settingsConfidencePct(
+                                          (confidence * 100).toInt()),
                                       style: const TextStyle(
                                           color: Colors.white38, fontSize: 11),
                                     ),
@@ -2272,7 +2457,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                                           Text(
                                             isDrafted
                                                 ? strings.settingsUndoAutoDraft
-                                                : strings.settingsUndoAutoDismiss,
+                                                : strings
+                                                    .settingsUndoAutoDismiss,
                                             style: const TextStyle(
                                                 color: Colors.white70,
                                                 fontSize: 11,
@@ -2326,8 +2512,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       }
       if (mounted) {
         final strings = AppLocalizations.of(context)!;
-        AppSnackBar.show(context,
-            strings.settingsUndoDraftLearnedIgnore,
+        AppSnackBar.show(context, strings.settingsUndoDraftLearnedIgnore,
             type: SnackBarType.neutral);
       }
     }
@@ -2353,8 +2538,8 @@ class _SettingsScreenState extends State<SettingsScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child:
-                Text(strings.settingsCancel, style: const TextStyle(color: Colors.white70)),
+            child: Text(strings.settingsCancel,
+                style: const TextStyle(color: Colors.white70)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
@@ -2378,14 +2563,26 @@ class _SettingsScreenState extends State<SettingsScreen>
     String type = isEdit ? editAcc.type : 'bank';
 
     final types = [
-      {'value': 'bank', 'label': strings.settingsAccountTypeBank, 'icon': Icons.account_balance},
-      {'value': 'credit_card', 'label': strings.settingsAccountTypeCard, 'icon': Icons.credit_card},
+      {
+        'value': 'bank',
+        'label': strings.settingsAccountTypeBank,
+        'icon': Icons.account_balance
+      },
+      {
+        'value': 'credit_card',
+        'label': strings.settingsAccountTypeCard,
+        'icon': Icons.credit_card
+      },
       {
         'value': 'wallet',
         'label': strings.settingsAccountTypeWallet,
         'icon': Icons.account_balance_wallet
       },
-      {'value': 'cash', 'label': strings.settingsAccountTypeCash, 'icon': Icons.money},
+      {
+        'value': 'cash',
+        'label': strings.settingsAccountTypeCash,
+        'icon': Icons.money
+      },
     ];
 
     await showModalBottomSheet(
@@ -2422,14 +2619,17 @@ class _SettingsScreenState extends State<SettingsScreen>
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      isEdit ? strings.settingsEditAccount : strings.settingsAddAccount,
+                      isEdit
+                          ? strings.settingsEditAccount
+                          : strings.settingsAddAccount,
                       style: const TextStyle(
                           fontSize: 20, fontWeight: FontWeight.bold),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 20),
                     Text(strings.settingsAccountType,
-                        style: const TextStyle(fontSize: 12, color: Colors.white54)),
+                        style: const TextStyle(
+                            fontSize: 12, color: Colors.white54)),
                     const SizedBox(height: 8),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -2496,8 +2696,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                         labelText: strings.settingsMatchingKeywords,
                         border: const OutlineInputBorder(),
                         prefixIcon: const Icon(Icons.vpn_key_outlined),
-                        helperText:
-                            strings.settingsMatchingKeywordsHelper,
+                        helperText: strings.settingsMatchingKeywordsHelper,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -2506,8 +2705,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                       keyboardType:
                           const TextInputType.numberWithOptions(decimal: true),
                       decoration: InputDecoration(
-                        labelText:
-                            strings.settingsStartingBalance(AppSettings.currencySymbol),
+                        labelText: strings.settingsStartingBalance(
+                            AppSettings.currencySymbol),
                         border: const OutlineInputBorder(),
                         prefixText: '${AppSettings.currencySymbol} ',
                         prefixStyle: const TextStyle(
@@ -2565,7 +2764,10 @@ class _SettingsScreenState extends State<SettingsScreen>
                               Navigator.pop(context);
                               _loadSettingsData();
                             },
-                            child: Text(isEdit ? strings.settingsSave : strings.settingsAdd,
+                            child: Text(
+                                isEdit
+                                    ? strings.settingsSave
+                                    : strings.settingsAdd,
                                 style: const TextStyle(
                                     fontWeight: FontWeight.bold)),
                           ),
@@ -2758,7 +2960,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                   ),
                   const SizedBox(height: 16),
                   ...options.map((opt) {
-                    final isSelected = AppSettings.currencySymbol == opt['code'];
+                    final isSelected =
+                        AppSettings.currencySymbol == opt['code'];
 
                     return InkWell(
                       onTap: () async {
@@ -2793,7 +2996,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                                   height: 36,
                                   alignment: Alignment.center,
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF6366F1).withValues(alpha: 0.2),
+                                    color: const Color(0xFF6366F1)
+                                        .withValues(alpha: 0.2),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Text(
@@ -2856,10 +3060,18 @@ class _SettingsScreenState extends State<SettingsScreen>
   void _showNumberFormatSelectionSheet() {
     final strings = AppLocalizations.of(context)!;
     final options = [
-      {'code': 'auto', 'label': '🌐 Auto (System Default)', 'preview': 'Follows system locale'},
+      {
+        'code': 'auto',
+        'label': '🌐 Auto (System Default)',
+        'preview': 'Follows system locale'
+      },
       {'code': 'en_IN', 'label': '🇮🇳 Indian Format', 'preview': '12,34,567'},
       {'code': 'en_US', 'label': '🌍 Standard Format', 'preview': '1,234,567'},
-      {'code': 'de_DE', 'label': '🇪🇺 European Format', 'preview': '1.234.567'},
+      {
+        'code': 'de_DE',
+        'label': '🇪🇺 European Format',
+        'preview': '1.234.567'
+      },
       {'code': 'en_GB', 'label': '🇬🇧 UK Format', 'preview': '1,234,567'},
     ];
 
@@ -3056,7 +3268,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                             Text(
                               '$sec ${sec == 1 ? "second" : "seconds"}',
                               style: TextStyle(
-                                color: isSelected ? Colors.white : Colors.white70,
+                                color:
+                                    isSelected ? Colors.white : Colors.white70,
                                 fontSize: 14,
                                 fontWeight: isSelected
                                     ? FontWeight.bold
@@ -3091,7 +3304,11 @@ class _SettingsScreenState extends State<SettingsScreen>
     final options = [
       {'ms': 1000, 'label': '1.0 second', 'sub': 'Fast toast dismiss'},
       {'ms': 1500, 'label': '1.5 seconds', 'sub': 'Quick summary view'},
-      {'ms': 2000, 'label': '2.0 seconds', 'sub': 'Standard duration (Recommended)'},
+      {
+        'ms': 2000,
+        'label': '2.0 seconds',
+        'sub': 'Standard duration (Recommended)'
+      },
       {'ms': 3000, 'label': '3.0 seconds', 'sub': 'Comfortable reading time'},
       {'ms': 4000, 'label': '4.0 seconds', 'sub': 'Extended reading time'},
     ];
@@ -3133,12 +3350,15 @@ class _SettingsScreenState extends State<SettingsScreen>
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    strings.settingsSnackBarDurationSubtitle((AppSettings.snackBarDurationMs / 1000).toStringAsFixed(1)),
+                    strings.settingsSnackBarDurationSubtitle(
+                        (AppSettings.snackBarDurationMs / 1000)
+                            .toStringAsFixed(1)),
                     style: const TextStyle(color: Colors.white54, fontSize: 12),
                   ),
                   const SizedBox(height: 16),
                   ...options.map((opt) {
-                    final isSelected = AppSettings.snackBarDurationMs == opt['ms'];
+                    final isSelected =
+                        AppSettings.snackBarDurationMs == opt['ms'];
 
                     return InkWell(
                       onTap: () async {
@@ -3276,7 +3496,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        isEdit ? strings.settingsEditCategory : strings.settingsAddCategory,
+                        isEdit
+                            ? strings.settingsEditCategory
+                            : strings.settingsAddCategory,
                         style: const TextStyle(
                             fontSize: 20, fontWeight: FontWeight.bold),
                         textAlign: TextAlign.center,
@@ -3293,8 +3515,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                       ),
                       const SizedBox(height: 16),
                       Text(strings.settingsThemeColor,
-                          style:
-                              const TextStyle(fontSize: 12, color: Colors.white54)),
+                          style: const TextStyle(
+                              fontSize: 12, color: Colors.white54)),
                       const SizedBox(height: 8),
                       Center(
                         child: Wrap(
@@ -3375,8 +3597,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                       ),
                       const SizedBox(height: 20),
                       Text(strings.settingsCategoryIcon,
-                          style:
-                              const TextStyle(fontSize: 12, color: Colors.white54)),
+                          style: const TextStyle(
+                              fontSize: 12, color: Colors.white54)),
                       const SizedBox(height: 10),
                       Row(
                         children: [
@@ -3398,7 +3620,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  strings.settingsIconLabel(icon.replaceAll('_', ' ')),
+                                  strings.settingsIconLabel(
+                                      icon.replaceAll('_', ' ')),
                                   style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 14),
@@ -3455,7 +3678,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                               ),
                               onPressed: () => Navigator.pop(context),
                               child: Text(strings.settingsCancel,
-                                  style: const TextStyle(color: Colors.white70)),
+                                  style:
+                                      const TextStyle(color: Colors.white70)),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -3491,7 +3715,10 @@ class _SettingsScreenState extends State<SettingsScreen>
                                 Navigator.pop(context);
                                 _loadSettingsData();
                               },
-                              child: Text(isEdit ? strings.settingsSave : strings.settingsAdd,
+                              child: Text(
+                                  isEdit
+                                      ? strings.settingsSave
+                                      : strings.settingsAdd,
                                   style: const TextStyle(
                                       fontWeight: FontWeight.bold)),
                             ),
@@ -3614,7 +3841,8 @@ class _SearchableIconPickerState extends State<SearchableIconPicker> {
                 const SizedBox(height: 16),
                 Text(
                   strings.settingsSearchCategoryIcons,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 12),
                 // Search field
@@ -3877,7 +4105,8 @@ class _ColorSpectrumPickerState extends State<ColorSpectrumPicker> {
                 Navigator.pop(context);
               },
               child: Text(strings.settingsSelectColor,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 15)),
             ),
           ),
         ],
@@ -4066,8 +4295,7 @@ class _SimulateNotificationSheetState
 
     if (pkg.isEmpty || body.isEmpty) {
       final strings = AppLocalizations.of(context)!;
-      AppSnackBar.show(
-          context, strings.settingsSimulateRequiredError,
+      AppSnackBar.show(context, strings.settingsSimulateRequiredError,
           type: SnackBarType.warning);
       return;
     }
@@ -4085,8 +4313,7 @@ class _SimulateNotificationSheetState
       await NotificationHandler.handleNotificationEvent(mockEvent);
       if (mounted) {
         final strings = AppLocalizations.of(context)!;
-        AppSnackBar.show(context,
-            strings.settingsSimulateSuccess,
+        AppSnackBar.show(context, strings.settingsSimulateSuccess,
             type: SnackBarType.success);
       }
     } catch (e) {
@@ -4148,8 +4375,8 @@ class _SimulateNotificationSheetState
               const SizedBox(height: 8),
               Text(
                 strings.settingsSimulateNotificationDescription,
-                style:
-                    const TextStyle(color: Colors.white54, fontSize: 12, height: 1.4),
+                style: const TextStyle(
+                    color: Colors.white54, fontSize: 12, height: 1.4),
               ),
               const SizedBox(height: 16),
               // Horizontal Templates List
@@ -4266,10 +4493,11 @@ class _SimulateNotificationSheetState
                   style: const TextStyle(color: Colors.white, fontSize: 13),
                   decoration: InputDecoration(
                     hintText: strings.settingsNotificationBodyHint,
-                    hintStyle: const TextStyle(color: Colors.white30, fontSize: 13),
+                    hintStyle:
+                        const TextStyle(color: Colors.white30, fontSize: 13),
                     border: InputBorder.none,
-                    contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 10),
                   ),
                 ),
               ),
@@ -4290,7 +4518,8 @@ class _SimulateNotificationSheetState
                   onPressed: _simulate,
                   child: Text(
                     strings.settingsSimulateAndProcess,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                 ),
               ),

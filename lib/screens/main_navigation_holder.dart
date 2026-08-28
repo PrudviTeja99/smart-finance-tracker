@@ -185,7 +185,8 @@ class _MainNavigationHolderState extends State<MainNavigationHolder>
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () {}, // Intercepts taps around and under the strap so pages behind are not clicked
+      onTap:
+          () {}, // Intercepts taps around and under the strap so pages behind are not clicked
       child: Theme(
         data: theme.copyWith(canvasColor: Colors.transparent),
         child: SafeArea(
