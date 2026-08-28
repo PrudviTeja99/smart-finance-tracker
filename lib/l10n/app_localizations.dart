@@ -320,6 +320,12 @@ abstract class AppLocalizations {
   /// **'Total Balance: {amount}'**
   String dashboardTotalBalance(Object amount);
 
+  /// No description provided for @accountBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance: {amount}'**
+  String accountBalance(String amount);
+
   /// No description provided for @dashboardClearFilter.
   ///
   /// In en, this message translates to:
@@ -2857,6 +2863,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Show curved line connecting transfer bar tops'**
   String get settingsTransferTrendLineSubtitle;
+
+  /// No description provided for @chartViewDonut.
+  ///
+  /// In en, this message translates to:
+  /// **'Donut'**
+  String get chartViewDonut;
+
+  /// No description provided for @chartViewBar.
+  ///
+  /// In en, this message translates to:
+  /// **'Bar'**
+  String get chartViewBar;
 }
 
 class _AppLocalizationsDelegate

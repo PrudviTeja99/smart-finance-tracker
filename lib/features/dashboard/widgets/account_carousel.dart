@@ -26,6 +26,24 @@ class AccountCarousel extends StatelessWidget {
     }
   }
 
+  String _getAccountTypeDisplay(BuildContext context, String type) {
+    final l10n = AppLocalizations.of(context);
+    if (l10n == null) return type.replaceAll('_', ' ').toUpperCase();
+    switch (type.toLowerCase()) {
+      case 'bank':
+        return l10n.settingsAccountTypeBank.toUpperCase();
+      case 'credit_card':
+      case 'card':
+        return l10n.settingsAccountTypeCard.toUpperCase();
+      case 'wallet':
+        return l10n.settingsAccountTypeWallet.toUpperCase();
+      case 'cash':
+        return l10n.settingsAccountTypeCash.toUpperCase();
+      default:
+        return type.replaceAll('_', ' ').toUpperCase();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
@@ -91,7 +109,7 @@ class AccountCarousel extends StatelessWidget {
                           Icon(_getIcon(account.type),
                               color: const Color(0xFF6366F1), size: 20),
                           Text(
-                            account.type.replaceAll('_', ' ').toUpperCase(),
+                            _getAccountTypeDisplay(context, account.type),
                             style: const TextStyle(
                                 fontSize: 8,
                                 color: Colors.white38,

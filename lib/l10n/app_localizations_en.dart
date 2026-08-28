@@ -134,6 +134,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String accountBalance(String amount) {
+    return 'Balance: $amount';
+  }
+
+  @override
   String get dashboardClearFilter => 'Clear Filter';
 
   @override
@@ -1590,4 +1595,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get settingsTransferTrendLineSubtitle =>
       'Show curved line connecting transfer bar tops';
+
+  @override
+  String get chartViewDonut => 'Donut';
+
+  @override
+  String get chartViewBar => 'Bar';
 }

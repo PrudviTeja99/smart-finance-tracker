@@ -244,12 +244,12 @@ class __TransactionFormContentState extends State<_TransactionFormContent> {
                                       ),
                                       const SizedBox(height: 2),
                                        Text(
-                                         'Balance: ${AppFormatters.formatAmount(acc.balance)}',
+                                         AppLocalizations.of(context)!.accountBalance(AppFormatters.formatAmount(acc.balance)),
                                          style: const TextStyle(
-                                          fontSize: 11,
-                                          color: Colors.white54,
-                                        ),
-                                      ),
+                                           fontSize: 11,
+                                           color: Colors.white54,
+                                         ),
+                                       ),
                                     ],
                                   ),
                                 ),

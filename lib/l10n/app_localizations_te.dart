@@ -132,6 +132,11 @@ class AppLocalizationsTe extends AppLocalizations {
   }
 
   @override
+  String accountBalance(String amount) {
+    return 'బ్యాలెన్స్: $amount';
+  }
+
+  @override
   String get dashboardClearFilter => 'ఫిల్టర్ తొలగించు';
 
   @override
@@ -1597,9 +1602,15 @@ class AppLocalizationsTe extends AppLocalizations {
       'ఆదాయం బార్‌లను కలుపుతూ వక్రరేఖను చూపించు';
 
   @override
-  String get settingsTransferTrendLineTitle => 'బదిలీల ట్రెండ్ లైన్';
+  String get settingsTransferTrendLineTitle => 'బదిలీ ట్రెండ్ లైన్';
 
   @override
   String get settingsTransferTrendLineSubtitle =>
-      'బదిలీల బార్‌లను కలుపుతూ వక్రరేఖను చూపించు';
+      'బదిలీ బార్ నిలువు వరుసలను కలిపే లైన్ చూపండి';
+
+  @override
+  String get chartViewDonut => 'డోనట్';
+
+  @override
+  String get chartViewBar => 'బార్';
 }

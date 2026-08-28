@@ -44,6 +44,8 @@
   "dashboardAccounts": "Accounts",
   "dashboardTotalBalance": "Total Balance: {amount}",
   "@dashboardTotalBalance": { "placeholders": { "amount": {} } },
+  "accountBalance": "Balance: {amount}",
+  "@accountBalance": { "placeholders": { "amount": { "type": "String" } } },
   "dashboardClearFilter": "Clear Filter",
   "dashboardIncomeAnalysis": "Income Breakdown",
   "dashboardExpenseAnalysis": "Expenses Breakdown",
@@ -565,5 +567,7 @@
   "settingsIncomeTrendLineTitle": "Income Trend Line",
   "settingsIncomeTrendLineSubtitle": "Show curved line connecting income bar tops",
   "settingsTransferTrendLineTitle": "Transfer Trend Line",
-  "settingsTransferTrendLineSubtitle": "Show curved line connecting transfer bar tops"
+  "settingsTransferTrendLineSubtitle": "Show curved line connecting transfer bar tops",
+  "chartViewDonut": "Donut",
+  "chartViewBar": "Bar"
 }

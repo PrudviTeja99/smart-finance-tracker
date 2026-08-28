@@ -1,3 +1,4 @@
+import 'package:finance_tracker/l10n/app_localizations.dart';
 import 'package:finance_tracker/models/account_model.dart';
 import 'package:finance_tracker/models/category_model.dart';
 import 'package:finance_tracker/models/transaction_model.dart';
@@ -67,6 +68,7 @@ class _DraftEditorState extends State<DraftEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     final selectedCategory = widget.categories.firstWhere(
       (c) => c.id == _categoryId,
       orElse: () => widget.categories.firstWhere(
@@ -703,13 +705,13 @@ class _DraftEditorState extends State<DraftEditor> {
                                         ),
                                       ),
                                       const SizedBox(height: 2),
-                                      Text(
-                                        'Balance: ${AppFormatters.formatAmount(acc.balance)}',
-                                        style: const TextStyle(
-                                          fontSize: 11,
-                                          color: Colors.white54,
-                                        ),
-                                      ),
+                                       Text(
+                                         AppLocalizations.of(context)!.accountBalance(AppFormatters.formatAmount(acc.balance)),
+                                         style: const TextStyle(
+                                           fontSize: 11,
+                                           color: Colors.white54,
+                                         ),
+                                       ),
                                     ],
                                   ),
                                 ),

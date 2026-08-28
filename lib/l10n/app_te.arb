@@ -44,6 +44,8 @@
   "dashboardAccounts": "ఖాతాలు",
   "dashboardTotalBalance": "మొత్తం బ్యాలెన్స్: {amount}",
   "@dashboardTotalBalance": { "placeholders": { "amount": {} } },
+  "accountBalance": "బ్యాలెన్స్: {amount}",
+  "@accountBalance": { "placeholders": { "amount": { "type": "String" } } },
   "dashboardClearFilter": "ఫిల్టర్ తొలగించు",
   "dashboardIncomeAnalysis": "ఆదాయాల వివరాలు",
   "dashboardExpenseAnalysis": "ఖర్చుల వివరాలు",
@@ -564,6 +566,8 @@
   "settingsExpenseTrendLineSubtitle": "ఖర్చుల బార్‌లను కలుపుతూ వక్రరేఖను చూపించు",
   "settingsIncomeTrendLineTitle": "ఆదాయం ట్రెండ్ లైన్",
   "settingsIncomeTrendLineSubtitle": "ఆదాయం బార్‌లను కలుపుతూ వక్రరేఖను చూపించు",
-  "settingsTransferTrendLineTitle": "బదిలీల ట్రెండ్ లైన్",
-  "settingsTransferTrendLineSubtitle": "బదిలీల బార్‌లను కలుపుతూ వక్రరేఖను చూపించు"
+  "settingsTransferTrendLineTitle": "బదిలీ ట్రెండ్ లైన్",
+  "settingsTransferTrendLineSubtitle": "బదిలీ బార్ నిలువు వరుసలను కలిపే లైన్ చూపండి",
+  "chartViewDonut": "డోనట్",
+  "chartViewBar": "బార్"
 }
