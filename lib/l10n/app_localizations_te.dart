@@ -132,6 +132,11 @@ class AppLocalizationsTe extends AppLocalizations {
   }
 
   @override
+  String accountBalance(String amount) {
+    return 'బ్యాలెన్స్: $amount';
+  }
+
+  @override
   String get dashboardClearFilter => 'ఫిల్టర్ తొలగించు';
 
   @override
@@ -210,6 +215,34 @@ class AppLocalizationsTe extends AppLocalizations {
   @override
   String get settingsOpenNotificationAccessBtn =>
       'నోటిఫికేషన్ యాక్సెస్ తెరవండి';
+
+  @override
+  String get settingsStatusEnabled => 'ప్రారంభించబడింది';
+
+  @override
+  String get settingsStatusDisabled => 'నిలిపివేయబడింది';
+
+  @override
+  String get settingsReliabilitySetupComplete =>
+      'విశ్వసనీయత సెటప్ పూర్తయింది ✓';
+
+  @override
+  String get settingsReliabilitySetupCompleteSubtitle =>
+      'గరిష్ట విశ్వసనీయత కోసం అన్ని బ్యాక్‌గ్రౌండ్ అనుమతులు ప్రారంభించబడ్డాయి.';
+
+  @override
+  String get settingsConfirmAutoStartTitle =>
+      'ఆటో-స్టార్ట్ సెట్టింగ్‌ను నిర్ధారించండి';
+
+  @override
+  String get settingsConfirmAutoStartDescription =>
+      'మీ పరికర సెట్టింగ్‌లలో స్మార్ట్ ఫైనాన్స్ ట్రాకర్ కోసం ఆటో-స్టార్ట్‌ను ఆన్ చేశారా?';
+
+  @override
+  String get settingsNotYet => 'ఇంకా లేదు';
+
+  @override
+  String get settingsYesEnabled => 'అవును, ప్రారంభించబడింది';
 
   @override
   String get settingsAutoDeleteArchivedAlerts =>
@@ -1569,9 +1602,15 @@ class AppLocalizationsTe extends AppLocalizations {
       'ఆదాయం బార్‌లను కలుపుతూ వక్రరేఖను చూపించు';
 
   @override
-  String get settingsTransferTrendLineTitle => 'బదిలీల ట్రెండ్ లైన్';
+  String get settingsTransferTrendLineTitle => 'బదిలీ ట్రెండ్ లైన్';
 
   @override
   String get settingsTransferTrendLineSubtitle =>
-      'బదిలీల బార్‌లను కలుపుతూ వక్రరేఖను చూపించు';
+      'బదిలీ బార్ నిలువు వరుసలను కలిపే లైన్ చూపండి';
+
+  @override
+  String get chartViewDonut => 'డోనట్';
+
+  @override
+  String get chartViewBar => 'బార్';
 }

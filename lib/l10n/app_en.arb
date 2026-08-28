@@ -44,6 +44,8 @@
   "dashboardAccounts": "Accounts",
   "dashboardTotalBalance": "Total Balance: {amount}",
   "@dashboardTotalBalance": { "placeholders": { "amount": {} } },
+  "accountBalance": "Balance: {amount}",
+  "@accountBalance": { "placeholders": { "amount": { "type": "String" } } },
   "dashboardClearFilter": "Clear Filter",
   "dashboardIncomeAnalysis": "Income Breakdown",
   "dashboardExpenseAnalysis": "Expenses Breakdown",
@@ -68,6 +70,14 @@
   "settingsKeepNotificationAccessTitle": "Keep Notification Access Enabled",
   "settingsKeepNotificationAccessDescription": "Smart Tracking requires notification access to capture incoming transaction alerts. If notification access is disabled, automatic transaction detection will stop working.",
   "settingsOpenNotificationAccessBtn": "Open Notification Access",
+  "settingsStatusEnabled": "ENABLED",
+  "settingsStatusDisabled": "DISABLED",
+  "settingsReliabilitySetupComplete": "Reliability Setup Complete ✓",
+  "settingsReliabilitySetupCompleteSubtitle": "All background permissions enabled for maximum reliability.",
+  "settingsConfirmAutoStartTitle": "Confirm Auto-Start Setting",
+  "settingsConfirmAutoStartDescription": "Did you turn ON Auto-Start for Smart Finance Tracker in your device settings?",
+  "settingsNotYet": "Not Yet",
+  "settingsYesEnabled": "Yes, Enabled",
 
   "settingsAutoDeleteArchivedAlerts": "Auto-Delete Archived Alerts",
   "settingsAutoDeleteSubtitle": "Automatically purge old ignored notification logs",
@@ -557,5 +567,7 @@
   "settingsIncomeTrendLineTitle": "Income Trend Line",
   "settingsIncomeTrendLineSubtitle": "Show curved line connecting income bar tops",
   "settingsTransferTrendLineTitle": "Transfer Trend Line",
-  "settingsTransferTrendLineSubtitle": "Show curved line connecting transfer bar tops"
+  "settingsTransferTrendLineSubtitle": "Show curved line connecting transfer bar tops",
+  "chartViewDonut": "Donut",
+  "chartViewBar": "Bar"
 }

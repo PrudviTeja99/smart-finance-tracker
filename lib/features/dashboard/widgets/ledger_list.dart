@@ -6,6 +6,7 @@ import '../../../models/category_model.dart';
 import '../../../utils/app_settings.dart';
 import '../../../utils/app_formatters.dart';
 import '../../../utils/icon_helper.dart';
+import '../../../l10n/app_localizations.dart';
 
 class LedgerItem extends StatelessWidget {
   final TransactionModel tx;
@@ -23,16 +24,19 @@ class LedgerItem extends StatelessWidget {
     required this.onTap,
   });
 
-  String _getAccountTypeDisplay(String type) {
-    switch (type) {
+  String _getAccountTypeDisplay(BuildContext context, String type) {
+    final l10n = AppLocalizations.of(context);
+    if (l10n == null) return type.replaceAll('_', ' ').toUpperCase();
+    switch (type.toLowerCase()) {
       case 'bank':
-        return 'Bank';
+        return l10n.settingsAccountTypeBank;
       case 'credit_card':
-        return 'Card';
+      case 'card':
+        return l10n.settingsAccountTypeCard;
       case 'wallet':
-        return 'Wallet';
+        return l10n.settingsAccountTypeWallet;
       case 'cash':
-        return 'Cash';
+        return l10n.settingsAccountTypeCash;
       default:
         return type.replaceAll('_', ' ').toUpperCase();
     }
@@ -114,7 +118,7 @@ class LedgerItem extends StatelessWidget {
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
-                            _getAccountTypeDisplay(account.type),
+                            _getAccountTypeDisplay(context, account.type),
                             style: const TextStyle(
                                 fontSize: 9, color: Colors.white54),
                           ),

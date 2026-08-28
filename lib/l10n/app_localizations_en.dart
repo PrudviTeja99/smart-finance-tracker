@@ -134,6 +134,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String accountBalance(String amount) {
+    return 'Balance: $amount';
+  }
+
+  @override
   String get dashboardClearFilter => 'Clear Filter';
 
   @override
@@ -209,6 +214,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsOpenNotificationAccessBtn => 'Open Notification Access';
+
+  @override
+  String get settingsStatusEnabled => 'ENABLED';
+
+  @override
+  String get settingsStatusDisabled => 'DISABLED';
+
+  @override
+  String get settingsReliabilitySetupComplete => 'Reliability Setup Complete ✓';
+
+  @override
+  String get settingsReliabilitySetupCompleteSubtitle =>
+      'All background permissions enabled for maximum reliability.';
+
+  @override
+  String get settingsConfirmAutoStartTitle => 'Confirm Auto-Start Setting';
+
+  @override
+  String get settingsConfirmAutoStartDescription =>
+      'Did you turn ON Auto-Start for Smart Finance Tracker in your device settings?';
+
+  @override
+  String get settingsNotYet => 'Not Yet';
+
+  @override
+  String get settingsYesEnabled => 'Yes, Enabled';
 
   @override
   String get settingsAutoDeleteArchivedAlerts => 'Auto-Delete Archived Alerts';
@@ -1564,4 +1595,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get settingsTransferTrendLineSubtitle =>
       'Show curved line connecting transfer bar tops';
+
+  @override
+  String get chartViewDonut => 'Donut';
+
+  @override
+  String get chartViewBar => 'Bar';
 }

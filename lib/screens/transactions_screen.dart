@@ -230,6 +230,63 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     });
   }
 
+  String _getTimeframeDisplay(AppLocalizations strings) {
+    if (_selectedTimeframe == 'This Month' ||
+        _selectedTimeframe == strings.transactionsThisMonth) {
+      return strings.transactionsThisMonth;
+    }
+    if (_selectedTimeframe == 'This Week' ||
+        _selectedTimeframe == strings.transactionsThisWeek) {
+      return strings.transactionsThisWeek;
+    }
+    if (_selectedTimeframe == 'This Year' ||
+        _selectedTimeframe == strings.transactionsThisYear) {
+      return strings.transactionsThisYear;
+    }
+    if (_selectedTimeframe == 'All Time' ||
+        _selectedTimeframe == strings.transactionsAllTime) {
+      return strings.transactionsAllTime;
+    }
+    if (_selectedTimeframe == 'Custom' && _customMonthLabel.isNotEmpty) {
+      return _customMonthLabel;
+    }
+    return _selectedTimeframe;
+  }
+
+  String _getFilterSummaryText(AppLocalizations strings) {
+    final List<String> parts = [];
+
+    parts.add(_getTimeframeDisplay(strings));
+
+    if (_selectedAccountId != null) {
+      final acc = _accounts.firstWhere(
+        (a) => a.id == _selectedAccountId,
+        orElse: () => AccountModel(id: -1, name: '', type: '', keywords: '', balance: 0.0),
+      );
+      if (acc.name.isNotEmpty) {
+        parts.add(acc.name);
+      }
+    }
+
+    if (_selectedCategoryId != null) {
+      final cat = _categories.firstWhere(
+        (c) => c.id == _selectedCategoryId,
+        orElse: () => CategoryModel(id: -1, name: '', icon: '', color: 0),
+      );
+      if (cat.name.isNotEmpty) {
+        parts.add(cat.name);
+      }
+    }
+
+    if (_searchController.text.trim().isNotEmpty) {
+      parts.add('"${_searchController.text.trim()}"');
+    }
+
+    parts.add(_currentSort.getLocalizedLabel(strings));
+
+    return parts.join(' • ');
+  }
+
   void _openSortSheet() {
     final strings = AppLocalizations.of(context)!;
     showModalBottomSheet(
@@ -437,13 +494,15 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     runSpacing: 8,
                     children: [
                       ...[
-                        strings.transactionsThisMonth,
-                        strings.transactionsThisWeek,
-                        strings.transactionsThisYear
-                      ].map((tf) {
-                        final isSel = _selectedTimeframe == tf;
+                        {'key': 'This Month', 'label': strings.transactionsThisMonth},
+                        {'key': 'This Week', 'label': strings.transactionsThisWeek},
+                        {'key': 'This Year', 'label': strings.transactionsThisYear},
+                      ].map((item) {
+                        final tfKey = item['key']!;
+                        final tfLabel = item['label']!;
+                        final isSel = _selectedTimeframe == tfKey;
                         return ChoiceChip(
-                          label: Text(tf),
+                          label: Text(tfLabel),
                           selected: isSel,
                           selectedColor: const Color(0xFF6366F1),
                           backgroundColor: const Color(0xFF0F172A),
@@ -452,7 +511,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                           onSelected: (val) {
                             if (val) {
                               setState(() {
-                                _selectedTimeframe = tf;
+                                _selectedTimeframe = tfKey;
                                 _customStartDate = null;
                                 _customEndDate = null;
                                 _customMonthLabel = '';
@@ -779,24 +838,28 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                   ),
                 ),
 
-                // Active Filter Bar (If any filters applied)
-                if (_hasActiveFilters)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    color: const Color(0xFF1E293B).withValues(alpha: 0.5),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            strings.transactionsShowingCount(transactionsList.length, _allTransactions.length, _currentSort.getLocalizedLabel(strings)),
-                            style: const TextStyle(
-                                fontSize: 12, color: Colors.white54),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                // Filter & Sort Summary Bar
+                Container(
+                  width: double.infinity,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  color: const Color(0xFF1E293B).withValues(alpha: 0.5),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          _getFilterSummaryText(strings),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.white70,
+                            fontWeight: FontWeight.w500,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
+                      ),
+                      if (_hasActiveFilters)
                         GestureDetector(
                           onTap: _clearFilters,
                           child: Text(
@@ -808,9 +871,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                             ),
                           ),
                         ),
-                      ],
-                    ),
+                    ],
                   ),
+                ),
 
                 // Transactions List
                 Expanded(

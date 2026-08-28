@@ -320,6 +320,12 @@ abstract class AppLocalizations {
   /// **'Total Balance: {amount}'**
   String dashboardTotalBalance(Object amount);
 
+  /// No description provided for @accountBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance: {amount}'**
+  String accountBalance(String amount);
+
   /// No description provided for @dashboardClearFilter.
   ///
   /// In en, this message translates to:
@@ -457,6 +463,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Open Notification Access'**
   String get settingsOpenNotificationAccessBtn;
+
+  /// No description provided for @settingsStatusEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'ENABLED'**
+  String get settingsStatusEnabled;
+
+  /// No description provided for @settingsStatusDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'DISABLED'**
+  String get settingsStatusDisabled;
+
+  /// No description provided for @settingsReliabilitySetupComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Reliability Setup Complete ✓'**
+  String get settingsReliabilitySetupComplete;
+
+  /// No description provided for @settingsReliabilitySetupCompleteSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'All background permissions enabled for maximum reliability.'**
+  String get settingsReliabilitySetupCompleteSubtitle;
+
+  /// No description provided for @settingsConfirmAutoStartTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Auto-Start Setting'**
+  String get settingsConfirmAutoStartTitle;
+
+  /// No description provided for @settingsConfirmAutoStartDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Did you turn ON Auto-Start for Smart Finance Tracker in your device settings?'**
+  String get settingsConfirmAutoStartDescription;
+
+  /// No description provided for @settingsNotYet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not Yet'**
+  String get settingsNotYet;
+
+  /// No description provided for @settingsYesEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes, Enabled'**
+  String get settingsYesEnabled;
 
   /// No description provided for @settingsAutoDeleteArchivedAlerts.
   ///
@@ -2809,6 +2863,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Show curved line connecting transfer bar tops'**
   String get settingsTransferTrendLineSubtitle;
+
+  /// No description provided for @chartViewDonut.
+  ///
+  /// In en, this message translates to:
+  /// **'Donut'**
+  String get chartViewDonut;
+
+  /// No description provided for @chartViewBar.
+  ///
+  /// In en, this message translates to:
+  /// **'Bar'**
+  String get chartViewBar;
 }
 
 class _AppLocalizationsDelegate

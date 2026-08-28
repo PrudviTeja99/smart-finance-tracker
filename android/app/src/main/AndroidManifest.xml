@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.finance_tracker">
+    package="bpt.studiohq.smart_finance_tracker">
 
     <!-- Permissions required for background notification listening -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />

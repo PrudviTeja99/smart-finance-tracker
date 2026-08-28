@@ -127,13 +127,13 @@ class AnalyticsCard extends StatelessWidget {
               child: Row(
                 children: [
                   _buildChartSegment(
-                    label: 'Donut',
+                    label: strings.chartViewDonut,
                     icon: Icons.pie_chart_rounded,
                     isSelected: chartView == 'donut',
                     onTap: () => onToggleChartView('donut'),
                   ),
                   _buildChartSegment(
-                    label: 'Bar',
+                    label: strings.chartViewBar,
                     icon: Icons.bar_chart_rounded,
                     isSelected: chartView == 'bar',
                     onTap: () => onToggleChartView('bar'),

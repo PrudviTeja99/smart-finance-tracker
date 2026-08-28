@@ -1,4 +1,4 @@
-package com.example.finance_tracker
+package bpt.studiohq.smart_finance_tracker
 
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -12,7 +12,7 @@ import io.flutter.plugin.common.MethodChannel
 import java.io.ByteArrayOutputStream
 
 class MainActivity : FlutterActivity() {
-    private val CHANNEL = "com.example.finance_tracker/app_info"
+    private val CHANNEL = "bpt.studiohq.smart_finance_tracker/app_info"
 
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -55,16 +55,41 @@ class MainActivity : FlutterActivity() {
                 } catch (e: Exception) {
                     result.error("ERROR", e.message, null)
                 }
+            } else if (call.method == "isIgnoringBatteryOptimizations") {
+                try {
+                    val pm = getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager
+                    val isIgnoring = pm.isIgnoringBatteryOptimizations(packageName)
+                    result.success(isIgnoring)
+                } catch (e: Exception) {
+                    result.success(false)
+                }
             } else if (call.method == "requestIgnoreBatteryOptimizations") {
                 try {
-                    val intent = android.content.Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
-                    val uri = android.net.Uri.parse("package:$packageName")
-                    intent.data = uri
-                    intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                    val intent = android.content.Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                        data = android.net.Uri.parse("package:$packageName")
+                        addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
                     startActivity(intent)
                     result.success(true)
-                } catch (e: Exception) {
-                    result.error("ERROR", e.message, null)
+                } catch (e1: Exception) {
+                    try {
+                        val fallbackIntent = android.content.Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).apply {
+                            addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        startActivity(fallbackIntent)
+                        result.success(true)
+                    } catch (e2: Exception) {
+                        try {
+                            val detailsIntent = android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                data = android.net.Uri.fromParts("package", packageName, null)
+                                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                            startActivity(detailsIntent)
+                            result.success(true)
+                        } catch (e3: Exception) {
+                            result.error("ERROR", e3.message, null)
+                        }
+                    }
                 }
             } else if (call.method == "openAutoStartSettings") {
                 try {

@@ -34,6 +34,10 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen>
     with WidgetsBindingObserver {
   bool _isServiceEnabled = false;
+  bool _hasNotificationPermission = false;
+  bool _hasBatteryExemption = false;
+  bool _hasAutoStartOpened = false;
+  bool? _userToggledReliabilityExpand;
   List<AccountModel> _accounts = [];
   List<CategoryModel> _categories = [];
 
@@ -41,7 +45,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _loadSettingsData();
+    _scheduleInitialLoad();
   }
 
   @override
@@ -54,6 +58,12 @@ class _SettingsScreenState extends State<SettingsScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed && widget.isActive) {
       _loadSettingsData();
+      // Allow Android OS 300ms to finish committing system settings updates to PowerManager
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted && widget.isActive) {
+          _loadSettingsData();
+        }
+      });
     }
   }
 
@@ -61,8 +71,17 @@ class _SettingsScreenState extends State<SettingsScreen>
   void didUpdateWidget(SettingsScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.isActive && !oldWidget.isActive) {
-      _loadSettingsData();
+      _scheduleInitialLoad();
     }
+  }
+
+  void _scheduleInitialLoad() {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      if (mounted && widget.isActive) {
+        await _loadSettingsData();
+      }
+    });
   }
 
   Future<void> _loadSettingsData() async {
@@ -71,6 +90,8 @@ class _SettingsScreenState extends State<SettingsScreen>
     final categoriesList = await dbService.getAllCategories();
     final running = await NotificationHandler.isServiceRunning();
     final permission = await NotificationHandler.hasPermission();
+    final batteryExemption =
+        await NotificationHandler.isIgnoringBatteryOptimizations();
 
     // Start or stop service based on persistent user setting
     if (permission && !running && AppSettings.smartTrackingEnabled) {
@@ -86,6 +107,9 @@ class _SettingsScreenState extends State<SettingsScreen>
         _accounts = accountsList;
         _categories = categoriesList;
         _isServiceEnabled = serviceEnabled;
+        _hasNotificationPermission = permission;
+        _hasBatteryExemption = batteryExemption;
+        _hasAutoStartOpened = AppSettings.autoStartEnabled;
       });
     }
   }
@@ -100,13 +124,6 @@ class _SettingsScreenState extends State<SettingsScreen>
         await NotificationHandler.openPermissionSettings();
       } else {
         await NotificationHandler.startService();
-      }
-
-      // Auto-enable Auto-Delete with a default of 1 month
-      if (!AppSettings.autoDeleteArchive) {
-        await AppSettings.setAutoDeleteArchive(true);
-        await AppSettings.setAutoDeleteValue(1);
-        await AppSettings.setAutoDeleteUnit('months');
       }
     } else {
       // Confirmation dialog before disabling
@@ -147,7 +164,6 @@ class _SettingsScreenState extends State<SettingsScreen>
         return;
       }
       await NotificationHandler.stopService();
-      await AppSettings.setAutoDeleteArchive(false);
 
       // Asynchronous background cleanup — doesn't block the UI
       final dbService = DatabaseService.instance;
@@ -160,7 +176,12 @@ class _SettingsScreenState extends State<SettingsScreen>
             '🧹 Background cleanup complete: archived alerts, audit logs, and processed queue cleared.');
       });
     }
-    _loadSettingsData();
+
+    if (mounted) {
+      setState(() {
+        _isServiceEnabled = value;
+      });
+    }
   }
 
   void _showExportFormatSheet() {
@@ -1411,6 +1432,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     required String description,
     required String buttonText,
     required VoidCallback onTap,
+    required bool isEnabled,
     bool isHighlyRecommended = false,
   }) {
     return InkWell(
@@ -1423,7 +1445,12 @@ class _SettingsScreenState extends State<SettingsScreen>
           children: [
             Row(
               children: [
-                _buildLeadingIcon(icon, color: const Color(0xFF818CF8)),
+                _buildLeadingIcon(
+                  icon,
+                  color: isEnabled
+                      ? const Color(0xFF10B981)
+                      : const Color(0xFFEF4444),
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
@@ -1435,6 +1462,50 @@ class _SettingsScreenState extends State<SettingsScreen>
                     ),
                   ),
                 ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: isEnabled
+                        ? const Color(0xFF10B981).withValues(alpha: 0.15)
+                        : const Color(0xFFEF4444).withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isEnabled
+                          ? const Color(0xFF10B981).withValues(alpha: 0.35)
+                          : const Color(0xFFEF4444).withValues(alpha: 0.35),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isEnabled
+                            ? Icons.check_circle_rounded
+                            : Icons.cancel_rounded,
+                        size: 12,
+                        color: isEnabled
+                            ? const Color(0xFF10B981)
+                            : const Color(0xFFEF4444),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        isEnabled
+                            ? AppLocalizations.of(context)!.settingsStatusEnabled
+                            : AppLocalizations.of(context)!.settingsStatusDisabled,
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: isEnabled
+                              ? const Color(0xFF10B981)
+                              : const Color(0xFFEF4444),
+                          letterSpacing: 0.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 4),
                 const Icon(Icons.chevron_right_rounded,
                     color: Color(0xFF94A3B8), size: 20),
               ],
@@ -1550,93 +1621,217 @@ class _SettingsScreenState extends State<SettingsScreen>
           secondary: _buildLeadingIcon(Icons.receipt_long_rounded, color: const Color(0xFF0EA5E9)),
         ),
 
-        // Reliability Recommendations - always shown when toggle is present
+        // Reliability Recommendations - Collapsible when both permissions are satisfied
         if (_isServiceEnabled) ...[
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFF0B132B),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: const Color(0xFF6366F1).withValues(alpha: 0.35),
+          Builder(builder: (context) {
+            final bool allReliabilityEnabled =
+                _hasAutoStartOpened && _hasBatteryExemption;
+            final bool isExpanded =
+                _userToggledReliabilityExpand ?? !allReliabilityEnabled;
+
+            return Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0B132B),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: allReliabilityEnabled
+                        ? const Color(0xFF10B981).withValues(alpha: 0.35)
+                        : const Color(0xFF6366F1).withValues(alpha: 0.35),
+                  ),
                 ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Explanation Header Banner
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    margin: const EdgeInsets.only(bottom: 12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header Banner (Clickable to Expand / Collapse)
+                    InkWell(
+                      onTap: () {
+                        setState(() {
+                          _userToggledReliabilityExpand = !isExpanded;
+                        });
+                      },
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                          color: const Color(0xFF6366F1).withValues(alpha: 0.2)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: allReliabilityEnabled
+                              ? const Color(0xFF10B981).withValues(alpha: 0.1)
+                              : const Color(0xFF6366F1).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: allReliabilityEnabled
+                                ? const Color(0xFF10B981)
+                                    .withValues(alpha: 0.25)
+                                : const Color(0xFF6366F1)
+                                    .withValues(alpha: 0.2),
+                          ),
+                        ),
+                        child: Row(
                           children: [
-                            _buildLeadingIcon(Icons.shield_rounded,
-                                color: const Color(0xFF818CF8)),
+                            _buildLeadingIcon(
+                              allReliabilityEnabled
+                                  ? Icons.verified_user_rounded
+                                  : Icons.shield_rounded,
+                              color: allReliabilityEnabled
+                                  ? const Color(0xFF10B981)
+                                  : const Color(0xFF818CF8),
+                            ),
                             const SizedBox(width: 10),
                             Expanded(
-                              child: Text(
-                                strings.settingsReliabilityRecommendations,
-                                style: const TextStyle(
-                                    color: Color(0xFFE2E8F0),
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    allReliabilityEnabled
+                                        ? strings
+                                            .settingsReliabilitySetupComplete
+                                        : strings
+                                            .settingsReliabilityRecommendations,
+                                    style: TextStyle(
+                                      color: allReliabilityEnabled
+                                          ? const Color(0xFF10B981)
+                                          : const Color(0xFFE2E8F0),
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    allReliabilityEnabled
+                                        ? strings
+                                            .settingsReliabilitySetupCompleteSubtitle
+                                        : strings
+                                            .settingsReliabilityRecommendationsSubtitle,
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 11,
+                                      height: 1.3,
+                                    ),
+                                  ),
+                                ],
                               ),
+                            ),
+                            Icon(
+                              isExpanded
+                                  ? Icons.keyboard_arrow_up_rounded
+                                  : Icons.keyboard_arrow_down_rounded,
+                              color: allReliabilityEnabled
+                                  ? const Color(0xFF10B981)
+                                  : const Color(0xFF94A3B8),
+                              size: 24,
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          strings.settingsReliabilityRecommendationsSubtitle,
-                          style: const TextStyle(
-                              color: Colors.white70, fontSize: 12, height: 1.4),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                  _buildReliabilityAction(
-                    icon: Icons.rocket_launch_rounded,
-                    isHighlyRecommended: true,
-                    title: strings.settingsEnableAutoStartTitle,
-                    description:
-                        strings.settingsEnableAutoStartDescription,
-                    buttonText: strings.settingsEnableAutoStartBtn,
-                    onTap: () => NotificationHandler.openAutoStartSettings(),
-                  ),
-                  Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 16),
-                  _buildReliabilityAction(
-                    icon: Icons.battery_saver_rounded,
-                    isHighlyRecommended: true,
-                    title: strings.settingsEnableUnrestrictedRunTitle,
-                    description:
-                        strings.settingsEnableUnrestrictedRunDescription,
-                    buttonText: strings.settingsEnableUnrestrictedRunBtn,
-                    onTap: () => NotificationHandler.requestBatteryExemption(),
-                  ),
-                  Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 16),
-                  _buildReliabilityAction(
-                    icon: Icons.notifications_active_rounded,
-                    title: strings.settingsKeepNotificationAccessTitle,
-                    description:
-                        strings.settingsKeepNotificationAccessDescription,
-                    buttonText: strings.settingsOpenNotificationAccessBtn,
-                    onTap: () => NotificationHandler.openPermissionSettings(),
-                  ),
-                ],
+                    if (isExpanded) ...[
+                      const SizedBox(height: 12),
+                      _buildReliabilityAction(
+                        icon: Icons.rocket_launch_rounded,
+                        isHighlyRecommended: true,
+                        isEnabled: _hasAutoStartOpened,
+                        title: strings.settingsEnableAutoStartTitle,
+                        description:
+                            strings.settingsEnableAutoStartDescription,
+                        buttonText: strings.settingsEnableAutoStartBtn,
+                        onTap: () async {
+                          await NotificationHandler.openAutoStartSettings();
+                          if (!mounted) return;
+                          final dialogContext = context;
+                          final confirmed = await showDialog<bool>(
+                            context: dialogContext,
+                            builder: (context) => AlertDialog(
+                              backgroundColor: const Color(0xFF1E293B),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20)),
+                              icon: const Icon(Icons.rocket_launch_rounded,
+                                  color: Color(0xFF818CF8), size: 36),
+                              title: Text(strings.settingsConfirmAutoStartTitle,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 17,
+                                      color: Colors.white)),
+                              content: Text(
+                                strings.settingsConfirmAutoStartDescription,
+                                style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 13,
+                                    height: 1.5),
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.pop(context, false),
+                                  child: Text(strings.settingsNotYet,
+                                      style: const TextStyle(
+                                          color: Colors.white54,
+                                          fontWeight: FontWeight.bold)),
+                                ),
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.pop(context, true),
+                                  child: Text(strings.settingsYesEnabled,
+                                      style: const TextStyle(
+                                          color: Color(0xFF10B981),
+                                          fontWeight: FontWeight.bold)),
+                                ),
+                              ],
+                            ),
+                          );
+
+                          if (confirmed == true) {
+                            await AppSettings.setAutoStartEnabled(true);
+                            if (mounted) {
+                              setState(() {
+                                _hasAutoStartOpened = true;
+                              });
+                            }
+                          } else if (confirmed == false) {
+                            await AppSettings.setAutoStartEnabled(false);
+                            if (mounted) {
+                              setState(() {
+                                _hasAutoStartOpened = false;
+                              });
+                            }
+                          }
+                        },
+                      ),
+                      Divider(
+                          color:
+                              const Color(0xFF334155).withValues(alpha: 0.4),
+                          height: 16),
+                      _buildReliabilityAction(
+                        icon: Icons.battery_saver_rounded,
+                        isHighlyRecommended: true,
+                        isEnabled: _hasBatteryExemption,
+                        title: strings.settingsEnableUnrestrictedRunTitle,
+                        description: strings
+                            .settingsEnableUnrestrictedRunDescription,
+                        buttonText:
+                            strings.settingsEnableUnrestrictedRunBtn,
+                        onTap: () async {
+                          await NotificationHandler.requestBatteryExemption();
+                          final isExempt = await NotificationHandler
+                              .isIgnoringBatteryOptimizations();
+                          if (mounted) {
+                            setState(() {
+                              _hasBatteryExemption = isExempt;
+                            });
+                          }
+                        },
+                      ),
+                    ],
+                  ],
+                ),
               ),
-            ),
-          ),
-          Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
+            );
+          }),
+          Divider(
+              color: const Color(0xFF334155).withValues(alpha: 0.4),
+              height: 1),
         ] else
           Divider(color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
 
