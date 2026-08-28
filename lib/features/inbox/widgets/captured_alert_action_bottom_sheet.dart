@@ -20,8 +20,8 @@ class CapturedAlertActionBottomSheet extends StatelessWidget {
     final title = alert['title'] as String? ?? '';
     final body = alert['body'] as String? ?? '';
 
-    final dateStr = alert['date'] as String? ?? '';
-    final date = DateTime.tryParse(dateStr);
+    final ts = alert['timestamp'] as int?;
+    final date = ts != null ? DateTime.fromMillisecondsSinceEpoch(ts) : null;
     final formattedDate =
         date != null ? DateFormat('dd MMM, hh:mm a').format(date) : '';
 

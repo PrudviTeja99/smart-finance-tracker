@@ -526,7 +526,8 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                          color:
+                              const Color(0xFF10B981).withValues(alpha: 0.15),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(Icons.check_circle_rounded,
@@ -695,7 +696,8 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
         backgroundColor: const Color(0xFF1E293B),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(strings.inboxDiscardSelectedDraftsTitle,
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            style: const TextStyle(
+                color: Colors.white, fontWeight: FontWeight.bold)),
         content: Text(
           strings.inboxDiscardSelectedDraftsConfirm(count),
           style:
@@ -704,8 +706,8 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child:
-                Text(strings.inboxCancel, style: const TextStyle(color: Colors.white38)),
+            child: Text(strings.inboxCancel,
+                style: const TextStyle(color: Colors.white38)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
@@ -752,7 +754,8 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
         backgroundColor: const Color(0xFF1E293B),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(strings.inboxDiscardAllDraftsTitle,
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            style: const TextStyle(
+                color: Colors.white, fontWeight: FontWeight.bold)),
         content: Text(
           strings.inboxDiscardAllDraftsConfirm(count),
           style:
@@ -761,8 +764,8 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child:
-                Text(strings.inboxCancel, style: const TextStyle(color: Colors.white38)),
+            child: Text(strings.inboxCancel,
+                style: const TextStyle(color: Colors.white38)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
@@ -801,7 +804,8 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
         backgroundColor: const Color(0xFF1E293B),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(strings.inboxClearAllAlertsTitle,
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            style: const TextStyle(
+                color: Colors.white, fontWeight: FontWeight.bold)),
         content: Text(
           strings.inboxClearAllAlertsConfirm(count),
           style:
@@ -810,8 +814,8 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child:
-                Text(strings.inboxCancel, style: const TextStyle(color: Colors.white38)),
+            child: Text(strings.inboxCancel,
+                style: const TextStyle(color: Colors.white38)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
@@ -917,9 +921,9 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
         (a) => a['id'] == logId,
         orElse: () => <String, dynamic>{},
       );
-      final notificationDate = alertLog['date'] != null
-          ? (DateTime.tryParse(alertLog['date'] as String) ?? DateTime.now())
-          : DateTime.now();
+      final ts = alertLog['timestamp'] as int?;
+      final notificationDate =
+          ts != null ? DateTime.fromMillisecondsSinceEpoch(ts) : DateTime.now();
 
       // 1. Parse details with original notification date & notificationLogId
       final tx = await _parser.parseNotification(
@@ -1204,8 +1208,12 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
                           // Tab items
                           Row(
                             children: [
-                              _buildTabItem(0, Icons.edit_note_rounded,
-                                  strings.inboxDrafts, _pendingTransactions.length, value),
+                              _buildTabItem(
+                                  0,
+                                  Icons.edit_note_rounded,
+                                  strings.inboxDrafts,
+                                  _pendingTransactions.length,
+                                  value),
                               _buildTabItem(
                                   1,
                                   Icons.receipt_long_rounded,
@@ -1388,16 +1396,16 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
                             const Icon(Icons.mark_email_read_outlined,
                                 size: 64, color: Colors.white24),
                             const SizedBox(height: 16),
-                        Text(
-                          strings.inboxAllCaughtUp,
+                            Text(
+                              strings.inboxAllCaughtUp,
                               style: TextStyle(
                                   fontSize: 18,
                                   color: Colors.white70,
                                   fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 6),
-                        Text(
-                          strings.inboxEmpty,
+                            Text(
+                              strings.inboxEmpty,
                               style: TextStyle(
                                   fontSize: 13, color: Colors.white38),
                               textAlign: TextAlign.center,
@@ -1417,16 +1425,16 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
                               ),
                             ),
                             const SizedBox(height: 24),
-                        Text(
-                          strings.inboxTrackingDisabled,
+                            Text(
+                              strings.inboxTrackingDisabled,
                               style: TextStyle(
                                   fontSize: 20,
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 10),
-                        Text(
-                          strings.inboxTrackingDisabledDescription,
+                            Text(
+                              strings.inboxTrackingDisabledDescription,
                               style: TextStyle(
                                   fontSize: 13,
                                   color: Colors.white54,
@@ -1447,8 +1455,8 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
                               ),
                               onPressed: _enableService,
                               icon: const Icon(Icons.bolt_rounded, size: 20),
-                          label: Text(
-                            strings.inboxEnableTracking,
+                              label: Text(
+                                strings.inboxEnableTracking,
                                 style: TextStyle(
                                     fontWeight: FontWeight.bold, fontSize: 14),
                               ),
@@ -1586,11 +1594,9 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen>
 
     final sortedPackages = groups.keys.toList()
       ..sort((a, b) {
-        final dateStrA = groups[a]!.first['date'] as String? ?? '';
-        final dateStrB = groups[b]!.first['date'] as String? ?? '';
-        final dateA = DateTime.tryParse(dateStrA) ?? DateTime(1970);
-        final dateB = DateTime.tryParse(dateStrB) ?? DateTime(1970);
-        return dateB.compareTo(dateA);
+        final tsA = groups[a]!.first['timestamp'] as int? ?? 0;
+        final tsB = groups[b]!.first['timestamp'] as int? ?? 0;
+        return tsB.compareTo(tsA);
       });
 
     return ListView.builder(
