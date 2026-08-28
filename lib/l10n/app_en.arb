@@ -571,10 +571,12 @@
   "chartViewDonut": "Donut",
   "chartViewBar": "Bar",
   "settingsEraseAllDataTitle": "Erase All App Data",
-  "settingsEraseAllDataSubtitle": "Developer tool: Wipe all tables & reset database to default",
+  "settingsEraseAllDataSubtitle": "Wipe all tables & reset database to default",
   "settingsEraseConfirmationTitle": "Erase All App Data?",
   "settingsEraseConfirmationBody": "This will permanently wipe all transactions, notification logs, audit history, accounts, and categories. The database will be reset to fresh default state.",
   "settingsEraseCancel": "Cancel",
   "settingsEraseConfirm": "Erase Everything",
-  "settingsEraseSuccess": "All database tables and app data erased successfully."
+  "settingsEraseSuccess": "All database tables and app data erased successfully.",
+  "settingsEnableDeveloperOptionsTitle": "Developer Mode",
+  "settingsEnableDeveloperOptionsSubtitle": "Show developer options section"
 }

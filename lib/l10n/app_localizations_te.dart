@@ -1619,7 +1619,7 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get settingsEraseAllDataSubtitle =>
-      'డెవలపర్ టూల్: అన్ని టేబుళ్లను తుడిచివేసి డేటాబేస్‌ను రీసెట్ చేయండి';
+      'అన్ని టేబుళ్లను తుడిచివేసి డేటాబేస్‌ను రీసెట్ చేయండి';
 
   @override
   String get settingsEraseConfirmationTitle => 'అన్ని యాప్ డేటాను తొలగించాలా?';
@@ -1637,4 +1637,11 @@ class AppLocalizationsTe extends AppLocalizations {
   @override
   String get settingsEraseSuccess =>
       'అన్ని డేటాబేస్ టేబుళ్లు విజయవంతంగా రీసెట్ చేయబడ్డాయి.';
+
+  @override
+  String get settingsEnableDeveloperOptionsTitle => 'డెవలపర్ మోడ్';
+
+  @override
+  String get settingsEnableDeveloperOptionsSubtitle =>
+      'డెవలపర్ విభాగాన్ని చూపించండి';
 }

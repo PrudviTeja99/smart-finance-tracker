@@ -1,12 +1,10 @@
 import 'dart:convert';
-import 'dart:isolate';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/bio_tagger.dart';
 import '../utils/category_classifier.dart';
 
 /// Top-level isolate functions for CPU-heavy weight decoding/encoding.
-/// Top-level functions have zero closure context and capture no instance fields (e.g. Futures).
 Map<String, Map<String, double>> _decodeWeightsIsolateTask(String? jsonStr) {
   if (jsonStr == null || jsonStr.isEmpty) return {};
   try {
@@ -22,7 +20,7 @@ Map<String, Map<String, double>> _decodeWeightsIsolateTask(String? jsonStr) {
       }
     });
     return result;
-  } catch (e) {
+  } catch (_) {
     return {};
   }
 }
@@ -60,13 +58,13 @@ class PerceptronStorageService {
         final accJson = prefs.getString(_accountWeightsKey);
 
         final taggerWeights =
-            await Isolate.run(() => _decodeWeightsIsolateTask(taggerJson));
+            await compute(_decodeWeightsIsolateTask, taggerJson);
         final categoryWeights =
-            await Isolate.run(() => _decodeWeightsIsolateTask(catJson));
+            await compute(_decodeWeightsIsolateTask, catJson);
         final typeWeights =
-            await Isolate.run(() => _decodeWeightsIsolateTask(typeJson));
+            await compute(_decodeWeightsIsolateTask, typeJson);
         final accountWeights =
-            await Isolate.run(() => _decodeWeightsIsolateTask(accJson));
+            await compute(_decodeWeightsIsolateTask, accJson);
 
         _tagger = StructuredPerceptronTagger(initialWeights: taggerWeights);
         _classifier = CategoryClassifier(
@@ -74,8 +72,7 @@ class PerceptronStorageService {
           initialTypeWeights: typeWeights,
           initialAccountWeights: accountWeights,
         );
-      } catch (e) {
-        debugPrint('Error loading Perceptron weights: $e');
+      } catch (_) {
         _tagger = StructuredPerceptronTagger();
         _classifier = CategoryClassifier();
       }
@@ -104,7 +101,7 @@ class PerceptronStorageService {
       if (_tagger != null) {
         final weightTable = _tagger!.weightTable;
         final taggerJson =
-            await Isolate.run(() => _encodeWeightsIsolateTask(weightTable));
+            await compute(_encodeWeightsIsolateTask, weightTable);
         await prefs.setString(_taggerWeightsKey, taggerJson);
       }
       if (_classifier != null) {
@@ -113,18 +110,16 @@ class PerceptronStorageService {
         final accWeights = _classifier!.accountWeights;
 
         final catJson =
-            await Isolate.run(() => _encodeWeightsIsolateTask(catWeights));
+            await compute(_encodeWeightsIsolateTask, catWeights);
         final typeJson =
-            await Isolate.run(() => _encodeWeightsIsolateTask(typeWeights));
+            await compute(_encodeWeightsIsolateTask, typeWeights);
         final accJson =
-            await Isolate.run(() => _encodeWeightsIsolateTask(accWeights));
+            await compute(_encodeWeightsIsolateTask, accWeights);
 
         await prefs.setString(_categoryWeightsKey, catJson);
         await prefs.setString(_typeWeightsKey, typeJson);
         await prefs.setString(_accountWeightsKey, accJson);
       }
-    } catch (e) {
-      debugPrint('Error saving Perceptron weights: $e');
-    }
+    } catch (_) {}
   }
 }

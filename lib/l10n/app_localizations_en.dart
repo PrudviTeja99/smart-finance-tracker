@@ -1607,7 +1607,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsEraseAllDataSubtitle =>
-      'Developer tool: Wipe all tables & reset database to default';
+      'Wipe all tables & reset database to default';
 
   @override
   String get settingsEraseConfirmationTitle => 'Erase All App Data?';
@@ -1625,4 +1625,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get settingsEraseSuccess =>
       'All database tables and app data erased successfully.';
+
+  @override
+  String get settingsEnableDeveloperOptionsTitle => 'Developer Mode';
+
+  @override
+  String get settingsEnableDeveloperOptionsSubtitle =>
+      'Show developer options section';
 }

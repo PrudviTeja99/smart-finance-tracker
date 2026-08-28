@@ -1217,10 +1217,11 @@ class _SettingsScreenState extends State<SettingsScreen>
               // 3. Advanced Settings (Bottom)
               _buildAdvancedSettingsCard(),
 
-              const SizedBox(height: 16),
-
               // 4. Developer Options (Bottom)
-              _buildDeveloperOptionsCard(),
+              if (AppSettings.developerOptionsEnabled) ...[
+                const SizedBox(height: 16),
+                _buildDeveloperOptionsCard(),
+              ],
             ],
           ),
         ],
@@ -2122,6 +2123,23 @@ class _SettingsScreenState extends State<SettingsScreen>
             ],
           ),
           onTap: _showSnackBarDurationSelectionSheet,
+        ),
+        Divider(
+            color: const Color(0xFF334155).withValues(alpha: 0.4), height: 1),
+        SwitchListTile(
+          secondary: _buildLeadingIcon(Icons.developer_mode_rounded,
+              color: const Color(0xFF06B6D4)),
+          title: Text(strings.settingsEnableDeveloperOptionsTitle,
+              style:
+                  const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          subtitle: Text(strings.settingsEnableDeveloperOptionsSubtitle,
+              style: const TextStyle(fontSize: 11)),
+          value: AppSettings.developerOptionsEnabled,
+          activeColor: const Color(0xFF06B6D4),
+          onChanged: (val) async {
+            await AppSettings.setDeveloperOptionsEnabled(val);
+            setState(() {});
+          },
         ),
       ],
     );

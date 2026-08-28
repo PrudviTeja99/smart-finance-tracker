@@ -571,10 +571,12 @@
   "chartViewDonut": "డోనట్",
   "chartViewBar": "బార్",
   "settingsEraseAllDataTitle": "అన్ని యాప్ డేటాను తొలగించండి",
-  "settingsEraseAllDataSubtitle": "డెవలపర్ టూల్: అన్ని టేబుళ్లను తుడిచివేసి డేటాబేస్‌ను రీసెట్ చేయండి",
+  "settingsEraseAllDataSubtitle": "అన్ని టేబుళ్లను తుడిచివేసి డేటాబేస్‌ను రీసెట్ చేయండి",
   "settingsEraseConfirmationTitle": "అన్ని యాప్ డేటాను తొలగించాలా?",
   "settingsEraseConfirmationBody": "ఇది అన్ని లావాదేవీలు, నోటిఫికేషన్ లాగ్‌లు, ఖాతాలు మరియు వర్గాలను శాశ్వతంగా తొలగిస్తుంది. డేటాబేస్ డిఫాల్ట్ స్థితికి రీసెట్ చేయబడుతుంది.",
   "settingsEraseCancel": "రద్దు చేయండి",
   "settingsEraseConfirm": "అన్నీ తొలగించండి",
-  "settingsEraseSuccess": "అన్ని డేటాబేస్ టేబుళ్లు విజయవంతంగా రీసెట్ చేయబడ్డాయి."
+  "settingsEraseSuccess": "అన్ని డేటాబేస్ టేబుళ్లు విజయవంతంగా రీసెట్ చేయబడ్డాయి.",
+  "settingsEnableDeveloperOptionsTitle": "డెవలపర్ మోడ్",
+  "settingsEnableDeveloperOptionsSubtitle": "డెవలపర్ విభాగాన్ని చూపించండి"
 }

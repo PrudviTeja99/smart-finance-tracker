@@ -2885,7 +2885,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsEraseAllDataSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Developer tool: Wipe all tables & reset database to default'**
+  /// **'Wipe all tables & reset database to default'**
   String get settingsEraseAllDataSubtitle;
 
   /// No description provided for @settingsEraseConfirmationTitle.
@@ -2917,6 +2917,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'All database tables and app data erased successfully.'**
   String get settingsEraseSuccess;
+
+  /// No description provided for @settingsEnableDeveloperOptionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Developer Mode'**
+  String get settingsEnableDeveloperOptionsTitle;
+
+  /// No description provided for @settingsEnableDeveloperOptionsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Show developer options section'**
+  String get settingsEnableDeveloperOptionsSubtitle;
 }
 
 class _AppLocalizationsDelegate
