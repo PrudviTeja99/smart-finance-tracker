@@ -136,7 +136,7 @@ class DatabaseService {
     await _seedDefaultData(db);
   }
 
-  Future<void> _seedDefaultData(Database db) async {
+  Future<void> _seedDefaultData(DatabaseExecutor db) async {
     // Seed default accounts
     final defaultAccounts = [
       AccountModel(
@@ -745,6 +745,23 @@ class DatabaseService {
       'raw_notification_queue',
       where: "status = 'processed'",
     );
+  }
+
+  /// Completely erase all user data across all tables and re-seed default data (Developer feature).
+  Future<void> eraseAllData() async {
+    final db = await database;
+    await db.transaction((txn) async {
+      await txn.delete('transactions');
+      await txn.delete('notification_logs');
+      await txn.delete('raw_notification_queue');
+      await txn.delete('model_audit_log');
+      await txn.delete('classifier_state');
+      await txn.delete('accounts');
+      await txn.delete('categories');
+
+      await _seedDefaultData(txn);
+    });
+    _notifyDashboardDataChanged();
   }
 
   // --- RAW NOTIFICATION QUEUE (Zero-Battery Background Ingestion) ---

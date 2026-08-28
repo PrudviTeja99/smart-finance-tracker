@@ -1613,4 +1613,28 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get chartViewBar => 'బార్';
+
+  @override
+  String get settingsEraseAllDataTitle => 'అన్ని యాప్ డేటాను తొలగించండి';
+
+  @override
+  String get settingsEraseAllDataSubtitle =>
+      'డెవలపర్ టూల్: అన్ని టేబుళ్లను తుడిచివేసి డేటాబేస్‌ను రీసెట్ చేయండి';
+
+  @override
+  String get settingsEraseConfirmationTitle => 'అన్ని యాప్ డేటాను తొలగించాలా?';
+
+  @override
+  String get settingsEraseConfirmationBody =>
+      'ఇది అన్ని లావాదేవీలు, నోటిఫికేషన్ లాగ్‌లు, ఖాతాలు మరియు వర్గాలను శాశ్వతంగా తొలగిస్తుంది. డేటాబేస్ డిఫాల్ట్ స్థితికి రీసెట్ చేయబడుతుంది.';
+
+  @override
+  String get settingsEraseCancel => 'రద్దు చేయండి';
+
+  @override
+  String get settingsEraseConfirm => 'అన్నీ తొలగించండి';
+
+  @override
+  String get settingsEraseSuccess =>
+      'అన్ని డేటాబేస్ టేబుళ్లు విజయవంతంగా రీసెట్ చేయబడ్డాయి.';
 }
